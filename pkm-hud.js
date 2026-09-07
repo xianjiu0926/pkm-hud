@@ -1810,16 +1810,111 @@ function dexSearch(){
   }
   },150);
 }
-function pokedexHTML(){
+var REGIONAL_DEX={'关都':'宝可梦列表（按关都图鉴编号）/简单版','城都':'宝可梦列表（按城都图鉴编号）/简单版','丰缘':'宝可梦列表（按丰缘图鉴编号）/简单版','神奥':'宝可梦列表（按神奥图鉴编号）/简单版','合众':'宝可梦列表（按合众图鉴编号）/简单版','卡洛斯':'宝可梦列表（按卡洛斯图鉴编号）/简单版','阿罗拉':'宝可梦列表（按阿罗拉图鉴编号）/简单版','伽勒尔':'宝可梦列表（按伽勒尔图鉴编号）/简单版','帕底亚':'宝可梦列表（按帕底亚图鉴编号）/简单版'};
+var LOC_REGION={
+  '关都':'关都','城都':'城都','丰缘':'丰缘','神奥':'神奥','合众':'合众','卡洛斯':'卡洛斯','阿罗拉':'阿罗拉','伽勒尔':'伽勒尔','帕底亚':'帕底亚','洗翠':'洗翠',
+  '深灰市':'关都','尼比市':'关都','华蓝市':'关都','枯叶市':'关都','玉虹市':'关都','彩虹市':'关都','浅红市':'关都','金黄市':'关都','黄金市':'关都','红莲镇':'关都','红莲岛':'关都','常青市':'关都','常磐市':'关都','真新镇':'关都','紫苑镇':'关都','月见山':'关都','华蓝洞窟':'关都',
+  '桔梗市':'城都','桧皮镇':'城都','满金市':'城都','圆珠市':'城都','湛蓝市':'城都','浅葱市':'城都','卡吉镇':'城都','烟墨市':'城都','若叶镇':'城都',
+  '卡那兹市':'丰缘','武斗镇':'丰缘','紫堇市':'丰缘','釜炎镇':'丰缘','橙华市':'丰缘','茵郁市':'丰缘','绿岭市':'丰缘','琉璃市':'丰缘','未白镇':'丰缘',
+  '黑金市':'神奥','百代市':'神奥','帷幕市':'神奥','野原市':'神奥','家缘市':'神奥','水脉市':'神奥','雪峰市':'神奥','滨海市':'神奥','双叶镇':'神奥',
+  '三曜市':'合众','七宝市':'合众','立涌市':'合众','飞云市':'合众','雷文市':'合众','帆巴市':'合众','吹寄市':'合众','雪花市':'合众','双龙市':'合众','青海波市':'合众','鹿子镇':'合众',
+  '白檀市':'卡洛斯','遥香市':'卡洛斯','娑罗市':'卡洛斯','比翼市':'卡洛斯','密阿雷市':'卡洛斯','香薰市':'卡洛斯','百刻市':'卡洛斯','映雪市':'卡洛斯','朝香镇':'卡洛斯',
+  '好奥乐市':'阿罗拉','利利小镇':'阿罗拉','美乐美乐岛':'阿罗拉','阿卡拉岛':'阿罗拉','乌拉乌拉岛':'阿罗拉','波尼岛':'阿罗拉',
+  '草路镇':'伽勒尔','水舟镇':'伽勒尔','机擎市':'伽勒尔','溯传镇':'伽勒尔','舞姿镇':'伽勒尔','战竞镇':'伽勒尔','尖钉镇':'伽勒尔','拳关市':'伽勒尔','化朗镇':'伽勒尔',
+  '圆模镇':'帕底亚','深钵镇':'帕底亚','玻瓶市':'帕底亚','酿光市':'帕底亚','锦汇市':'帕底亚','霜抹山':'帕底亚','冰柜镇':'帕底亚','焙固镇':'帕底亚','小匙镇':'帕底亚',
+  '祝庆村':'洗翠','纯白冻土':'洗翠','黑曜原野':'洗翠','红莲湿地':'洗翠','群青海岸':'洗翠','天冠山麓':'洗翠'
+};
+function regionFromLocation(loc){
+  var s=t2s(String(loc||'').trim());
+  if(!s)return '';
+  if(LOC_REGION[s])return LOC_REGION[s];
+  var sfx=['地区','地方','市','镇','岛','村','町','山','冻土','原野','湿地','海岸','山麓','洞窟','遗迹','森林','道路'];
+  var key=s;
+  for(var i=0;i<sfx.length;i++){
+    if(key.length>sfx[i].length&&key.slice(-sfx[i].length)===sfx[i]){key=key.slice(0,-sfx[i].length);break;}
+  }
+  for(var k in LOC_REGION){var kk=t2s(k);if(kk===key)return LOC_REGION[k];}
+  for(var k2 in LOC_REGION){if(s.indexOf(k2)>=0)return LOC_REGION[k2];}
+  return '';
+}
+var dexRegion='全国';
+var dexRegionCache={};
+function fetchRegionalDex(region,cb){
+  var page=REGIONAL_DEX[region];
+  if(!page){cb&&cb(null);return;}
+  fetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=wikitext&origin=*')
+    .then(function(r){return r.ok?r.json():Promise.reject();})
+    .then(function(j){
+      var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
+      var list=wt?parseDex(wt):null;
+      if(list&&list.length)cb&&cb(list);else cb&&cb(null);
+    })
+    .catch(function(){cb&&cb(null);});
+}
+function loadDexList(region,cb){
+  if(region==='全国'){
+    if(dexCache){cb&&cb(dexCache);return;}
+    fetchDex(cb);return;
+  }
+  var cached=dexRegionCache[region]||lsGet('pk_dexlist_'+region,null);
+  if(cached&&cached.length){dexRegionCache[region]=cached;cb&&cb(cached);return;}
+  fetchRegionalDex(region,function(list){
+    if(list&&list.length){dexRegionCache[region]=list;lsSet('pk_dexlist_'+region,list);}
+    cb&&cb(list);
+  });
+}
+function dexRegionTabsHTML(){
+  var regs=['全国'].concat(Object.keys(REGIONAL_DEX));
+  return '<div class="badge-tabs" id="dex-region-tabs">'+regs.map(function(r){return '<button class="badge-tab'+(dexRegion===r?' active':'')+'" data-dexregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('')+'</div>';
+}
+function dexCountHTML(list,owned,sSet){
+  if(!list)return '<div class="dex-count">加载失败</div>';
+  var caught=0,seenC=0;
+  list.forEach(function(p){
+    var bn=p.name.split('（')[0].split('(')[0].trim();
+    if(devUnlocked()||hitSpecies(owned,bn))caught++;
+    else if(hitSpecies(sSet,bn))seenC++;
+  });
+  if(devUnlocked())return '<div class="dex-count">✨ 已解锁全部图鉴 · 总数 '+list.length+'</div>';
+  return '<div class="dex-count">捕捉 '+caught+' · 见过 '+seenC+' · 总数 '+list.length+'</div>';
+}
+function renderDexRegion(){
   var owned=ownedSpecies(),sSet=loadSeen();
-  var caught=Object.keys(owned),seen=Object.keys(sSet);
-var countHtml=devUnlocked()?'<div class="dex-count">✨ 已解锁全部图鉴 · 总数 <span id="dex-total">—</span></div>':'<div class="dex-count">捕捉 '+caught.length+' · 见过 '+seen.length+' · 总数 <span id="dex-total">—</span></div>';
-var html=frame('全国图鉴','<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号，自动跳转" autocomplete="off"></div>'+countHtml+'<div class="pokedex" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
-  setTimeout(function(){
-    var render=function(d){renderDexGrid(d,null,sSet,owned);};
-    if(dexCache){render(dexCache);}
-    else{fetchDex(function(d){render(d);});}
-  },0);
+  var c=document.getElementById('dex-count');
+  if(c)c.innerHTML='<div class="dex-count">加载中…</div>';
+  loadDexList(dexRegion,function(list){
+    renderDexGrid(list,null,sSet,owned);
+    var c2=document.getElementById('dex-count');
+    if(c2)c2.innerHTML=dexCountHTML(list,owned,sSet);
+  });
+}
+var pkmDexContextLast='';
+function updateDexContext(){
+  try{
+    var region=regionFromLocation((stat_data.环境&&stat_data.环境.当前地点)||'');
+    if(!region)return;
+    loadDexList(region,function(list){
+      try{
+        var owned=ownedSpecies(),sSet=loadSeen();
+        var caught=0,seenC=0;
+        if(list){list.forEach(function(p){var bn=p.name.split('（')[0].split('(')[0].trim();if(hitSpecies(owned,bn))caught++;else if(hitSpecies(sSet,bn))seenC++;});}
+        var txt='[图鉴进度] 当前地区：'+region+'。'+region+'图鉴 捕捉'+caught+'/'+list.length+(seenC?'·见过'+seenC:'')+'。';
+        if(dexCache){
+          var nc=0,ns=0;
+          dexCache.forEach(function(p){var bn=p.name.split('（')[0].split('(')[0].trim();if(hitSpecies(owned,bn))nc++;else if(hitSpecies(sSet,bn))ns++;});
+          txt+='全国 捕捉'+nc+'/'+dexCache.length+'。';
+        }
+        if(txt===pkmDexContextLast)return;
+        pkmDexContextLast=txt;
+        var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;
+        if(ctx&&typeof ctx.setExtensionPrompt==='function'){ctx.setExtensionPrompt('pkmn_dex_context',txt,0,0,0);}
+      }catch(e2){}
+    });
+  }catch(e){}
+}
+function pokedexHTML(){
+  var html=frame('图鉴',dexRegionTabsHTML()+'<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号" autocomplete="off"></div><div id="dex-count"><div class="dex-count">加载中…</div></div><div class="pokedex" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
+  setTimeout(function(){renderDexRegion();},0);
   return html;
 }
 var pkmCache={},pkmLoading={};
@@ -3066,7 +3161,8 @@ var bd=pageOverlay.querySelector('[data-box-del]');
 if(bd){bd.addEventListener('click',function(e){e.stopPropagation();openDeleteBoxConfirm();});}
 var bs=pageOverlay.querySelector('#box-select');if(bs){bs.addEventListener('change',function(){activeBox=bs.value;pageOverlay.querySelector('.page-body').innerHTML=boxHTML();bindPageInteractions();});}
   var si=pageOverlay.querySelector('#dex-search-input');
-  if(si){si.addEventListener('input',dexSearch);}
+if(si){si.addEventListener('input',dexSearch);}
+pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(b){b.addEventListener('click',function(){dexRegion=b.getAttribute('data-dexregion');pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(x){x.classList.toggle('active',x===b);});renderDexRegion();});});
   pageOverlay.querySelectorAll('input[data-clear]').forEach(function(r){r.addEventListener('change',function(){if(r.checked)clearTarget=r.getAttribute('data-clear');});});
 var ic=pageOverlay.querySelector('input[data-toggle="itemclick"]');
 if(ic){ic.addEventListener('change',function(){itemClickEnabled=ic.checked;try{localStorage.setItem('pk_itemclick',itemClickEnabled?'1':'0');}catch(e){}});}
@@ -3579,6 +3675,9 @@ win.addEventListener('touchmove', function(e){
 
 function open(){
   try{stat_data=loadStatData();nearbyOpen=false;foldState={};activeBag='道具';}catch(e){}
+try{recordSeen();}catch(e){}
+try{updateDexContext();}catch(e){}
+try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
   try{recordSeen();}catch(e){}
   try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
   mask.classList.add('open');
@@ -3658,6 +3757,7 @@ var pkmAutoRefreshBound=false;
 function pkRefreshData(){
   try{stat_data=loadStatData();}catch(e){}
   try{recordSeen();}catch(e){}
+  try{updateDexContext();}catch(e){}
   try{
     var win=document.getElementById('pkm-hud-win');
     var ov=document.querySelector('.overlay.open,.page-overlay.open');
@@ -3682,16 +3782,21 @@ function pkBindAutoRefresh(){
     if(!(ctx&&ctx.eventSource))return;
     var ev1=ctx.eventTypes&&(ctx.eventTypes.MESSAGE_RECEIVED||'message_received');
     var ev2=ctx.eventTypes&&(ctx.eventTypes.MESSAGE_SENT||'message_sent');
+    var ev3=ctx.eventTypes&&(ctx.eventTypes.CHAT_CHANGED||'chat_changed');
     var handler=function(){setTimeout(pkRefreshData,450);};
     if(typeof ctx.eventSource.on==='function'){
       ctx.eventSource.on(ev1,handler);
       ctx.eventSource.on(ev2,handler);
+      ctx.eventSource.on(ev3,handler);
     }
   }catch(e){}
+  try{setTimeout(updateDexContext,300);}catch(e){}
+  try{setTimeout(updateDexContext,2500);}catch(e){}
 }
 function safeRender(){
   try{pkBindAutoRefresh();}catch(e){}
   try{recordSeen();}catch(e){}
+  try{updateDexContext();}catch(e){}
   try{preloadBadges();}catch(e){}
   try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
   try{resizeFrame();}catch(e){}
