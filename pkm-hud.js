@@ -305,7 +305,7 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.1.5';
+var PK_VER='1.1.6';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1054,6 +1054,15 @@ var ITEM_IMG={
   '宝可梦图鉴':'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png'
 };
 var ITEM_TEXT={'宝可梦图鉴':'宝可梦图鉴'};
+function itemImgOf(name){
+  if(!name)return undefined;
+  if(ITEM_IMG[name]!==undefined)return ITEM_IMG[name];
+  var ks=Object.keys(ITEM_IMG).sort(function(a,b){return b.length-a.length;});
+  for(var i=0;i<ks.length;i++){
+    if(ITEM_IMG[ks[i]]&&name.indexOf(ks[i])>=0)return ITEM_IMG[ks[i]];
+  }
+  return undefined;
+}
 var PS_ITEM_OUTLINE=false;
 var PS_MIRRORS=[
   'https://cdn.jsdelivr.net/gh/msikma/pokesprite@master/',
@@ -1463,7 +1472,7 @@ function cardHTML(c){
   var isGmax=/极巨|極巨|gmax|dynamax/i.test(c.name+' '+c.species);
   var isGigantamax=/超极巨|超極巨|gmax|gigantamax/i.test(c.name+' '+c.species);
   var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);
-var ov=ITEM_IMG[itName];
+var ov=itemImgOf(itName);
 var itemImg;
 if(!itName){itemImg='';}
 else if(ov!==undefined){itemImg=ov?'<img class="item-badge" src="'+esc(ov)+'" onerror="itemImgErr(this)">':'<span class="item-badge">?</span>';}
@@ -1482,7 +1491,8 @@ function openNearbyPage(){pageOverlay.innerHTML='<div class="page nearby-page"><
 
 function bagCategories(){var cats=[{key:'道具',label:'道具',items:[]},{key:'精灵球',label:'精灵球',items:[]},{key:'重要物品',label:'重要物品',items:[]}];var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var c=cats.find(function(x){return x.key===it.类型;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
 var activeBag='道具';
-function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0);var icon;if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var ov=ITEM_IMG[it.name];if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=(isTM||!itemClickEnabled)?'':' data-item="'+esc(it.name)+'" style="cursor:pointer"';return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
+function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0);var icon;if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var ov=itemImgOf(it.name);
+if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=(isTM||!itemClickEnabled)?'':' data-item="'+esc(it.name)+'" style="cursor:pointer"';return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
 function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return frame('背包','<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
 
 var activeBox='1';var nearbyOpen=false;var foldState={};function foldHTML(key,label,fn){var open=!!foldState[key];return '<div class="fold-box"><div class="fold-head" data-fold="'+key+'"><span>'+label+'</span><span class="fold-arrow">'+(open?'▾':'▸')+'</span></div>'+(open?'<div class="fold-body">'+fn()+'</div>':'')+'</div>';}function bagPlainHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return '<div class="fold-inner"><div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div></div>';}function relPlainHTML(){var rel=stat_data.人际关系||{};var ks=Object.keys(rel);if(!ks.length)return '<div class="fold-inner"><div class="empty">暂无</div></div>';return '<div class="fold-inner">'+ks.map(function(k){var val=rel[k];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(k)+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('')+'</div>';}
