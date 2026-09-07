@@ -1,6 +1,6 @@
 (function(){
 var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;--male:#00BFFF;--female:#FF4500}'+
-'#pkm-hud-win,#pkm-hud-win *{box-sizing:border-box}#pkm-hud-win *{margin:0;padding:0}'+
+':where(#pkm-hud-win) *{box-sizing:border-box;margin:0;padding:0}:where(#pkm-hud-btn){box-sizing:border-box}'+
 '#pkm-hud-win{font-family:"Segoe UI","Helvetica Neue","PingFang SC","Microsoft YaHei",monospace;color:var(--text)}'+
 '.hud{--hud-pad:clamp(10px,3vw,14px);max-width:600px;margin:16px auto;padding:var(--hud-pad);border-radius:10px;position:relative;background-color:#0f1626;box-shadow:0 8px 24px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden}'+
 '.hud::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:inherit;z-index:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px),repeating-linear-gradient(90deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px)}'+
@@ -306,7 +306,7 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.0.4';
+var PK_VER='1.0.5';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
