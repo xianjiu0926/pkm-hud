@@ -305,7 +305,7 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.1.1';
+var PK_VER='1.1.2';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -2079,7 +2079,12 @@ function pkmPreviewFallback(el){
   }
   el.style.display='none';
 }
+var pkmStatsRaf=0;
 function updatePkmStats(){
+  if(pkmStatsRaf)return;
+  pkmStatsRaf=requestAnimationFrame(function(){pkmStatsRaf=0;updatePkmStatsNow();});
+}
+function updatePkmStatsNow(){
   var d=curPkm;if(!d)return;
   var list=curPkmForms&&curPkmForms.length?curPkmForms:d.forms;
   var f=list[curPkmForm]||list[0]||{};
@@ -2099,16 +2104,26 @@ function updatePkmStats(){
     return mn+'~'+mx;
   }
   var rows=[['HP',f.stats.hp,1],['物攻',f.stats.atk,0],['物防',f.stats.def,0],['特攻',f.stats.spa,0],['特防',f.stats.spd,0],['速度',f.stats.spe,0]];
-  var h='',total=0;
-  for(var i=0;i<rows.length;i++){
-    var b=parseInt(rows[i][1],10);
-    if(isNaN(b))continue;
-    total+=b;
-    var rg=(i===0&&isShed)?'1':range(b,rows[i][2]);
-    h+='<div style="display:flex;justify-content:space-between;gap:8px"><span>'+rows[i][0]+' '+b+'</span><span>'+rg+'</span></div>';
+  var key=curPkmNdex+'|'+curPkmForm;
+  if(stEl.getAttribute('data-stats-key')!==key){
+    var h='',total=0;
+    for(var i=0;i<rows.length;i++){
+      var b=parseInt(rows[i][1],10);
+      if(isNaN(b))continue;
+      total+=b;
+      h+='<div style="display:flex;justify-content:space-between;gap:8px"><span>'+rows[i][0]+' '+b+'</span><span data-st="'+i+'"></span></div>';
+    }
+    h+='<div style="margin-top:4px;font-weight:800"><span>总和 '+total+'</span></div>';
+    stEl.innerHTML=h;
+    stEl.setAttribute('data-stats-key',key);
   }
-  h+='<div style="margin-top:4px;font-weight:800"><span>总和 '+total+'</span></div>';
-  stEl.innerHTML=h;
+  for(var j=0;j<rows.length;j++){
+    var cell=stEl.querySelector('[data-st="'+j+'"]');
+    if(!cell)continue;
+    var bb=parseInt(rows[j][1],10);
+    if(isNaN(bb)){cell.textContent='—~—';continue;}
+    cell.textContent=(j===0&&isShed)?'1':range(bb,rows[j][2]);
+  }
 }
 function renderPkmForm(idx){
   var d=curPkm;if(!d)return;
