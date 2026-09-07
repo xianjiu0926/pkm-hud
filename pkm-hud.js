@@ -306,7 +306,7 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.0.7';
+var PK_VER='1.0.8';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1810,19 +1810,18 @@ function dexSearch(){
   }
   },150);
 }
-var REGIONAL_DEX={'关都':'宝可梦列表（按关都图鉴编号）/简单版','城都':'宝可梦列表（按城都图鉴编号）/简单版','丰缘':'宝可梦列表（按丰缘图鉴编号）/简单版','神奥':'宝可梦列表（按神奥图鉴编号）/简单版','合众':'宝可梦列表（按合众图鉴编号）/简单版','卡洛斯':'宝可梦列表（按卡洛斯图鉴编号）/简单版','阿罗拉':'宝可梦列表（按阿罗拉图鉴编号）/简单版','伽勒尔':'宝可梦列表（按伽勒尔图鉴编号）/简单版','帕底亚':'宝可梦列表（按帕底亚图鉴编号）/简单版'};
+var REGIONAL_DEX={'关都':'宝可梦列表（按关都图鉴编号）','城都':'宝可梦列表（按城都图鉴编号）','丰缘':'宝可梦列表（按丰缘图鉴编号）','神奥':'宝可梦列表（按神奥图鉴编号）','合众':'宝可梦列表（按新合众图鉴编号）','卡洛斯':'宝可梦列表（按卡洛斯图鉴编号）','阿罗拉':'宝可梦列表（按新阿罗拉图鉴编号）','伽勒尔':'宝可梦列表（按铠岛图鉴编号）','帕底亚':'宝可梦列表（按帕底亚图鉴编号）'};
 var LOC_REGION={
-  '关都':'关都','城都':'城都','丰缘':'丰缘','神奥':'神奥','合众':'合众','卡洛斯':'卡洛斯','阿罗拉':'阿罗拉','伽勒尔':'伽勒尔','帕底亚':'帕底亚','洗翠':'洗翠',
+  '关都':'关都','城都':'城都','丰缘':'丰缘','神奥':'神奥','合众':'合众','卡洛斯':'卡洛斯','阿罗拉':'阿罗拉','伽勒尔':'伽勒尔','帕底亚':'帕底亚',
   '深灰市':'关都','尼比市':'关都','华蓝市':'关都','枯叶市':'关都','玉虹市':'关都','彩虹市':'关都','浅红市':'关都','金黄市':'关都','黄金市':'关都','红莲镇':'关都','红莲岛':'关都','常青市':'关都','常磐市':'关都','真新镇':'关都','紫苑镇':'关都','月见山':'关都','华蓝洞窟':'关都',
   '桔梗市':'城都','桧皮镇':'城都','满金市':'城都','圆珠市':'城都','湛蓝市':'城都','浅葱市':'城都','卡吉镇':'城都','烟墨市':'城都','若叶镇':'城都',
   '卡那兹市':'丰缘','武斗镇':'丰缘','紫堇市':'丰缘','釜炎镇':'丰缘','橙华市':'丰缘','茵郁市':'丰缘','绿岭市':'丰缘','琉璃市':'丰缘','未白镇':'丰缘',
   '黑金市':'神奥','百代市':'神奥','帷幕市':'神奥','野原市':'神奥','家缘市':'神奥','水脉市':'神奥','雪峰市':'神奥','滨海市':'神奥','双叶镇':'神奥',
   '三曜市':'合众','七宝市':'合众','立涌市':'合众','飞云市':'合众','雷文市':'合众','帆巴市':'合众','吹寄市':'合众','雪花市':'合众','双龙市':'合众','青海波市':'合众','鹿子镇':'合众',
-  '白檀市':'卡洛斯','遥香市':'卡洛斯','娑罗市':'卡洛斯','比翼市':'卡洛斯','密阿雷市':'卡洛斯','香薰市':'卡洛斯','百刻市':'卡洛斯','映雪市':'卡洛斯','朝香镇':'卡洛斯',
+  '白檀市':'卡洛斯','遥香市':'卡洛斯','娑罗市':'卡洛斯','比翼市':'卡洛斯','香薰市':'卡洛斯','百刻市':'卡洛斯','映雪市':'卡洛斯','朝香镇':'卡洛斯',
   '好奥乐市':'阿罗拉','利利小镇':'阿罗拉','美乐美乐岛':'阿罗拉','阿卡拉岛':'阿罗拉','乌拉乌拉岛':'阿罗拉','波尼岛':'阿罗拉',
   '草路镇':'伽勒尔','水舟镇':'伽勒尔','机擎市':'伽勒尔','溯传镇':'伽勒尔','舞姿镇':'伽勒尔','战竞镇':'伽勒尔','尖钉镇':'伽勒尔','拳关市':'伽勒尔','化朗镇':'伽勒尔',
-  '圆模镇':'帕底亚','深钵镇':'帕底亚','玻瓶市':'帕底亚','酿光市':'帕底亚','锦汇市':'帕底亚','霜抹山':'帕底亚','冰柜镇':'帕底亚','焙固镇':'帕底亚','小匙镇':'帕底亚',
-  '祝庆村':'洗翠','纯白冻土':'洗翠','黑曜原野':'洗翠','红莲湿地':'洗翠','群青海岸':'洗翠','天冠山麓':'洗翠'
+  '圆模镇':'帕底亚','深钵镇':'帕底亚','玻瓶市':'帕底亚','酿光市':'帕底亚','锦汇市':'帕底亚','霜抹山':'帕底亚','冰柜镇':'帕底亚','焙固镇':'帕底亚','小匙镇':'帕底亚'
 };
 function regionFromLocation(loc){
   var s=t2s(String(loc||'').trim());
@@ -1839,6 +1838,23 @@ function regionFromLocation(loc){
 }
 var dexRegion='全国';
 var dexRegionCache={};
+function parseRegionalDex(wt){
+  var list=[],seen={};
+  var typeSet={};
+  for(var ti=0;ti<TYPE_LIST.length;ti++){typeSet[TYPE_LIST[ti]]=1;}
+  var re=/\{\{\s*rdex(?:\/[A-Za-z]+)?\s*\|([^{}]+)\}\}/gi,m;
+  while((m=re.exec(wt))!==null){
+    var body=m[1].replace(/\u005B\u005B(?:[^\u005D|]*\|)?([^\u005D]*)\u005D\u005D/g,'$1');
+    var parts=body.split('|'),id='',name='';
+    for(var i=0;i<parts.length;i++){
+      var p=String(parts[i]).trim();
+      if(!id&&/^\d+$/.test(p)){id=p;}
+      if(!name&&p&&!/^\d+$/.test(p)&&p.indexOf('形态')!==0&&!typeSet[p]&&!/^[A-Za-z]/.test(p)){name=p;}
+    }
+    if(id&&name&&!seen[id+'|'+name]){seen[id+'|'+name]=1;list.push({id:id,name:name});}
+  }
+  return list;
+}
 function fetchRegionalDex(region,cb){
   var page=REGIONAL_DEX[region];
   if(!page){cb&&cb(null);return;}
@@ -1846,7 +1862,7 @@ function fetchRegionalDex(region,cb){
     .then(function(r){return r.ok?r.json():Promise.reject();})
     .then(function(j){
       var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-      var list=wt?parseDex(wt):null;
+      var list=wt?parseRegionalDex(wt):null;
       if(list&&list.length)cb&&cb(list);else cb&&cb(null);
     })
     .catch(function(){cb&&cb(null);});
@@ -1865,7 +1881,7 @@ function loadDexList(region,cb){
 }
 function dexRegionTabsHTML(){
   var regs=['全国'].concat(Object.keys(REGIONAL_DEX));
-  return '<div class="badge-tabs" id="dex-region-tabs">'+regs.map(function(r){return '<button class="badge-tab'+(dexRegion===r?' active':'')+'" data-dexregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('')+'</div>';
+  return '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px" id="dex-region-tabs">'+regs.map(function(r){return '<button class="badge-tab'+(dexRegion===r?' active':'')+'" data-dexregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('')+'</div>';
 }
 function dexCountHTML(list,owned,sSet){
   if(!list)return '<div class="dex-count">加载失败</div>';
