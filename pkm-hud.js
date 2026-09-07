@@ -307,7 +307,7 @@ var css=':root{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;--male:
 
 /* ===== 脚本版本 & 自动更新 ===== */
 var PK_VER='1.0.0';
-var PK_UPDATE_URL='https://raw.githubusercontent.com/你的用户名/pkm-hud/main/pkm-hud.js';
+var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
