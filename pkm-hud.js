@@ -2761,32 +2761,36 @@ function pkCheckUpdate(){
   }catch(e){ pkSetUpdateMsg('❌ 检查失败：'+e.message); }
 }
 function pkUpdateScript(newContent){
-  try{
-    var ST = WIN.SillyTavern;
-    var ctx = ST && ST.getContext ? ST.getContext() : null;
-    if(!ctx || !ctx.characterId) return Promise.resolve(false);
-    var char = null;
-    try{ if(ctx.getOneCharacter) char = ctx.getOneCharacter(ctx.characterId); }catch(e){}
-    if(!char && ctx.characters) char = ctx.characters[ctx.characterId];
-    if(!char) return Promise.resolve(false);
-    var ext = (char.data && char.data.extensions) || char.extensions;
-    if(!ext || !ext.tavern_helper || !Array.isArray(ext.tavern_helper.scripts)) return Promise.resolve(false);
-    var scripts = ext.tavern_helper.scripts;
-    var idx = -1;
-    for(var i=0;i<scripts.length;i++){
-      var s = scripts[i];
-      if(s && typeof s.content==='string' && s.content.indexOf('PK_VER')>=0 && s.content.indexOf('pkm-hud-btn')>=0){ idx = i; break; }
-    }
-    if(idx<0){
-      for(var j=0;j<scripts.length;j++){
-        var s2 = scripts[j];
-        if(s2 && typeof s2.content==='string' && s2.content.indexOf('pkm-hud-btn')>=0 && /hud/i.test(s2.name||'')){ idx = j; break; }
+  return new Promise(function(resolve){
+    try{
+      var ST = WIN.SillyTavern;
+      var ctx = ST && ST.getContext ? ST.getContext() : null;
+      if(!ctx || !ctx.characterId){ resolve({ok:false, msg:'❌ 读不到酒馆上下文'}); return; }
+      var char = null;
+      try{ if(ctx.getOneCharacter) char = ctx.getOneCharacter(ctx.characterId); }catch(e){}
+      if(!char && ctx.characters) char = ctx.characters[ctx.characterId];
+      if(!char){ resolve({ok:false, msg:'❌ 读不到当前角色'}); return; }
+      var ext = (char.data && char.data.extensions) || char.extensions;
+      if(!ext || !ext.tavern_helper || !Array.isArray(ext.tavern_helper.scripts)){ resolve({ok:false, msg:'❌ 找不到 tavern_helper.scripts'}); return; }
+      var scripts = ext.tavern_helper.scripts;
+      var idx = -1;
+      for(var i=0;i<scripts.length;i++){
+        var s = scripts[i];
+        if(s && typeof s.content==='string' && s.content.indexOf('PK_VER')>=0 && s.content.indexOf('pkm-hud-btn')>=0){ idx = i; break; }
       }
-    }
-    if(idx<0) return Promise.resolve(false);
-    scripts[idx].content = newContent;
-    return pkSaveCharacter(char);
-  }catch(e){ return Promise.resolve(false); }
+      if(idx<0){
+        for(var j=0;j<scripts.length;j++){
+          var s2 = scripts[j];
+          if(s2 && typeof s2.content==='string' && s2.content.indexOf('pkm-hud-btn')>=0 && /hud/i.test(s2.name||'')){ idx = j; break; }
+        }
+      }
+      if(idx<0){ resolve({ok:false, msg:'❌ 脚本列表里没找到 HUD 脚本（可能特征没匹配上）'}); return; }
+      scripts[idx].content = newContent;
+      pkSaveCharacter(char).then(function(saved){
+        resolve(saved ? {ok:true, msg:'✅ 已更新到 v'+pkLatestVer+'，请刷新页面生效'} : {ok:false, msg:'❌ 保存角色卡失败（接口没返回成功）'});
+      });
+    }catch(e){ resolve({ok:false, msg:'❌ 异常: '+e.message}); }
+  });
 }
 
 function pkSaveCharacter(char){
@@ -2817,13 +2821,10 @@ function pkSaveCharacter(char){
 function pkDoUpdate(){
   if(!pkLatestContent){ pkSetUpdateMsg('请先检查更新'); return; }
   pkSetUpdateMsg('正在更新...');
-  pkUpdateScript(pkLatestContent).then(function(ok){
-    if(ok){
-      pkSetUpdateMsg('✅ 已更新到 v'+pkLatestVer+'，请刷新页面生效');
-    }else{
-      diyCopyText(pkLatestContent, function(copied){
-        pkSetUpdateMsg(copied?'⚠️ 自动写入失败，已复制新脚本到剪贴板，请手动粘贴到酒馆助手':'⚠️ 自动写入失败且复制失败，请手动从 GitHub 复制');
-      });
+  pkUpdateScript(pkLatestContent).then(function(res){
+    pkSetUpdateMsg(res.msg);
+    if(!res.ok){
+      try{ diyCopyText(pkLatestContent, function(){}); }catch(e){}
     }
   });
 }
