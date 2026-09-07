@@ -2766,11 +2766,10 @@ function pkUpdateScript(newContent){
       var ST = WIN.SillyTavern;
       var ctx = ST && ST.getContext ? ST.getContext() : null;
       if(!ctx || !ctx.characterId){ resolve({ok:false, msg:'❌ 读不到酒馆上下文'}); return; }
-      var char = null;
+var char = null;
 if(ctx.characters) char = ctx.characters[ctx.characterId];
-if(!char && ctx.getOneCharacter){ try{ char = ctx.getOneCharacter(ctx.characterId); }catch(e){} }}catch(e){}
-      if(!char && ctx.characters) char = ctx.characters[ctx.characterId];
-      if(!char){ resolve({ok:false, msg:'❌ 读不到当前角色'}); return; }
+if(!char && ctx.getOneCharacter){ try{ char = ctx.getOneCharacter(ctx.characterId); }catch(e){} }
+if(!char){ resolve({ok:false, msg:'❌ 读不到当前角色'}); return; }
       var ext = (char.data && char.data.extensions) || char.extensions;
       if(!ext || !ext.tavern_helper || !Array.isArray(ext.tavern_helper.scripts)){ resolve({ok:false, msg:'❌ 找不到 tavern_helper.scripts'}); return; }
       var scripts = ext.tavern_helper.scripts;
