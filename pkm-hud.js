@@ -79,8 +79,8 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '.info-row.block .v{text-align:left;word-break:break-word}'+
 '.trainer-frame .info-row{padding-left:clamp(6px,1.5vw,10px)}'+
 '.heart{color:#f05060;font-size:.95rem;margin-left:2px}'+
-'#badge-entry{cursor:pointer;border-radius:4px}'+
-'#badge-entry:hover{background:rgba(170,204,255,.08)}'+
+'#badge-cycle{cursor:pointer;border-radius:4px;padding:0 4px}'+
+'#badge-cycle:hover{background:rgba(170,204,255,.14)}'+
 '.badge-line{display:flex;align-items:center;gap:6px;width:100%;margin-top:3px;padding-left:10px}'+
 '#badge-entry .v{width:100%}'+
 '.badge-region{font-size:.72rem;color:var(--dim);flex-shrink:0}'+
@@ -297,16 +297,16 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-btn{position:fixed;z-index:2147483600;width:54px;height:54px;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);display:flex;align-items:center;justify-content:center;transition:box-shadow .15s;font-size:26px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}'+
 '#pkm-hud-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.6),0 0 18px rgba(124,196,248,.6)}'+
 '#pkm-hud-btn img{width:36px;height:36px;object-fit:contain;image-rendering:pixelated;pointer-events:none}'+
-'#pkm-hud-mask{position:fixed;inset:0;z-index:2147483500;background:rgba(8,12,24,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none}'+
-'#pkm-hud-mask.open{display:block}'+
-'#pkm-hud-win{position:fixed;left:0;top:0;z-index:2147483600;width:min(94vw,650px);max-height:86vh;overflow-y:auto;display:none;border-radius:12px;overscroll-behavior:contain;-webkit-overscroll-behavior:contain}'+
-'#pkm-hud-win.open{display:block}'+
+'#pkm-hud-mask{position:fixed;inset:0;z-index:2147483500;background:rgba(8,12,24,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:block;opacity:0;visibility:hidden;transition:opacity .18s ease,visibility 0s linear .18s;pointer-events:none}'+
+'#pkm-hud-mask.open{opacity:1;visibility:visible;transition:opacity .18s ease,visibility 0s;pointer-events:auto}'+
+'#pkm-hud-win{position:fixed;left:0;top:0;z-index:2147483600;width:min(94vw,650px);max-height:86vh;overflow-y:auto;display:block;border-radius:12px;overscroll-behavior:contain;-webkit-overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(14px) scale(.98);transform-origin:center;transition:opacity .18s ease,transform .18s ease,visibility 0s linear .18s;pointer-events:none}'+
+'#pkm-hud-win.open{opacity:1;visibility:visible;transform:none;transition:opacity .18s ease,transform .18s ease,visibility 0s;pointer-events:auto}'+
 '#pkm-hud-win .hud{margin:0;max-width:none;width:100%}'+
 '#pkm-hud-close{position:absolute;right:8px;top:8px;z-index:10;width:32px;height:32px;border-radius:50%;border:1px solid var(--frame);background:rgba(43,74,111,.92);color:#fff;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}'+
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.0.5';
+var PK_VER='1.0.6';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1356,7 +1356,7 @@ function badgeCount(r){var t=BADGE_MAP[r.region]||[];if(r.list.length)return r.l
 function badgeTotal(rs){var n=0;rs.forEach(function(r){n+=badgeCount(r);});return n;}
 function pickRegion(rs){if(!rs.length)return '';var saved=null;try{saved=JSON.parse(localStorage.getItem('pk_badge_sel')||'null');}catch(e){}if(saved&&saved.region){for(var i=0;i<rs.length;i++){if(rs[i].region===saved.region)return saved.region;}}return rs[rs.length-1].region;}
 function badgeImg(region,e,got,big){var u=badgeUrl(region,e[0]),cls=got?'':' off';if(!u)return '<span class="badge-cell'+cls+'">·</span>';if(big)return '<div class="badge-item'+cls+'"><img src="'+esc(u)+'" onerror="badgeImgErr(this)"><span class="badge-name">'+esc(e[2])+'<br>'+esc(e[3])+'</span></div>';return '<span class="badge-cell'+cls+'" title="'+esc(e[2]+' · '+e[3]+' · '+e[1])+'"><img src="'+esc(u)+'" onerror="badgeImgErr(this)"></span>';}
-function badgeRowHTML(){var rs=parseBadges();if(!rs.length)return '<div class="info-row" id="badge-entry"><span class="k">徽章</span><span class="v"><span class="dim">尚无徽章</span></span></div>';var reg=pickRegion(rs),cur=rs[0],i;for(i=0;i<rs.length;i++){if(rs[i].region===reg)cur=rs[i];}var tab=BADGE_MAP[cur.region]||[],cells='';if(tab.length){for(i=0;i<tab.length;i++){cells+=badgeImg(cur.region,tab[i],badgeGot(cur,tab[i],i),false);}}else{cells='<span class="dim">'+esc(cur.list.join(' '))+'</span>';}var more=rs.length>1?'<span class="badge-more">+'+(rs.length-1)+'个地区</span>':'';return '<div class="info-row block" id="badge-entry"><span class="k">徽章</span><span class="v"><div class="badge-line"><span class="badge-region" id="badge-cycle" title="点击切换地区">'+esc(cur.region)+(rs.length>1?' ⇄':'')+'<span class="badge-cnt"> '+badgeCount(cur)+'/'+(tab.length||badgeCount(cur))+'</span></span><span class="badge-row">'+cells+'</span>'+more+'</div></span></div>';}
+function badgeRowHTML(){var rs=parseBadges();if(!rs.length)return '<div class="info-row" id="badge-entry"><span class="k">徽章</span><span class="v"><span class="dim">尚无徽章</span></span></div>';var reg=pickRegion(rs),cur=rs[0],i;for(i=0;i<rs.length;i++){if(rs[i].region===reg)cur=rs[i];}var tab=BADGE_MAP[cur.region]||[],cells='';if(tab.length){for(i=0;i<tab.length;i++){cells+=badgeImg(cur.region,tab[i],badgeGot(cur,tab[i],i),false);}}else{cells='<span class="dim">'+esc(cur.list.join(' '))+'</span>';}var more=rs.length>1?'<span class="badge-more">+'+(rs.length-1)+'个地区</span>':'';return '<div class="info-row block" id="badge-entry"><span class="k">徽章</span><span class="v"><div class="badge-line"><span class="badge-region" id="badge-cycle" title="点击切换地区">'+esc(cur.region)+(rs.length>1?' ⇄':'')+'<span class="badge-cnt"> '+badgeCount(cur)+'/'+(tab.length||badgeCount(cur))+'</span></span><span class="badge-row">'+cells+'</span>'+more+'<button class="btn-small" data-badge-open style="margin-left:auto;padding:2px 8px;font-size:.7rem">🏅 查看</button></div></span></div>';}
 function badgePageHTML(){var rs=parseBadges(),regions=Object.keys(BADGE_MAP);var cur=badgeSel||pickRegion(rs)||regions[0];if(regions.indexOf(cur)<0)cur=regions[0];var tabs=regions.map(function(r){return '<button class="badge-tab'+(r===cur?' active':'')+'" data-bregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('');var rec=null;rs.forEach(function(r){if(r.region===cur)rec=r;});if(!rec)rec={region:cur,list:[],cnt:0};var tab=BADGE_MAP[cur]||[],cells=tab.map(function(e,i){return badgeImg(cur,e,badgeGot(rec,e,i),true);}).join('');var mh=badgeMinH();return frame('徽章盒 '+esc(cur)+' '+badgeCount(rec)+'/'+tab.length,'<div class="badge-tabs">'+tabs+'</div><div class="badge-grid" style="min-height:'+mh+'px">'+cells+'</div>');}
 function baseName(s){var t=String(s||'').trim(),i=t.indexOf('-');if(i>0)t=t.slice(0,i);var pre=['搭档','头目','霸主','闪光','原始回归','原始','超极巨化','超极巨','极巨化','极巨','太晶化','太晶','阿罗拉','伽勒尔','洗翠','帕底亚','Mega','mega'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){if(t.indexOf(pre[k])===0&&t.length>pre[k].length){t=t.slice(pre[k].length).trim();go=true;}}}return t;}
 function addSpecies(o,n){n=baseName(n);if(n)o[n]=1;}
@@ -3109,8 +3109,8 @@ if(db){db.addEventListener('click',function(e){
 });}
 }
 
-function bindBadge(){var be=document.getElementById('badge-entry');if(be){be.addEventListener('click',badgeClick);}}
-function badgeClick(e){var rs=parseBadges();if(e.target.closest('#badge-cycle')&&rs.length>1){var cur=pickRegion(rs),i=0,k;for(k=0;k<rs.length;k++){if(rs[k].region===cur)i=k;}try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:rs[(i+1)%rs.length].region}));}catch(err){}var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();}return;}openPage('badge');}
+function bindBadge(){var bc=document.getElementById('badge-cycle');if(bc){bc.addEventListener('click',badgeClick);}var bo=document.querySelector('[data-badge-open]');if(bo){bo.addEventListener('click',function(e){e.stopPropagation();openPage('badge');});}}
+function badgeClick(e){e.stopPropagation();var rs=parseBadges();if(rs.length>1){var cur=pickRegion(rs),i=0,k;for(k=0;k<rs.length;k++){if(rs[k].region===cur)i=k;}try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:rs[(i+1)%rs.length].region}));}catch(err){}var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();}return;}openPage('badge');}
 
 function openPage(key){
   if(key==='forum'){
@@ -3654,7 +3654,43 @@ function closeHud(){
   }catch(e){}
 }
 
+var pkmAutoRefreshBound=false;
+function pkRefreshData(){
+  try{stat_data=loadStatData();}catch(e){}
+  try{recordSeen();}catch(e){}
+  try{
+    var win=document.getElementById('pkm-hud-win');
+    var ov=document.querySelector('.overlay.open,.page-overlay.open');
+    if(win&&win.classList.contains('open')&&!ov){
+      var activeTab='1';
+      var at=document.querySelector('.tab-btn.active');
+      if(at)activeTab=at.getAttribute('data-tab')||'1';
+      render();
+      var tabs=document.querySelectorAll('.tab-btn');
+      for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-tab')===activeTab);}
+      var panels=document.querySelectorAll('.tab-panel');
+      for(var j=0;j<panels.length;j++){panels[j].classList.toggle('active',panels[j].id==='tab-'+activeTab);}
+      resizeFrame();
+    }
+  }catch(e){}
+}
+function pkBindAutoRefresh(){
+  if(pkmAutoRefreshBound)return;
+  pkmAutoRefreshBound=true;
+  try{
+    var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;
+    if(!(ctx&&ctx.eventSource))return;
+    var ev1=ctx.eventTypes&&(ctx.eventTypes.MESSAGE_RECEIVED||'message_received');
+    var ev2=ctx.eventTypes&&(ctx.eventTypes.MESSAGE_SENT||'message_sent');
+    var handler=function(){setTimeout(pkRefreshData,450);};
+    if(typeof ctx.eventSource.on==='function'){
+      ctx.eventSource.on(ev1,handler);
+      ctx.eventSource.on(ev2,handler);
+    }
+  }catch(e){}
+}
 function safeRender(){
+  try{pkBindAutoRefresh();}catch(e){}
   try{recordSeen();}catch(e){}
   try{preloadBadges();}catch(e){}
   try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
