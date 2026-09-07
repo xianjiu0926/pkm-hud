@@ -306,7 +306,7 @@ var css=':root{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;--male:
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.0.0';
+var PK_VER='1.0.1';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
