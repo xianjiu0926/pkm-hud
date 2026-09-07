@@ -99,7 +99,6 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '.badge-item.off img{filter:grayscale(1) brightness(.45);opacity:.4}'+
 '.badge-name{font-size:.66rem;color:var(--text);text-align:center;line-height:1.3}'+
 '.badge-item.off .badge-name{color:var(--dim)}'+
-'#badge-cycle{cursor:pointer;text-decoration:underline;text-underline-offset:2px}'+
 '.heart.empty{color:#888;opacity:.35}'+
 '.nearby-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px dashed rgba(170,204,255,.25);font-size:.85rem;border-radius:6px;cursor:pointer;transition:background .12s}'+
 '.nearby-item:hover{background:rgba(170,204,255,.08)}'+
@@ -306,7 +305,7 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.0.8';
+var PK_VER='1.0.9';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1778,15 +1777,15 @@ function renderDexGrid(list,cSet,sSet,owned){
   if(t)t.textContent=list.length;
   var html='';
   list.forEach(function(p){
-    var id=p.id||'',name=p.name||'';
-    var bn=name.split('（')[0].split('(')[0].trim();
-    var caught=devUnlocked()||hitSpecies(owned,bn);
-    var seen=!caught&&hitSpecies(sSet,bn);
-    var known=caught||seen;
-    var cls=caught?'caught':(seen?'seen':'unknown');
-    var label=known?name:'？？？';
-    var attr=known?' data-name="'+esc(bn)+'"':' data-noclick="1"';
-    html+='<div class="dex-cell '+cls+'" data-id="'+esc(id)+'"'+attr+'><span class="dex-no">#'+esc(id)+'</span><span class="dex-name">'+esc(label)+'</span></div>';
+    var id=p.id||'',ndex=p.ndex||id,name=p.name||'';
+var bn=name.split('（')[0].split('(')[0].trim();
+var caught=devUnlocked()||hitSpecies(owned,bn);
+var seen=!caught&&hitSpecies(sSet,bn);
+var known=caught||seen;
+var cls=caught?'caught':(seen?'seen':'unknown');
+var label=known?name:'？？？';
+var attr=known?' data-name="'+esc(bn)+'"':' data-noclick="1"';
+html+='<div class="dex-cell '+cls+'" data-id="'+esc(ndex)+'" data-rdex="'+esc(id)+'"'+attr+'><span class="dex-no">#'+esc(id)+'</span><span class="dex-name">'+esc(label)+'</span></div>';
   });
   g.innerHTML=html;
 }
@@ -1801,8 +1800,9 @@ function dexSearch(){
     var c=cells[i];
     if(!v){c.style.display='';continue;}
     var nm=c.getAttribute('data-name')||'';
-    var id=c.getAttribute('data-id')||'';
-    if(nm&&(nm.indexOf(v)>=0||id.indexOf(v)>=0)){
+var id=c.getAttribute('data-id')||'';
+var rd=c.getAttribute('data-rdex')||'';
+if(nm&&(nm.indexOf(v)>=0||id.indexOf(v)>=0||rd.indexOf(v)>=0)){
       c.style.display='';
     }else{
       c.style.display='none';
@@ -1845,20 +1845,21 @@ function parseRegionalDex(wt){
   var re=/\{\{\s*rdex(?:\/[A-Za-z]+)?\s*\|([^{}]+)\}\}/gi,m;
   while((m=re.exec(wt))!==null){
     var body=m[1].replace(/\u005B\u005B(?:[^\u005D|]*\|)?([^\u005D]*)\u005D\u005D/g,'$1');
-    var parts=body.split('|'),id='',name='';
+    var parts=body.split('|'),nums=[],name='';
     for(var i=0;i<parts.length;i++){
-      var p=String(parts[i]).trim();
-      if(!id&&/^\d+$/.test(p)){id=p;}
-      if(!name&&p&&!/^\d+$/.test(p)&&p.indexOf('形态')!==0&&!typeSet[p]&&!/^[A-Za-z]/.test(p)){name=p;}
+      var p=t2s(String(parts[i]).trim());
+      if(/^\d+$/.test(p)){nums.push(p);continue;}
+      if(!name&&p&&p.indexOf('形态')!==0&&!typeSet[p]&&!/^[A-Za-z]/.test(p)){name=p;}
     }
-    if(id&&name&&!seen[id+'|'+name]){seen[id+'|'+name]=1;list.push({id:id,name:name});}
+    var id=nums[0]||'',ndex=nums[nums.length-1]||id;
+    if(id&&name&&!seen[id+'|'+name]){seen[id+'|'+name]=1;list.push({id:id,ndex:ndex,name:name});}
   }
   return list;
 }
 function fetchRegionalDex(region,cb){
   var page=REGIONAL_DEX[region];
   if(!page){cb&&cb(null);return;}
-  fetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=wikitext&origin=*')
+  fetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=wikitext&variant=zh-hans&origin=*')
     .then(function(r){return r.ok?r.json():Promise.reject();})
     .then(function(j){
       var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
@@ -1872,10 +1873,10 @@ function loadDexList(region,cb){
     if(dexCache){cb&&cb(dexCache);return;}
     fetchDex(cb);return;
   }
-  var cached=dexRegionCache[region]||lsGet('pk_dexlist_'+region,null);
+  var cached=dexRegionCache[region]||lsGet('pk_dexlist2_'+region,null);
   if(cached&&cached.length){dexRegionCache[region]=cached;cb&&cb(cached);return;}
   fetchRegionalDex(region,function(list){
-    if(list&&list.length){dexRegionCache[region]=list;lsSet('pk_dexlist_'+region,list);}
+    if(list&&list.length){dexRegionCache[region]=list;lsSet('pk_dexlist2_'+region,list);}
     cb&&cb(list);
   });
 }
@@ -3694,8 +3695,6 @@ function open(){
 try{recordSeen();}catch(e){}
 try{updateDexContext();}catch(e){}
 try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
-  try{recordSeen();}catch(e){}
-  try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
   mask.classList.add('open');
   win.classList.add('open');
   try{ document.body.style.overflow='hidden'; }catch(e){}
