@@ -306,7 +306,7 @@ var css=':root{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;--male:
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.0.2';
+var PK_VER='1.0.3';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -2787,36 +2787,69 @@ if(!char){ resolve({ok:false, msg:'❌ 读不到当前角色'}); return; }
       if(idx<0){ resolve({ok:false, msg:'❌ 脚本列表里没找到 HUD 脚本（可能特征没匹配上）'}); return; }
       scripts[idx].content = newContent;
       pkSaveCharacter(char).then(function(saved){
-        resolve(saved ? {ok:true, msg:'✅ 已更新到 v'+pkLatestVer+'，请刷新页面生效'} : {ok:false, msg:'❌ 保存角色卡失败（接口没返回成功）'});
-      });
+  resolve(saved ? {ok:true, msg:'✅ 已更新到 v'+pkLatestVer+'，请刷新页面生效'} : {ok:false, msg:'❌ 保存角色卡失败（接口没返回成功）'});
+}).catch(function(err){
+  resolve({ok:false, msg:'❌ 保存失败：'+(err && err.message ? err.message : err)});
+});
     }catch(e){ resolve({ok:false, msg:'❌ 异常: '+e.message}); }
   });
 }
 
+function pkGetCsrf(){
+  return new Promise(function(resolve){
+    var done=false;
+    function fin(t){ if(!done){ done=true; resolve(t||''); } }
+    getCsrfToken(fin);
+    setTimeout(function(){ fin(''); }, 3000);
+  });
+}
 function pkSaveCharacter(char){
   try{
+    var top = char || {};
+    var data = (top.data && typeof top.data === 'object') ? top.data : top;
+    var ext = data.extensions || top.extensions || {};
+    var name = data.name || top.name || '';
+    if(!name) return Promise.resolve(false);
+
     var fd = new WIN.FormData();
-    var ext = (char.data && char.data.extensions) || char.extensions || {};
-    fd.append('ch_name', char.name || '');
-    fd.append('avatar_url', char.avatar || '');
-    fd.append('character_version', char.character_version || (char.data && char.data.character_version) || '');
-    fd.append('creator', char.creator || (char.data && char.data.creator) || '');
-    fd.append('creator_notes', char.creator_notes || (char.data && char.data.creator_notes) || '');
-    fd.append('description', char.description || '');
-    fd.append('first_mes', char.first_mes || '');
-    fd.append('world', (ext && ext.world) || (char.data && char.data.world) || char.world || '');
+    fd.append('ch_name', name);
+    fd.append('avatar_url', top.avatar || data.avatar || '');
+    fd.append('description', data.description || '');
+    fd.append('personality', data.personality || '');
+    fd.append('scenario', data.scenario || '');
+    fd.append('first_mes', data.first_mes || '');
+    fd.append('mes_example', data.mes_example || '');
+    fd.append('creator_notes', data.creator_notes || '');
+    fd.append('creator', data.creator || '');
+    fd.append('character_version', data.character_version || '');
+    fd.append('system_prompt', data.system_prompt || '');
+    fd.append('post_history_instructions', data.post_history_instructions || '');
+    fd.append('alternate_greetings', JSON.stringify(data.alternate_greetings || []));
+    fd.append('tags', JSON.stringify(data.tags || []));
+    fd.append('character_book', JSON.stringify(data.character_book || null));
     fd.append('extensions', JSON.stringify(ext));
-    fd.append('chat', char.chat || '');
-    fd.append('create_date', char.create_date || '');
-    fd.append('personality', char.personality || '');
-    fd.append('scenario', char.scenario || '');
-    fd.append('mes_example', char.mes_example || '');
-    fd.append('talkativeness', (ext && ext.talkativeness != null) ? String(ext.talkativeness) : '0.5');
-    fd.append('fav', char.fav ? 'true' : 'false');
-    return fetch('/api/characters/edit', {method:'POST', body:fd})
-      .then(function(r){ return r.ok; })
-      .catch(function(){ return false; });
-  }catch(e){ return Promise.resolve(false); }
+    fd.append('chat', top.chat || data.chat || '');
+    fd.append('create_date', top.create_date || data.create_date || '');
+    fd.append('talkativeness', (data.talkativeness != null) ? String(data.talkativeness) : '0.5');
+    fd.append('fav', (top.fav || data.fav) ? 'true' : 'false');
+
+    return pkGetCsrf().then(function(token){
+      var headers = {};
+      if(token){
+        headers['X-CSRF-Token'] = token;
+        fd.append('_csrf', token);
+      }
+      function post(url){
+        return fetch(url, {method:'POST', body:fd, headers:headers}).then(function(r){
+          if(r.ok) return true;
+          return r.text().then(function(t){ throw new Error('HTTP '+r.status+(t?'：'+t:'')); });
+        });
+      }
+      return post('/api/characters/edit').catch(function(){ return post('/editcharacter'); });
+    });
+  }catch(e){
+    return Promise.resolve(false);
+  }
 }
 function pkDoUpdate(){
   if(!pkLatestContent){ pkSetUpdateMsg('请先检查更新'); return; }
