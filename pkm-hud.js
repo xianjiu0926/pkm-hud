@@ -305,7 +305,7 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.1.2';
+var PK_VER='1.1.3';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -2079,6 +2079,32 @@ function pkmPreviewFallback(el){
   }
   el.style.display='none';
 }
+var pkmLvValue=50;
+function bindPkmSlider(el){
+  if(!el)return;
+  var min=0,max=100;
+  pkmLvValue=parseInt(el.getAttribute('data-val'),10)||50;
+  var fill=el.querySelector('.pkm-fill');
+  var thumb=el.querySelector('.pkm-thumb');
+  function paint(){
+    var pct=Math.max(0,Math.min(100,(pkmLvValue-min)/(max-min)*100));
+    if(fill)fill.style.width=pct+'%';
+    if(thumb)thumb.style.left='calc('+pct+'% - 9px)';
+  }
+  function setFromClientX(cx){
+    var r=el.getBoundingClientRect();
+    if(r.width<=0)return;
+    var pct=Math.max(0,Math.min(1,(cx-r.left)/r.width));
+    var v=Math.round(min+pct*(max-min));
+    if(v!==pkmLvValue){pkmLvValue=v;el.setAttribute('data-val',String(v));paint();updatePkmStats();}
+  }
+  paint();
+  el._pkmDrag=false;
+  el.addEventListener('pointerdown',function(e){el._pkmDrag=true;try{el.setPointerCapture(e.pointerId);}catch(err){}setFromClientX(e.clientX);e.preventDefault();});
+  el.addEventListener('pointermove',function(e){if(el._pkmDrag)setFromClientX(e.clientX);});
+  el.addEventListener('pointerup',function(){el._pkmDrag=false;});
+  el.addEventListener('pointercancel',function(){el._pkmDrag=false;});
+}
 var pkmStatsRaf=0;
 function updatePkmStats(){
   if(pkmStatsRaf)return;
@@ -2093,7 +2119,7 @@ function updatePkmStatsNow(){
   var stEl=document.getElementById('pkm-stats');
   var numEl=document.getElementById('pkm-lv-num');
   if(!lvEl||!stEl)return;
-  var lv=parseInt(lvEl.value,10)||0;
+  var lv=parseInt(pkmLvValue,10)||0;
   if(numEl)numEl.textContent=lv+'级';
   var isShed=(curPkmNdex===292)||(f.name&&f.name.indexOf('脱壳忍者')>=0)||(d.name&&d.name.indexOf('脱壳忍者')>=0);
   function range(b,isHp){
@@ -2157,7 +2183,7 @@ if(big){
       if(f.abilityd)abi+='<span class="dim">隐藏:</span><span class="abi-link" data-ability="'+esc(f.abilityd)+'">'+esc(f.abilityd)+'</span>';
       out+='<div class="row"><span class="k">特性</span><span class="v">'+abi+'</span></div>';
     }
-    if(f.stats&&(f.stats.hp||f.stats.atk||f.stats.def||f.stats.spa||f.stats.spd||f.stats.spe)){out+='<div class="row block"><span class="k">种族值</span><span class="v" style="width:100%"><div style="display:flex;align-items:center;gap:8px;margin:2px 0"><span class="dim" style="font-size:.72rem">等级</span><input type="range" id="pkm-lv" min="0" max="100" value="50" style="flex:1;margin:0"><span id="pkm-lv-num" style="font-size:.8rem;font-weight:800">50级</span></div><div id="pkm-stats" style="font-size:.82rem;line-height:1.6"></div></span></div>';}
+    if(f.stats&&(f.stats.hp||f.stats.atk||f.stats.def||f.stats.spa||f.stats.spd||f.stats.spe)){out+='<div class="row block"><span class="k">种族值</span><span class="v" style="width:100%"><div style="display:flex;align-items:center;gap:8px;margin:2px 0"><span class="dim" style="font-size:.72rem">等级</span><div id="pkm-lv" data-val="50" style="flex:1;position:relative;height:24px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer"><div class="pkm-rail" style="position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;background:rgba(0,0,0,.72);border-radius:999px;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)"></div><div class="pkm-fill" style="position:absolute;left:0;top:50%;height:4px;margin-top:-2px;width:50%;background:linear-gradient(180deg,#7cc4f8,#4a9dd8);border-radius:999px"></div><div class="pkm-thumb" style="position:absolute;top:50%;left:calc(50% - 9px);width:18px;height:18px;margin-top:-9px;background:#fff;border:2px solid #7cc4f8;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div></div><span id="pkm-lv-num" style="font-size:.8rem;font-weight:800">50级</span></div><div id="pkm-stats" style="font-size:.82rem;line-height:1.6"></div></span></div>';}
     if(d.ndex)out+='<div class="row"><span class="k">全国图鉴</span><span class="v">#'+esc(d.ndex)+'</span></div>';
     var nd=parseInt(d.ndex,10)||0;
     if(nd>0)out+='<div class="row"><span class="k">叫声</span><span class="v"><button class="btn-small" data-cry="'+nd+'">🔊 播放</button></span></div>';
@@ -2169,7 +2195,7 @@ if(big){
       var ratePct=(!isNaN(rate)&&rate>0)?(rate/7.65).toFixed(1)+'%':'—';
       out+='<div class="row"><span class="k">捕获率</span><span class="v">'+ratePct+'</span></div>';
     }
-    b.innerHTML=out||'<div class="empty">没有数据</div>';var lv=document.getElementById('pkm-lv');if(lv){lv.addEventListener('input',updatePkmStats);}updatePkmStats();
+    b.innerHTML=out||'<div class="empty">没有数据</div>';var lv=document.getElementById('pkm-lv');if(lv){bindPkmSlider(lv);}updatePkmStats();
   }
 }
 var HOME_CODE_OVERRIDE={'超级喷火龙X':'MX','超级喷火龙Y':'MY','超极巨化喷火龙':'GM','超级路卡利欧':'M','超级路卡利欧Z':'MZ','水井面具':'W','火灶面具':'H','础石面具':'C'};
@@ -3683,9 +3709,11 @@ win.addEventListener('touchstart', function(e){ if(e.touches&&e.touches[0]) touc
 win.addEventListener('touchmove', function(e){
   try{
     if(!e.touches||!e.touches[0]) return;
+    var t=e.target;
+    if(t&&t.nodeType===1&&t.closest&&(t.closest('#pkm-lv')||t.closest('input,select,button,textarea,label'))){return;}
     var y=e.touches[0].clientY;
     if(y<=touchY){ touchY=y; return; }
-    var el=e.target;
+    var el=t;
     if(el && el.nodeType!==1) el=el.parentElement;
     var atTop=true;
     while(el && el!==win && el!==document.body && el!==document.documentElement){
