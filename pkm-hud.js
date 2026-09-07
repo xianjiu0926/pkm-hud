@@ -2764,21 +2764,27 @@ function pkUpdateScript(newContent){
   try{
     var ST = WIN.SillyTavern;
     var ctx = ST && ST.getContext ? ST.getContext() : null;
-    if(!ctx || !ctx.characters || !ctx.characterId) return Promise.resolve(false);
-    var char = ctx.characters[ctx.characterId];
+    if(!ctx || !ctx.characterId) return Promise.resolve(false);
+    var char = null;
+    try{ if(ctx.getOneCharacter) char = ctx.getOneCharacter(ctx.characterId); }catch(e){}
+    if(!char && ctx.characters) char = ctx.characters[ctx.characterId];
     if(!char) return Promise.resolve(false);
     var ext = (char.data && char.data.extensions) || char.extensions;
     if(!ext || !ext.tavern_helper || !Array.isArray(ext.tavern_helper.scripts)) return Promise.resolve(false);
     var scripts = ext.tavern_helper.scripts;
-    var found = false;
+    var idx = -1;
     for(var i=0;i<scripts.length;i++){
-      if(scripts[i] && typeof scripts[i].content==='string' && scripts[i].content.indexOf('pkm-hud-btn')>=0){
-        scripts[i].content = newContent;
-        found = true;
-        break;
+      var s = scripts[i];
+      if(s && typeof s.content==='string' && s.content.indexOf('PK_VER')>=0 && s.content.indexOf('pkm-hud-btn')>=0){ idx = i; break; }
+    }
+    if(idx<0){
+      for(var j=0;j<scripts.length;j++){
+        var s2 = scripts[j];
+        if(s2 && typeof s2.content==='string' && s2.content.indexOf('pkm-hud-btn')>=0 && /hud/i.test(s2.name||'')){ idx = j; break; }
       }
     }
-    if(!found) return Promise.resolve(false);
+    if(idx<0) return Promise.resolve(false);
+    scripts[idx].content = newContent;
     return pkSaveCharacter(char);
   }catch(e){ return Promise.resolve(false); }
 }
@@ -2794,7 +2800,7 @@ function pkSaveCharacter(char){
     fd.append('creator_notes', char.creator_notes || (char.data && char.data.creator_notes) || '');
     fd.append('description', char.description || '');
     fd.append('first_mes', char.first_mes || '');
-    fd.append('world', (char.data && char.data.world) || char.world || '');
+    fd.append('world', (ext && ext.world) || (char.data && char.data.world) || char.world || '');
     fd.append('extensions', JSON.stringify(ext));
     fd.append('chat', char.chat || '');
     fd.append('create_date', char.create_date || '');
