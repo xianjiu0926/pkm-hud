@@ -305,7 +305,7 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.1.3';
+var PK_VER='1.1.4';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1360,9 +1360,10 @@ function badgePageHTML(){var rs=parseBadges(),regions=Object.keys(BADGE_MAP);var
 function baseName(s){var t=String(s||'').trim(),i=t.indexOf('-');if(i>0)t=t.slice(0,i);var pre=['搭档','头目','霸主','闪光','原始回归','原始','超极巨化','超极巨','极巨化','极巨','太晶化','太晶','阿罗拉','伽勒尔','洗翠','帕底亚','Mega','mega'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){if(t.indexOf(pre[k])===0&&t.length>pre[k].length){t=t.slice(pre[k].length).trim();go=true;}}}return t;}
 function addSpecies(o,n){n=baseName(n);if(n)o[n]=1;}
 function ownedSpecies(){var o={},t=stat_data.队伍||{},k;for(k in t){if(t[k]&&t[k].名字&&t[k].名字!=='空')addSpecies(o,t[k].名字);}var b=stat_data.盒子||{};for(var bx in b){var sl=b[bx]||{};for(var p in sl){if(sl[p]&&sl[p].名字&&sl[p].名字!=='空')addSpecies(o,sl[p].名字);}}return o;}
-function seenKey(){return 'pk_seen_'+String((stat_data.训练家&&stat_data.训练家.名字)||'default');}
+function chatKey(){try{var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;var cid=(ctx&&ctx.chatId)||'';return String(cid).replace(/[^a-zA-Z0-9_-]/g,'_');}catch(e){return '';}}
+function seenKey(){return 'pk_seen_'+String((stat_data.训练家&&stat_data.训练家.名字)||'default')+'_'+chatKey();}
 function loadSeen(){try{var o=JSON.parse(localStorage.getItem(seenKey())||'{}');return (o&&typeof o==='object')?o:{};}catch(e){return {};}}
-function seenFullKey(){return 'pk_seenfull2_'+String((stat_data.训练家&&stat_data.训练家.名字)||'default');}
+function seenFullKey(){return 'pk_seenfull2_'+String((stat_data.训练家&&stat_data.训练家.名字)||'default')+'_'+chatKey();}
 function loadSeenFull(){try{var o=JSON.parse(localStorage.getItem(seenFullKey())||'{}');return (o&&typeof o==='object')?o:{};}catch(e){return {};}}
 function addFull(o,n,ic){
   var t=t2s(String(n||'').trim());
