@@ -2762,51 +2762,64 @@ function pkCheckUpdate(){
 }
 function pkUpdateScript(newContent){
   try{
-    var sig='pkm-hud-btn', targetKey=null;
-    for(var i=0;i<localStorage.length;i++){
-      var k=localStorage.key(i), raw=localStorage.getItem(k);
-      if(raw && raw.indexOf(sig)>=0){ targetKey=k; break; }
-    }
-    if(!targetKey) return false;
-    var raw=localStorage.getItem(targetKey);
-    var v=JSON.parse(raw), found=false;
-    function walk(o){
-      if(found) return;
-      if(Array.isArray(o)){
-        for(var i=0;i<o.length;i++){
-          var it=o[i];
-          if(it && typeof it==='object'){
-            if(typeof it.content==='string' && it.content.indexOf(sig)>=0){ it.content=newContent; found=true; return; }
-            walk(it);
-          }
-        }
-      }else if(o && typeof o==='object'){
-        for(var k in o){
-          if(found) return;
-          var it=o[k];
-          if(it && typeof it==='object'){
-            if(typeof it.content==='string' && it.content.indexOf(sig)>=0){ it.content=newContent; found=true; return; }
-            walk(it);
-          }
-        }
+    var ST = WIN.SillyTavern;
+    var ctx = ST && ST.getContext ? ST.getContext() : null;
+    if(!ctx || !ctx.characters || !ctx.characterId) return Promise.resolve(false);
+    var char = ctx.characters[ctx.characterId];
+    if(!char) return Promise.resolve(false);
+    var ext = (char.data && char.data.extensions) || char.extensions;
+    if(!ext || !ext.tavern_helper || !Array.isArray(ext.tavern_helper.scripts)) return Promise.resolve(false);
+    var scripts = ext.tavern_helper.scripts;
+    var found = false;
+    for(var i=0;i<scripts.length;i++){
+      if(scripts[i] && typeof scripts[i].content==='string' && scripts[i].content.indexOf('pkm-hud-btn')>=0){
+        scripts[i].content = newContent;
+        found = true;
+        break;
       }
     }
-    walk(v);
-    if(!found) return false;
-    localStorage.setItem(targetKey, JSON.stringify(v));
-    return true;
-  }catch(e){ return false; }
+    if(!found) return Promise.resolve(false);
+    return pkSaveCharacter(char);
+  }catch(e){ return Promise.resolve(false); }
+}
+
+function pkSaveCharacter(char){
+  try{
+    var fd = new WIN.FormData();
+    var ext = (char.data && char.data.extensions) || char.extensions || {};
+    fd.append('ch_name', char.name || '');
+    fd.append('avatar_url', char.avatar || '');
+    fd.append('character_version', char.character_version || (char.data && char.data.character_version) || '');
+    fd.append('creator', char.creator || (char.data && char.data.creator) || '');
+    fd.append('creator_notes', char.creator_notes || (char.data && char.data.creator_notes) || '');
+    fd.append('description', char.description || '');
+    fd.append('first_mes', char.first_mes || '');
+    fd.append('world', (char.data && char.data.world) || char.world || '');
+    fd.append('extensions', JSON.stringify(ext));
+    fd.append('chat', char.chat || '');
+    fd.append('create_date', char.create_date || '');
+    fd.append('personality', char.personality || '');
+    fd.append('scenario', char.scenario || '');
+    fd.append('mes_example', char.mes_example || '');
+    fd.append('talkativeness', (ext && ext.talkativeness != null) ? String(ext.talkativeness) : '0.5');
+    fd.append('fav', char.fav ? 'true' : 'false');
+    return fetch('/api/characters/edit', {method:'POST', body:fd})
+      .then(function(r){ return r.ok; })
+      .catch(function(){ return false; });
+  }catch(e){ return Promise.resolve(false); }
 }
 function pkDoUpdate(){
   if(!pkLatestContent){ pkSetUpdateMsg('请先检查更新'); return; }
   pkSetUpdateMsg('正在更新...');
-  if(pkUpdateScript(pkLatestContent)){
-    pkSetUpdateMsg('✅ 已更新到 v'+pkLatestVer+'，请刷新页面生效');
-  }else{
-    diyCopyText(pkLatestContent, function(ok){
-      pkSetUpdateMsg(ok?'⚠️ 自动写入失败，已复制新脚本到剪贴板，请手动粘贴到酒馆助手':'⚠️ 自动写入失败且复制失败，请手动从 GitHub 复制');
-    });
-  }
+  pkUpdateScript(pkLatestContent).then(function(ok){
+    if(ok){
+      pkSetUpdateMsg('✅ 已更新到 v'+pkLatestVer+'，请刷新页面生效');
+    }else{
+      diyCopyText(pkLatestContent, function(copied){
+        pkSetUpdateMsg(copied?'⚠️ 自动写入失败，已复制新脚本到剪贴板，请手动粘贴到酒馆助手':'⚠️ 自动写入失败且复制失败，请手动从 GitHub 复制');
+      });
+    }
+  });
 }
 
 function recordOwnedOnly(){
