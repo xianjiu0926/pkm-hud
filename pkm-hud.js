@@ -72,7 +72,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.info-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(170,204,255,.25);font-size:clamp(.78rem,2.6vw,.88rem);color:var(--text)}'+
 '.info-row:last-child{border-bottom:none}'+
 '.info-row .k{color:var(--dim);flex-shrink:0;font-weight:600}'+
-'.info-row .v{text-align:right;word-break:break-word}'+
+'.info-row .v{text-align:right;word-break:break-word}'+'.cmd-panel{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin-bottom:10px;padding:0 10px 8px}'+'.cmd-panel>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none}'+'.cmd-panel>summary::-webkit-details-marker{display:none}'+'.cmd-note{font-size:.7rem;color:var(--dim);line-height:1.5;padding-bottom:6px}'+'.cmd-row{display:flex;gap:6px;align-items:center;padding:3px 0}'+'.cmd-btn{flex:1;min-width:0;text-align:left;padding:6px 10px;font-family:inherit;font-size:.8rem;color:var(--text);background:rgba(43,74,111,.6);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+'.cmd-btn:hover{filter:brightness(1.2)}'+'.cmd-tip{flex:0 0 30px;padding:6px 0;font-family:inherit;font-size:.8rem;font-weight:800;color:var(--dim);background:rgba(170,204,255,.12);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+
 '.info-row.cmd{justify-content:space-between;gap:10px;padding-right:clamp(10px,2.5vw,14px)}'+
 '.info-row.cmd .v{text-align:right}'+
 '.info-row.block{flex-direction:column;align-items:flex-start;gap:2px}'+
@@ -292,7 +292,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dt-lv{font-size:clamp(.95rem,3.2vw,1.15rem);color:var(--dim);margin-top:0}'+
 '.dt-big{width:96px;height:96px;background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated}'+
 '.dt-hold{margin-top:0;font-size:.8rem;color:var(--text)}'+'.trainer-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.28);overflow:hidden;filter:none}'+'.trainer-frame .info-inner{padding:8px 12px}'+'.trainer-frame .info-title{margin-left:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px}'+'.trainer-frame .info-row{padding-left:0}'+'.trainer-frame .info-row.cmd,.trainer-frame .info-row:last-child{padding-right:0}'+'.tr-env{font-size:.72rem;font-weight:400;letter-spacing:0;text-shadow:none;color:var(--dim);display:inline-flex;flex-wrap:wrap;gap:2px 8px}'+'.battle-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.battle-frame .info-inner{padding:8px 12px}'+'.battle-frame .info-title{margin-left:0}'+'.plain-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.plain-frame .info-inner{padding:8px 12px}'+'.plain-frame .info-title{margin-left:0}'+'.plain-frame .info-row{padding-left:0}'+'.plain-frame .info-row.cmd,.plain-frame .info-row:last-child,.plain-frame .task-item:last-child,.plain-frame .event-item:last-child{padding-right:0}'+
-'@media(orientation:landscape){.dt-top{justify-content:center}}'+'.nb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding-left:8%;padding-right:7%}'+'.nb-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid rgba(125,149,181,.45);border-radius:6px;background:rgba(43,74,111,.28);cursor:pointer;min-width:0;transition:filter .12s,transform .1s}'+'.nb-cell:hover{filter:brightness(1.2);transform:translateY(-2px)}'+'.nb-icon{width:clamp(38px,11vw,52px);height:clamp(38px,11vw,52px)}'+'.nb-name{font-size:.7rem;font-weight:800;text-align:center;line-height:1.2;max-width:100%;word-break:break-all}'+'.nb-cnt{font-size:.66rem;color:var(--dim)}'+'.nb-toggle{float:right;font-size:.7rem;font-weight:400;color:var(--dim);cursor:pointer;margin-right:2%}'+'.nb-toggle:hover{color:#7cc4f8}'+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 7% clamp(10px,2.5vw,14px) 8%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:.74rem;font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
+'@media(orientation:landscape){.dt-top{justify-content:center}}'+'.nb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding-left:8%;padding-right:7%}'+'.nb-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid rgba(125,149,181,.45);border-radius:6px;background:rgba(43,74,111,.28);cursor:pointer;min-width:0;transition:filter .12s,transform .1s}'+'.nb-cell:hover{filter:brightness(1.2);transform:translateY(-2px)}'+'.nb-icon{width:clamp(38px,11vw,52px);height:clamp(38px,11vw,52px)}'+'.nb-name{font-size:.7rem;font-weight:800;text-align:center;line-height:1.2;max-width:100%;word-break:break-all}'+'.nb-cnt{font-size:.66rem;color:var(--dim)}'+'.nb-toggle{float:right;font-size:.7rem;font-weight:400;color:var(--dim);cursor:pointer;margin-right:2%}'+'.nb-toggle:hover{color:#7cc4f8}'+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more{margin-top:4px}'+'.dt-more>summary{cursor:pointer;font-size:.76rem;color:var(--dim);padding:4px 2px;list-style:none}'+'.dt-more>summary::-webkit-details-marker{display:none}'+'.dt-more[open]>summary{color:#7cc4f8}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.tab-panel .bt-empty{height:auto;min-height:140px}'+'.bt-rule{font-size:.78rem;line-height:1.5;color:#ffe9a8;padding:6px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.28);border-radius:0 6px 6px 0;word-break:break-word}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 7% clamp(10px,2.5vw,14px) 8%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:.74rem;font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
 '#pkm-hud-btn{position:fixed;z-index:2147483600;width:54px;height:54px;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);display:flex;align-items:center;justify-content:center;transition:box-shadow .15s;font-size:26px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}'+
 '#pkm-hud-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.6),0 0 18px rgba(124,196,248,.6)}'+
 '#pkm-hud-btn img{width:46px;height:46px;object-fit:cover;border-radius:50%;pointer-events:none}'+
@@ -310,8 +310,15 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.1.7';
+var PK_VER='1.1.9';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
+/*PK_NOTICE_BEGIN
+1.战场规则
+2.快速指令
+3.附近宝可梦的互动改为输入回复栏而非直接发送
+4.删除通讯录与呼出论坛
+5.优化
+PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
@@ -325,18 +332,16 @@ st.textContent=css;
 var MENU=[
   {key:'bag',label:'背包',emoji:'🎒',img:'https://img.baibai.cv/f/3o2qte/1788188339193.png'},
   {key:'box',label:'盒子',emoji:'📦',img:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png'},
-  {key:'contacts',label:'通讯录',emoji:'📱',img:''},
   {key:'rel',label:'人际关系',emoji:'💬',img:''},
   {key:'rivals',label:'劲敌',emoji:'👥',img:''},
   {key:'breeding',label:'繁育',emoji:'🥚',img:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',isz:20},
-  {key:'forum',label:'呼出论坛',emoji:'📣',img:''},
   {key:'pokedex',label:'图鉴',emoji:'📖',img:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png'},
   {key:'badge',label:'徽章盒',emoji:'🏅',img:''},
   {key:'diy',label:'DIY',emoji:'🛠️',img:''},
   {key:'settings',label:'设置',emoji:'⚙️',img:''}
 ];
 
-var DEFAULT_STAT={"训练家":{"名字":"","活力":3,"活力上限":3,"金钱":0,"徽章":"","身份":"","声望":"0 无名","气场":"无","可命令等级":10},"队伍":{"1":{"名字":"空"},"2":{"名字":"空"},"3":{"名字":"空"},"4":{"名字":"空"},"5":{"名字":"空"},"6":{"名字":"空"}},"附近宝可梦":{},"背包":{},"盒子":{},"人际关系":{},"任务":{"主线":"","支线":"","传说":""},"劲敌":{},"通讯录":{},"繁育":{"蛋":"","剩余步数":0,"存放":""},"世界事件":{"附近遭遇":"","地区新闻":"","区域动态":""},"战场":{"场景":"","场上":{},"各方":{}},"环境":{"当前地点":"","日期":"","时间":"","赛程":""}};
+var DEFAULT_STAT={"训练家":{"名字":"","活力":3,"活力上限":3,"金钱":0,"徽章":"","身份":"","声望":"0 无名","气场":"无","可命令等级":10},"队伍":{"1":{"名字":"空"},"2":{"名字":"空"},"3":{"名字":"空"},"4":{"名字":"空"},"5":{"名字":"空"},"6":{"名字":"空"}},"附近宝可梦":{},"背包":{},"盒子":{},"人际关系":{},"任务":{"主线":"","支线":"","传说":""},"劲敌":{},"通讯录":{},"繁育":{"蛋":"","剩余步数":0,"存放":""},"世界事件":{"附近遭遇":"","地区新闻":"","区域动态":""},"战场":{"场景":"","规则":"","场上":{},"各方":{}},"环境":{"当前地点":"","日期":"","时间":"","赛程":""}};
 
 function cloneStat(){return JSON.parse(JSON.stringify(DEFAULT_STAT));}
 function mergeStat(extra){
@@ -415,7 +420,8 @@ function loadFromText(text){
 }
 function loadStatData(){
   var d=loadFromMvu();
-  if(d)return d;
+  if(d){try{localStorage.setItem('pk_mvu_backup',JSON.stringify(d));}catch(e){}return d;}
+  try{var backup=JSON.parse(localStorage.getItem('pk_mvu_backup')||'null');if(backup&&backup.训练家)return backup;}catch(e){}
   try{
     var el=WIN.document.querySelector('.statusbar-data-source')||document.querySelector('.statusbar-data-source');
     if(el){
@@ -1505,13 +1511,12 @@ function bagHTML(){var tabs=bagCategories().map(function(c){return '<button clas
 var activeBox='1';var nearbyOpen=false;var foldState={};function foldHTML(key,label,fn){var open=!!foldState[key];return '<div class="fold-box"><div class="fold-head" data-fold="'+key+'"><span>'+label+'</span><span class="fold-arrow">'+(open?'▾':'▸')+'</span></div>'+(open?'<div class="fold-body">'+fn()+'</div>':'')+'</div>';}function bagPlainHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return '<div class="fold-inner"><div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div></div>';}function relPlainHTML(){var rel=stat_data.人际关系||{};var ks=Object.keys(rel);if(!ks.length)return '<div class="fold-inner"><div class="empty">暂无</div></div>';return '<div class="fold-inner">'+ks.map(function(k){var val=rel[k];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(k)+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('')+'</div>';}
 function quickHTML(){var Q=[['box','q-box','https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png','盒子'],['pokedex','q-pokedex','https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png','图鉴'],['breeding','q-breeding','https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png','繁育'],['typechart','q-typechart','⚡','克制表']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="https://img.baibai.cv/f/3o2qte/1788188339193.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img box-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img box-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
 
-function contactsHTML(){var keys=Object.keys(stat_data.通讯录||{});if(!keys.length)return frame('通讯录','<div class="empty">通讯录为空</div>');var items=keys.map(function(name){return '<div class="nearby-item" style="cursor:default"><div class="nearby-info"><div class="nearby-name">'+esc(name)+'</div></div><button class="btn-small" data-call="'+esc(name)+'">📞 联系</button></div>';}).join('');return frame('通讯录',items);}
 function tasksHTML(){var t=stat_data.任务||{},html='';if(t.主线)html+='<div class="task-item"><span class="task-tag main">主线</span><div class="task-text">'+esc(t.主线)+'</div></div>';if(t.传说)html+='<div class="task-item"><span class="task-tag legend">传说</span><div class="task-text">'+esc(t.传说)+'</div></div>';if(t.支线)html+='<div class="task-item"><span class="task-tag random">支线</span><div class="task-text">'+esc(t.支线)+'</div></div>';if(!html)html='<div class="empty">暂无任务</div>';return frameP('任务',html);}
 function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){return esc(String(v||'')).split(/[；;]/).join('<br>');}if(w.附近遭遇)html+='<div class="event-item"><span class="event-type">📍 附近遭遇</span><p>'+ln(w.附近遭遇)+'</p></div>';if(w.地区新闻)html+='<div class="event-item"><span class="event-type">📰 地区新闻</span><p>'+ln(w.地区新闻)+'</p></div>';if(w.区域动态)html+='<div class="event-item"><span class="event-type">🌍 区域动态</span><p>'+ln(w.区域动态)+'</p></div>';if(!html)html='<div class="empty">暂无世界事件</div>';return '<div class="info-frame world-frame plain-frame"><div class="info-inner"><div class="info-title">世界动态</div>'+html+'</div></div>';}
 function relHTML(){var rel=stat_data.人际关系||{};var entries=Object.entries(rel);if(!entries.length)return frame('人际关系','<div class="empty">暂无</div>');var html=entries.map(function(kv){var val=kv[1];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(kv[0])+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('');return frame('人际关系',html);}
 function rivalsHTML(){var r=stat_data.劲敌||{};var entries=Object.entries(r);if(!entries.length)return frameP('劲敌','<div class="empty">尚未遭遇劲敌</div>');var html=entries.map(function(kv){return '<div class="nearby-item" style="cursor:default"><div class="nearby-info"><div class="nearby-name">'+esc(kv[0])+'</div><div class="nearby-sub">'+esc(kv[1])+'</div></div></div>';}).join('');return frameP('劲敌',html);}
 function breedingHTML(){var b=stat_data.繁育||{};return frame('繁育',infoRow('蛋',esc(b.蛋||'无蛋'))+infoRow('剩余步数',num(b.剩余步数,0)+'步')+infoRow('存放',esc(b.存放||'-')));}
-function sideOf(k){if(k.indexOf('敌方')>=0)return 'foe';if(k.indexOf('友方')>=0)return 'ally';if(k.indexOf('中立')>=0)return 'neu';return 'self';}function btCard(k,v){var side=sideOf(k),segs=String(v||'').split(/[｜|]/),nm=String(k).replace(/[（(](我方|友方|中立|敌方)[)）]/,'').trim(),tr='',pk=nm,di=nm.indexOf('·');if(di>0){tr=nm.slice(0,di);pk=nm.slice(di+1);}var lv='',hpc=0,hpm=0,rest=[];for(var i=0;i<segs.length;i++){var s=segs[i].trim();if(!s)continue;if(i===0){var lm=s.match(/Lv\.?\s*(\d+)/i);if(lm)lv=lm[1];var hm=s.match(/(\d+)\s*\/\s*(\d+)/);if(hm){hpc=parseInt(hm[1],10);hpm=parseInt(hm[2],10);}continue;}if(s.indexOf('阶级')===0){var bd=s.replace(/^阶级[：:\s]*/,'').trim();if(bd&&bd!=='无')rest.push('<div class="bt-line"><span class="bt-k">阶级</span>'+esc(bd).replace(/([+\-])(\d)/g,function(a,g,n){return '<b class="'+(g==='-'?'st-dn':'st-up')+'">'+g+n+'</b>';})+'</div>');continue;}if(s.indexOf('状态')===0){var stx=s.replace(/^状态[：:\s]*/,'').trim();if(stx&&stx!=='无')rest.push('<div class="bt-line"><span class="bt-k">状态</span>'+stx.split(/[,，、\/]/).map(function(x){return statusTag(x.trim());}).join(' ')+'</div>');continue;}rest.push('<div class="bt-line">'+esc(s)+'</div>');}var pct=hpm>0?Math.max(0,Math.min(100,hpc/hpm*100)):0;var hc=pct>=50?'hp-high':pct>=20?'hp-mid':'hp-low';var fnt=(hpm>0&&hpc<=0)?'<span class="ailment fnt">圈圈眼</span>':'';return '<div class="bt-card '+side+'"><div class="bt-head"><span class="bt-pk">'+esc(pk)+fnt+'</span>'+(lv?'<span class="bt-lv">Lv.'+esc(lv)+'</span>':'')+'</div>'+(tr?'<div class="bt-tr">'+esc(tr)+'</div>':'')+(hpm>0?'<div class="bt-hp"><div class="hp-bar"><div class="hp-fill '+hc+'" style="width:'+pct+'%"></div></div><span class="bt-hpn">'+hpc+'/'+hpm+'</span></div>':'')+rest.join('')+'</div>';}function battleHTML(){var b=stat_data.战场||{},html='';function ln(v){return esc(String(v||'')).split(/[｜|]/).join('<br>');}var f=b.场上||{},fk=Object.keys(f),s=b.各方||{},sk=Object.keys(s);if(b.场景)html+='<div class="bt-scene">'+ln(b.场景)+'</div>';if(fk.length)html+='<div class="bt-grid">'+fk.map(function(k){return btCard(k,f[k]);}).join('')+'</div>';if(sk.length)html+=sk.map(function(k){return '<div class="bt-side"><div class="bt-side-h">📋 '+esc(k)+'</div><div class="bt-side-b">'+ln(s[k])+'</div></div>';}).join('');if(!html)return '<div class="bt-empty">当前没有正在进行的战斗</div>';return '<div class="info-frame battle-frame"><div class="info-inner"><div class="info-title">战场</div><div class="battle-list">'+html+'</div></div></div>';}
+function sideOf(k){if(k.indexOf('敌方')>=0)return 'foe';if(k.indexOf('友方')>=0)return 'ally';if(k.indexOf('中立')>=0)return 'neu';return 'self';}function btCard(k,v){var side=sideOf(k),segs=String(v||'').split(/[｜|]/),nm=String(k).replace(/[（(](我方|友方|中立|敌方)[)）]/,'').trim(),tr='',pk=nm,di=nm.indexOf('·');if(di>0){tr=nm.slice(0,di);pk=nm.slice(di+1);}var lv='',hpc=0,hpm=0,rest=[];for(var i=0;i<segs.length;i++){var s=segs[i].trim();if(!s)continue;if(i===0){var lm=s.match(/Lv\.?\s*(\d+)/i);if(lm)lv=lm[1];var hm=s.match(/(\d+)\s*\/\s*(\d+)/);if(hm){hpc=parseInt(hm[1],10);hpm=parseInt(hm[2],10);}continue;}if(s.indexOf('阶级')===0){var bd=s.replace(/^阶级[：:\s]*/,'').trim();if(bd&&bd!=='无')rest.push('<div class="bt-line"><span class="bt-k">阶级</span>'+esc(bd).replace(/([+\-])(\d)/g,function(a,g,n){return '<b class="'+(g==='-'?'st-dn':'st-up')+'">'+g+n+'</b>';})+'</div>');continue;}if(s.indexOf('状态')===0){var stx=s.replace(/^状态[：:\s]*/,'').trim();if(stx&&stx!=='无')rest.push('<div class="bt-line"><span class="bt-k">状态</span>'+stx.split(/[,，、\/]/).map(function(x){return statusTag(x.trim());}).join(' ')+'</div>');continue;}rest.push('<div class="bt-line">'+esc(s)+'</div>');}var pct=hpm>0?Math.max(0,Math.min(100,hpc/hpm*100)):0;var hc=pct>=50?'hp-high':pct>=20?'hp-mid':'hp-low';var fnt=(hpm>0&&hpc<=0)?'<span class="ailment fnt">圈圈眼</span>':'';return '<div class="bt-card '+side+'"><div class="bt-head"><span class="bt-pk">'+esc(pk)+fnt+'</span>'+(lv?'<span class="bt-lv">Lv.'+esc(lv)+'</span>':'')+'</div>'+(tr?'<div class="bt-tr">'+esc(tr)+'</div>':'')+(hpm>0?'<div class="bt-hp"><div class="hp-bar"><div class="hp-fill '+hc+'" style="width:'+pct+'%"></div></div><span class="bt-hpn">'+hpc+'/'+hpm+'</span></div>':'')+rest.join('')+'</div>';}function battleHTML(){var b=stat_data.战场||{},html='';function ln(v){return esc(String(v||'')).split(/[｜|]/).join('<br>');}var f=b.场上||{},fk=Object.keys(f),s=b.各方||{},sk=Object.keys(s);if(b.规则)html+='<div class="bt-rule">'+ln(b.规则)+'</div>';if(b.场景)html+='<div class="bt-scene">'+ln(b.场景)+'</div>';if(fk.length)html+='<div class="bt-grid">'+fk.map(function(k){return btCard(k,f[k]);}).join('')+'</div>';if(sk.length)html+=sk.map(function(k){return '<div class="bt-side"><div class="bt-side-h">📋 '+esc(k)+'</div><div class="bt-side-b">'+ln(s[k])+'</div></div>';}).join('');if(!html)return '<div class="bt-empty">当前没有正在进行的战斗</div>';return '<div class="info-frame battle-frame"><div class="info-inner"><div class="info-title">战场</div><div class="battle-list">'+html+'</div></div></div>';}
 
 function ivsHTML(s){if(!s)return '<span class="dim">-</span>';return '<div class="ivs">'+String(s).split(',').map(function(x){return '<span class="iv">'+esc(x.trim())+'</span>';}).join('')+'</div>';}
 function movesHTML(s){if(!s)return '<span class="dim">-</span>';return '<div class="moves">'+String(s).split(/[,，/、]/).map(function(x){var p=x.split(':');var name=p[0]||'',type=p[1]||'',cat=p[2]||'';var color=TYPE_COLORS[type]||'#888';return '<div class="move-cell" style="border-color:'+color+';background:'+color+'22;cursor:pointer" data-move="'+esc(name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(cat)+'"><div class="move-name">'+esc(name)+'</div><div class="move-meta"><span class="move-type" style="background:'+color+'">'+esc(type)+'</span><span class="move-cat">'+esc(cat)+'</span></div></div>';}).join('')+'</div>';}
@@ -2781,7 +2786,7 @@ function typeLabel(t){t=t2s(String(t||'').trim());return TYPE_CN[t]||t;}
 function typeChipHTML(t){return '<span class="type-chip" style="background:'+typeColor(t)+'">'+esc(typeLabel(t))+'</span>';}
 function typesHTML(a1,a2){var out='';if(a1)out+=typeChipHTML(a1);if(a2&&a2!=='无')out+=typeChipHTML(a2);if(!out)return '<span class="dim">-</span>';return '<div class="types">'+out+'</div>';}
 function genderText(g){if(g==='♂')return '雄性';if(g==='♀')return '雌性';return '无性别';}
-function moveHexHTML(s){if(!s)return '';return '<div class="dt-hex-list">'+String(s).split(/[,，/、]/).map(function(x){var p=x.split(':');var name=p[0]||'',type=p[1]||'',cat=p[2]||'';if(!name)return '';if(!type)type=MOVE_TYPE[name]||'';var lb=typeLabel(type);var cl=typeColor(type);var chip=lb?'<span class="move-type" style="background:'+cl+'">'+esc(lb)+'</span>':'';return '<div class="dt-hex-wrap"><div class="dt-hex" data-move="'+esc(name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(cat)+'">'+chip+'<span class="dt-hex-name">'+esc(name)+'</span></div></div>';}).join('')+'</div>';}
+function hexFold(a){a=a.filter(function(x){return x;});if(!a.length)return '';return a.slice(0,4).join('')+(a.length>4?'<details class="dt-more"><summary>其余 '+(a.length-4)+' 个技能</summary>'+a.slice(4).join('')+'</details>':'');}function moveHexHTML(s){if(!s)return '';return '<div class="dt-hex-list">'+hexFold(String(s).split(/[,，/、]/).map(function(x){var p=x.split(':');var name=p[0]||'',type=p[1]||'',cat=p[2]||'';if(!name)return '';if(!type)type=MOVE_TYPE[name]||'';var lb=typeLabel(type);var cl=typeColor(type);var chip=lb?'<span class="move-type" style="background:'+cl+'">'+esc(lb)+'</span>':'';return '<div class="dt-hex-wrap"><div class="dt-hex" data-move="'+esc(name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(cat)+'">'+chip+'<span class="dt-hex-name">'+esc(name)+'</span></div></div>';}))+'</div>';}
 function resolveMoveTypes(scope){var els=(scope||document).querySelectorAll('.dt-hex[data-move]');for(var i=0;i<els.length;i++){(function(el){var name=el.getAttribute('data-move');if(!name)return;fetchMove(name,function(d){if(d&&d.type){var lb=typeLabel(d.type);var cl=typeColor(d.type);if(!lb)return;el.setAttribute('data-mvtype',d.type);var sp=el.querySelector('.move-type');if(!sp){sp=document.createElement('span');sp.className='move-type';el.insertBefore(sp,el.firstChild);}sp.style.background=cl;sp.textContent=lb;}});})(els[i]);}}
 function toggleDtPage(){var p1=document.querySelector('.dt-page[data-dt-page="1"]');var p2=document.querySelector('.dt-page[data-dt-page="2"]');var btn=document.querySelector('[data-dt-next]');if(!p1||!p2||!btn)return;if(p1.classList.contains('active')){p1.classList.remove('active');p2.classList.add('active');btn.classList.remove('right');btn.classList.add('left');btn.textContent='◀';}else{p2.classList.remove('active');p1.classList.add('active');btn.classList.remove('left');btn.classList.add('right');btn.textContent='▶';}}
 var NATURE_MAP={'勤奋':{up:'',down:''},'怕寂寞':{up:'攻击',down:'防御'},'固执':{up:'攻击',down:'特攻'},'顽皮':{up:'攻击',down:'特防'},'勇敢':{up:'攻击',down:'速度'},'大胆':{up:'防御',down:'攻击'},'坦率':{up:'',down:''},'淘气':{up:'防御',down:'特攻'},'乐天':{up:'防御',down:'特防'},'悠闲':{up:'防御',down:'速度'},'内敛':{up:'特攻',down:'攻击'},'慢吞吞':{up:'特攻',down:'防御'},'害羞':{up:'',down:''},'马虎':{up:'特攻',down:'特防'},'冷静':{up:'特攻',down:'速度'},'温和':{up:'特防',down:'攻击'},'温顺':{up:'特防',down:'防御'},'慎重':{up:'特防',down:'特攻'},'浮躁':{up:'',down:''},'自大':{up:'特防',down:'速度'},'胆小':{up:'速度',down:'攻击'},'急躁':{up:'速度',down:'防御'},'爽朗':{up:'速度',down:'特攻'},'天真':{up:'速度',down:'特防'},'认真':{up:'',down:''}};
@@ -2821,7 +2826,7 @@ function sendMessage(text){
   }catch(e){}
   alert('已生成指令：'+text);
 }
-function sendAction(pkm,action){var map={对战:'我要向'+pkm.名字+'发起对战。',捕捉:'我要收服'+pkm.名字+'。',观察:'我要观察'+pkm.名字+'的举动。'};var text=map[action]||('我'+action+pkm.名字+'。');var ov=document.querySelector('.overlay');if(ov)ov.classList.remove('open');sendMessage(text);}
+function sendAction(pkm,action){var map={对战:'我要向'+pkm.名字+'发起对战。',捕捉:'我要收服'+pkm.名字+'。',观察:'我要观察'+pkm.名字+'的举动。'};var text=map[action]||('我'+action+pkm.名字+'。');var ov=document.querySelector('.overlay');if(ov)ov.classList.remove('open');if(!fillInput(text))sendMessage(text);}
 
 function menuHTML(){return '<div class="menu-grid">'+MENU.map(function(m){var sz=getIconSize('m-'+m.key);var icon=m.img?'<span class="menu-icon-wrap"><img class="menu-icon" src="'+esc(m.img)+'" style="width:'+sz+'px;height:'+sz+'px"></span>':'<span class="menu-icon-wrap"><span class="menu-emoji" style="font-size:'+sz+'px">'+esc(m.emoji)+'</span></span>';return '<div class="menu-item" data-page="'+esc(m.key)+'"><div class="menu-item-inner">'+icon+'<span class="menu-label">'+esc(m.label)+'</span></div></div>';}).join('')+'</div>';}
 
@@ -2839,10 +2844,8 @@ var ICON_CFG=[
   {id:'m-box',label:'菜单·盒子',src:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png',def:30},
   {id:'m-breeding',label:'菜单·繁育',src:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',def:20},
   {id:'m-pokedex',label:'菜单·图鉴',src:'https://media.52poke.com/wiki/2/2d/%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png',def:30},
-  {id:'m-contacts',label:'菜单·通讯录',emoji:'📱',def:22},
   {id:'m-rel',label:'菜单·人际关系',emoji:'💬',def:22},
   {id:'m-rivals',label:'菜单·劲敌',emoji:'👥',def:22},
-  {id:'m-forum',label:'菜单·呼出论坛',emoji:'📣',def:22},
   {id:'m-badge',label:'菜单·徽章盒',emoji:'🏅',def:22},
   {id:'m-diy',label:'菜单·DIY',emoji:'🛠️',def:22},
   {id:'m-settings',label:'菜单·设置',emoji:'⚙️',def:22}
@@ -2904,8 +2907,15 @@ var devOn=devUnlocked();
 return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
-var pkLatestContent=null, pkLatestVer=null;
+var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
 function pkSetUpdateMsg(t){ try{ var m=document.getElementById('pk-update-msg'); if(m) m.textContent=t; }catch(e){} }
+function showNoticeModal(ver,notice){
+  var body='<div class="row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+
+    '<div class="row"><span class="k">最新版本</span><span class="v">v'+esc(ver)+'</span></div>'+
+    (notice?'<div class="row block"><span class="k">更新公告</span><span class="v" style="text-align:left;white-space:pre-wrap">'+esc(notice).replace(/\n/g,'<br>')+'</span></div>':'');
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">🎉 发现新版本 v'+esc(ver)+'</div><button class="close" data-close>✕</button></div><div class="modal-body">'+body+'<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-notice-update>⬆️ 立即更新</button><button class="act-btn" data-close>稍后再说</button></div></div></div>';
+  overlay.classList.add('open');
+}
 function pkCheckUpdate(){
   pkSetUpdateMsg('正在检查更新...');
   var updBtn=document.querySelector('[data-pk-do-update]');
@@ -2914,13 +2924,15 @@ function pkCheckUpdate(){
     fetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
       .then(function(r){ if(!r.ok) throw 0; return r.text(); })
       .then(function(txt){
-        pkLatestContent=txt;
-        var m=txt.match(/PK_VER='([^']+)'/);
-        pkLatestVer=m?m[1]:null;
-        if(!pkLatestVer){ pkSetUpdateMsg('❌ 远程脚本里没有 PK_VER，请确认上传的是同一个脚本'); return; }
-        if(pkLatestVer===PK_VER){ pkSetUpdateMsg('✅ 已是最新版本 v'+PK_VER); }
-        else{ pkSetUpdateMsg('发现新版本 v'+pkLatestVer+'（当前 v'+PK_VER+'）'); if(updBtn) updBtn.style.display='block'; }
-      })
+  pkLatestContent=txt;
+  var m=txt.match(/PK_VER='([^']+)'/);
+  pkLatestVer=m?m[1]:null;
+  var nm=txt.match(/\*PK_NOTICE_BEGIN([\s\S]*?)PK_NOTICE_END\*/);
+  pkLatestNotice=nm?nm[1].replace(/^\s+|\s+$/g,''):'';
+  if(!pkLatestVer){ pkSetUpdateMsg('❌ 远程脚本里没有 PK_VER，请确认上传的是同一个脚本'); return; }
+  if(pkLatestVer===PK_VER){ pkSetUpdateMsg('✅ 已是最新版本 v'+PK_VER); }
+  else{ pkSetUpdateMsg('发现新版本 v'+pkLatestVer+'（当前 v'+PK_VER+'）'); if(updBtn) updBtn.style.display='block'; showNoticeModal(pkLatestVer,pkLatestNotice); }
+})
       .catch(function(){ pkSetUpdateMsg('❌ 检查失败：网络问题或 PK_UPDATE_URL 地址不对'); });
   }catch(e){ pkSetUpdateMsg('❌ 检查失败：'+e.message); }
 }
@@ -3080,7 +3092,7 @@ function confirmClearModal(){
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">确认清理（'+clearStep+'/3）</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row"><span class="v">确认清理「'+(names[clearTarget]||'')+'」缓存？</span></div><div class="action-btns"><button class="act-btn" data-clear-confirm>✔ 确认（第 '+clearStep+' 次）</button><button class="act-btn" data-close>取消</button></div></div></div>';
   overlay.classList.add('open');
 }
-function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':return boxHTML();case 'contacts':return contactsHTML();case 'rel':return relHTML();case 'rivals':return rivalsHTML();case 'breeding':return breedingHTML();case 'pokedex':return pokedexHTML();case 'badge':return badgePageHTML();case 'diy':return diyHTML();case 'settings':return settingsHTML();case 'typechart':return typeChartHTML();default:return '<div class="empty">暂无</div>';}}
+function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':return boxHTML();case 'rel':return relHTML();case 'rivals':return rivalsHTML();case 'breeding':return breedingHTML();case 'pokedex':return pokedexHTML();case 'badge':return badgePageHTML();case 'diy':return diyHTML();case 'settings':return settingsHTML();case 'typechart':return typeChartHTML();default:return '<div class="empty">暂无</div>';}}
 function pageHTML(title,content){return '<div class="page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body">'+content+'</div></div>';}
 
 var overlay,pageOverlay,cards;
@@ -3088,7 +3100,7 @@ var hudActionCard=null;
 var hudConfirmCb=null;
 var currentDetailCard=null;
 
-var hudPendingActions=[];
+var CMDS=[['🏋️ 特训','洛托姆，帮我找个地方进行特训。','可指定方向：学会某个招式、赚钱、针对某项六维的专项特训'],['💨 快躲开','快躲开！（羁绊）使用XX攻击！','敌方招式必MISS，速度+1、闪避+1'],['⚡ 趁现在','趁现在！（羁绊）使用XX！','必先手、必暴击'],['🛡️ 坚持住','坚持住！（羁绊）使用XX！','清除异常状态，防御+1、特防+1，恢复30%最大HP'],['🔥 站起来','站起来！（羁绊）使用XX！','倒下的宝可梦复苏至HP1，攻击+1、特攻+1，本回合锁血'],['✨ 羁绊Mega','回应我的呼唤吧，Mega进化！（羁绊Mega，无需道具）然后使用XX！','搭档且亲密度≥200时，无需钥石与Mega石即可超进化'],['⚔️ 招式对抗','用XX对抗敌人的招式！（招式对抗）','无视先后手，两招正面相撞。不计算克制的攻防伤害相互抵消，僵持(差≤20%)双方受伤（差值+5），差>20%高方命中(用差值伤害)']];var cmdOpen=false;function cmdPanelHTML(){var rows=CMDS.map(function(c){return '<div class="cmd-row"><button class="cmd-btn" data-cmd="'+esc(c[1])+'" title="'+esc(c[2])+'">'+esc(c[0])+'</button><button class="cmd-tip" data-tip="'+esc(c[0])+'｜'+esc(c[2])+'" title="'+esc(c[2])+'">?</button></div>';}).join('');return '<details class="cmd-panel"'+(cmdOpen?' open':'')+'><summary>⌨️ 快捷指令 · 点击填入输入栏</summary><div class="cmd-note">羁绊每只每场限1次；亲密度≥200且未成为搭档时触发羁绊可觉醒搭档。把指令里的 XX 换成招式名再发送</div>'+rows+'</details>';}function bindCmdPanel(){var p=document.querySelector('.cmd-panel');if(!p)return;p.addEventListener('toggle',function(){cmdOpen=p.open;});p.addEventListener('click',function(e){var t=e.target.closest('[data-tip]');if(t){e.preventDefault();hudMsg(t.getAttribute('data-tip'));return;}var c=e.target.closest('[data-cmd]');if(!c)return;e.preventDefault();var txt=c.getAttribute('data-cmd');if(fillInput(txt)){var o=c.textContent;c.textContent='✔ 已填入输入栏';setTimeout(function(){c.textContent=o;},1200);}else{hudMsg('无法访问输入栏。指令：'+txt);}});}function fillInput(text){try{var w=WIN;var ta=w.document.querySelector('#send_textarea');if(ta){var cur=String(ta.value||'').replace(/\s+$/,'');var val=cur?cur+'\n'+text:text;ta.value=val;ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus();try{var i=val.indexOf('XX',cur.length);if(i<0){ta.setSelectionRange(val.length,val.length);}else{ta.setSelectionRange(i,i+2);}}catch(e2){}return true;}}catch(e){}return false;}var hudPendingActions=[];
 var hudActionInjected=null;
 var hudCleanupBound=false;
 var hudCmdOpen=false;
@@ -3220,7 +3232,6 @@ function bindHudCmdBar(){
 function bindPageInteractions(){
   pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);}});});
 pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){el.addEventListener('click',function(){var key=el.getAttribute('data-nearby');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);}});});
-  pageOverlay.querySelectorAll('[data-call]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();sendMessage('给'+btn.getAttribute('data-call')+'打电话。');});});
   pageOverlay.querySelectorAll('.bag-tab[data-bag]').forEach(function(btn){btn.addEventListener('click',function(){activeBag=btn.getAttribute('data-bag');pageOverlay.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===btn);});var list=pageOverlay.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}});});
   pageOverlay.querySelectorAll('.badge-tab[data-bregion]').forEach(function(b){b.addEventListener('click',function(){badgeSel=b.getAttribute('data-bregion');try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:badgeSel}));}catch(e){}var pg=pageOverlay.querySelector('.page');var oldTabs=pageOverlay.querySelector('.badge-tabs');var pageTop=pg?pg.scrollTop:0;var tabsLeft=oldTabs?oldTabs.scrollLeft:0;pageOverlay.querySelector('.page-body').innerHTML=badgePageHTML();bindPageInteractions();if(pg){pg.scrollTop=pageTop;}var newTabs=pageOverlay.querySelector('.badge-tabs');if(newTabs){newTabs.scrollLeft=tabsLeft;}});});
   pageOverlay.querySelectorAll('[data-bag-discard]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();discardBagItemAsk(btn.getAttribute('data-bag-discard'));});});
@@ -3280,12 +3291,6 @@ function bindBadge(){var bc=document.getElementById('badge-cycle');if(bc){bc.add
 function badgeClick(e){e.stopPropagation();var rs=parseBadges();if(rs.length>1){var cur=pickRegion(rs),i=0,k;for(k=0;k<rs.length;k++){if(rs[k].region===cur)i=k;}try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:rs[(i+1)%rs.length].region}));}catch(err){}var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();}return;}openPage('badge');}
 
 function openPage(key){
-  if(key==='forum'){
-    moveBackHTML='';
-    overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">呼出论坛</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row"><span class="v">确认要呼出论坛吗？</span></div><div class="action-btns"><button class="act-btn" data-confirm-forum>✔ 确认呼出</button><button class="act-btn" data-close>取消</button></div></div></div>';
-    overlay.classList.add('open');
-    return;
-  }
   var m=MENU.find(function(x){return x.key===key;})||(key==='typechart'?{label:'克制表'}:null);if(!m)return;
   pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);resolveItemImgs(pageOverlay);
 }
@@ -3563,7 +3568,7 @@ function render(){
   app.innerHTML='<div class="hud"><div class="hud-inner" id="hud-inner">'+
   '<div class="tab-panel active" id="tab-1">'+hudCmdBarHTML()+trainerHTML()+teamHTML()+quickHTML()+nearbyHTML()+'<div id="home-fold">'+homeFoldHTML()+'</div></div>'+
 '<div class="tab-panel" id="tab-2">'+envStripHTML()+worldHTML()+tasksHTML()+rivalsHTML()+'</div>'+
-  '<div class="tab-panel" id="tab-3">'+battleHTML()+'</div>'+
+  '<div class="tab-panel" id="tab-3">'+cmdPanelHTML()+battleHTML()+'</div>'+
   '<div class="tab-panel" id="tab-4">'+menuHTML()+'</div>'+
   '</div>'+
   '<div class="tab-bar"><button class="tab-btn active" data-tab="1">主页</button><button class="tab-btn" data-tab="2">世界</button><button class="tab-btn" data-tab="3">战场</button><button class="tab-btn" data-tab="4">菜单</button></div></div>';
@@ -3574,7 +3579,7 @@ resolveItemImgs(app);
 overlay=document.createElement('div');overlay.className='overlay';hudEl.appendChild(overlay);
 pageOverlay=document.createElement('div');pageOverlay.className='page-overlay';hudEl.appendChild(pageOverlay);
   cards=buildCards();
-bindHudCmdBar();
+bindHudCmdBar();bindCmdPanel();
 for(var i=0;i<cards.length;i++){preloadMoves(cards[i].skills);}
 
   document.querySelectorAll('.tab-btn').forEach(function(btn){btn.addEventListener('click',function(){
@@ -3633,8 +3638,8 @@ var dtn=e.target.closest('[data-dt-next]');if(dtn){e.stopPropagation();toggleDtP
 var nt=e.target.closest('[data-nature]');if(nt){e.stopPropagation();showNatureInfo(nt.getAttribute('data-nature'));return;}
 var st=e.target.closest('[data-shiny-toggle]');if(st){e.stopPropagation();if(curPkm){curPkmShiny=!curPkmShiny;renderPkmForm(curPkmForm);}return;}
     var fm=e.target.closest('[data-form]');if(fm){e.stopPropagation();renderPkmForm(parseInt(fm.getAttribute('data-form'),10));return;}
-    var cf=e.target.closest('[data-confirm-forum]');if(cf){e.stopPropagation();overlay.classList.remove('open');sendMessage('呼出论坛');return;}
 var cc=e.target.closest('[data-clear-confirm]');if(cc){e.stopPropagation();confirmClearModal();return;}
+var pdu=e.target.closest('[data-notice-update]');if(pdu){e.stopPropagation();overlay.classList.remove('open');pkDoUpdate();return;}
     var btn=e.target.closest('[data-action]');if(btn){var action=btn.getAttribute('data-action');var key=btn.getAttribute('data-key');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p)sendAction(p,action);}
   });
 }
@@ -3668,9 +3673,9 @@ function ensureHud(){
       var b0=document.getElementById('pkm-hud-btn');if(b0)b0.style.display='none';
       var w0=document.getElementById('pkm-hud-win');if(w0){w0.classList.remove('open');w0.style.display='none';}
       var m0=document.getElementById('pkm-hud-mask');if(m0)m0.style.display='none';
-  var s0=document.getElementById('pkm-hud-slot');if(s0){s0.innerHTML='';}
-}catch(e){}
-return;
+      var s0=document.getElementById('pkm-hud-slot');if(s0){s0.innerHTML='';}
+    }catch(e){}
+    return;
   }
   if(document.getElementById('pkm-hud-btn'))return;
 
@@ -3841,12 +3846,12 @@ function renderStatusBar(){
     if(!all.length){all=document.querySelectorAll('.mes');}
     if(!all.length)return;
     var last=all[all.length-1];
-document.querySelectorAll('#pkm-hud-inline').forEach(function(el){el.remove();});
-var ic=document.createElement('div');
-ic.id='pkm-hud-inline';
-var textEl=last.querySelector('.mes_text');
-if(textEl){textEl.insertAdjacentElement('afterend',ic);}else{last.appendChild(ic);}
-render();
+    document.querySelectorAll('#pkm-hud-inline').forEach(function(el){el.remove();});
+    var ic=document.createElement('div');
+    ic.id='pkm-hud-inline';
+    var textEl=last.querySelector('.mes_text');
+    if(textEl){textEl.insertAdjacentElement('afterend',ic);}else{last.appendChild(ic);}
+    render();
   }catch(e){}
 }
 var pkmAutoRefreshBound=false;
