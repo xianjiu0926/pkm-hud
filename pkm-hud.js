@@ -21,6 +21,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.menu-icon{width:30px;height:30px;object-fit:contain;image-rendering:pixelated}'+
 '.menu-emoji{font-size:1.35rem;line-height:1}'+
 '.menu-label{font-size:.78rem;font-weight:800;color:var(--text);text-shadow:1px 1px 0 #000}'+
+'.menu-badge{display:inline-block;margin-left:4px;padding:0 4px;border-radius:8px;background:#e05050;color:#fff;font-size:.6rem;font-weight:800;line-height:14px;vertical-align:top}'+
 '.card-bg-svg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}'+
 '.page-overlay{position:absolute;inset:0;background:rgba(10,16,30,.45);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;z-index:500;padding:12px}'+
 '.page-overlay.open{display:flex}'+
@@ -310,11 +311,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.2.3';
+var PK_VER='1.2.4';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.悬浮球图片自定义
-2.pc内嵌模式适配
+1.更新完毕后，会有按键，可以点开复制内容，防止更新失败
+2.现在有新版本会提示
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -2897,7 +2898,7 @@ function sendMessage(text){
 }
 function sendAction(pkm,action){var map={对战:'我要向'+pkm.名字+'发起对战。',捕捉:'我要收服'+pkm.名字+'。',观察:'我要观察'+pkm.名字+'的举动。'};var text=map[action]||('我'+action+pkm.名字+'。');var ov=document.querySelector('.overlay');if(ov)ov.classList.remove('open');if(!fillInput(text))sendMessage(text);}
 
-function menuHTML(){return '<div class="menu-grid">'+MENU.map(function(m){var sz=getIconSize('m-'+m.key);var icon=m.img?'<span class="menu-icon-wrap"><img class="menu-icon" src="'+esc(m.img)+'" style="width:'+sz+'px;height:'+sz+'px"></span>':'<span class="menu-icon-wrap"><span class="menu-emoji" style="font-size:'+sz+'px">'+esc(m.emoji)+'</span></span>';return '<div class="menu-item" data-page="'+esc(m.key)+'"><div class="menu-item-inner">'+icon+'<span class="menu-label">'+esc(m.label)+'</span></div></div>';}).join('')+'</div>';}
+function menuHTML(){return '<div class="menu-grid">'+MENU.map(function(m){var sz=getIconSize('m-'+m.key);var icon=m.img?'<span class="menu-icon-wrap"><img class="menu-icon" src="'+esc(m.img)+'" style="width:'+sz+'px;height:'+sz+'px"></span>':'<span class="menu-icon-wrap"><span class="menu-emoji" style="font-size:'+sz+'px">'+esc(m.emoji)+'</span></span>';var badge=(m.key==='settings'&&pkHasUpdate)?'<span class="menu-badge">新</span>':'';return '<div class="menu-item" data-page="'+esc(m.key)+'"><div class="menu-item-inner">'+icon+'<span class="menu-label">'+esc(m.label)+badge+'</span></div></div>';}).join('')+'</div>';}
 
 var clearTarget='all',clearStep=0;
 var itemClickEnabled=true;
@@ -3103,16 +3104,55 @@ function settingsHTML(){
   var itemChk=itemClickEnabled?' checked':'';
 var winChk=(winMode==='1')?' checked':'';
 var devOn=devUnlocked();
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 查看新版内容（更新没成功可复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
+var pkHasUpdate=false;
 function pkSetUpdateMsg(t){ try{ var m=document.getElementById('pk-update-msg'); if(m) m.textContent=t; }catch(e){} }
+function pkMarkHasUpdate(ver){
+  pkHasUpdate=true;
+  try{localStorage.setItem('pk_hasupdate',PK_VER+'>'+ver);}catch(e){}
+  var items=document.querySelectorAll('.menu-item[data-page="settings"] .menu-label');
+  for(var i=0;i<items.length;i++){
+    if(!items[i].querySelector('.menu-badge')){
+      var b=document.createElement('span');b.className='menu-badge';b.textContent='新';items[i].appendChild(b);
+    }
+  }
+}
+function pkAutoCheckUpdate(){
+  try{
+    fetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+      .then(function(txt){
+        var m=txt.match(/PK_VER='([^']+)'/);
+        var ver=m?m[1]:null;
+        if(ver && ver!==PK_VER){
+          pkLatestContent=txt;
+          pkLatestVer=ver;
+          var nm=txt.match(/\*PK_NOTICE_BEGIN([\s\S]*?)PK_NOTICE_END\*/);
+          pkLatestNotice=nm?nm[1].replace(/^\s+|\s+$/g,''):'';
+          pkMarkHasUpdate(ver);
+        }
+      })
+      .catch(function(){});
+  }catch(e){}
+}
 function showNoticeModal(ver,notice){
   var body='<div class="row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+
     '<div class="row"><span class="k">最新版本</span><span class="v">v'+esc(ver)+'</span></div>'+
     (notice?'<div class="row block"><span class="k">更新公告</span><span class="v" style="text-align:left;white-space:pre-wrap">'+esc(notice).replace(/\n/g,'<br>')+'</span></div>':'');
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">🎉 发现新版本 v'+esc(ver)+'</div><button class="close" data-close>✕</button></div><div class="modal-body">'+body+'<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-notice-update>⬆️ 立即更新</button><button class="act-btn" data-close>稍后再说</button></div></div></div>';
+  overlay.classList.add('open');
+}
+function openUpdateContent(){
+  if(!pkLatestContent){ hudMsg('还没有检查到新版本'); return; }
+  moveBackHTML='';
+  overlay.innerHTML='<div class="modal" style="max-width:560px"><div class="modal-head"><div class="modal-name">新版脚本内容 v'+esc(pkLatestVer||'?')+'</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    '<div class="dim" style="font-size:.72rem;margin-bottom:6px">若自动更新没生效：打开角色卡【扩展 → Tavern Helper 脚本】，全选后粘贴下面内容并保存</div>'+
+    '<textarea id="pk-update-content" readonly style="width:100%;box-sizing:border-box;height:260px;padding:8px;font-family:monospace;font-size:.72rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;resize:vertical">'+esc(pkLatestContent)+'</textarea>'+
+    '<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-pk-copy-content>📋 复制全部内容</button></div>'+
+    '</div></div>';
   overlay.classList.add('open');
 }
 function pkCheckUpdate(){
@@ -3130,7 +3170,7 @@ function pkCheckUpdate(){
   pkLatestNotice=nm?nm[1].replace(/^\s+|\s+$/g,''):'';
   if(!pkLatestVer){ pkSetUpdateMsg('❌ 远程脚本里没有 PK_VER，请确认上传的是同一个脚本'); return; }
   if(pkLatestVer===PK_VER){ pkSetUpdateMsg('✅ 已是最新版本 v'+PK_VER); }
-  else{ pkSetUpdateMsg('发现新版本 v'+pkLatestVer+'（当前 v'+PK_VER+'）'); if(updBtn) updBtn.style.display='block'; showNoticeModal(pkLatestVer,pkLatestNotice); }
+  else{ pkSetUpdateMsg('发现新版本 v'+pkLatestVer+'（当前 v'+PK_VER+'）'); if(updBtn) updBtn.style.display='block'; pkMarkHasUpdate(pkLatestVer); showNoticeModal(pkLatestVer,pkLatestNotice); }
 })
       .catch(function(){ pkSetUpdateMsg('❌ 检查失败：网络问题或 PK_UPDATE_URL 地址不对'); });
   }catch(e){ pkSetUpdateMsg('❌ 检查失败：'+e.message); }
@@ -3231,6 +3271,8 @@ function pkDoUpdate(){
   pkSetUpdateMsg('正在更新...');
   pkUpdateScript(pkLatestContent).then(function(res){
     pkSetUpdateMsg(res.msg);
+    var sc=document.querySelector('[data-pk-show-content]');
+    if(sc)sc.style.display='block';
     if(!res.ok){
       try{ diyCopyText(pkLatestContent, function(){}); }catch(e){}
     }
@@ -3480,6 +3522,8 @@ var pku=pageOverlay.querySelector('[data-pk-check-update]');
 if(pku){pku.addEventListener('click',function(e){e.stopPropagation();pkCheckUpdate();});}
 var pkd=pageOverlay.querySelector('[data-pk-do-update]');
 if(pkd){pkd.addEventListener('click',function(e){e.stopPropagation();pkDoUpdate();});}
+var psc=pageOverlay.querySelector('[data-pk-show-content]');
+if(psc){psc.addEventListener('click',function(e){e.stopPropagation();openUpdateContent();});}
 var db=pageOverlay.querySelector('[data-dev-unlock]');
 if(db){db.addEventListener('click',function(e){
   e.stopPropagation();
@@ -3857,6 +3901,7 @@ var st=e.target.closest('[data-shiny-toggle]');if(st){e.stopPropagation();if(cur
     var fm=e.target.closest('[data-form]');if(fm){e.stopPropagation();renderPkmForm(parseInt(fm.getAttribute('data-form'),10));return;}
 var cc=e.target.closest('[data-clear-confirm]');if(cc){e.stopPropagation();confirmClearModal();return;}
 var pdu=e.target.closest('[data-notice-update]');if(pdu){e.stopPropagation();overlay.classList.remove('open');pkDoUpdate();return;}
+var pkc=e.target.closest('[data-pk-copy-content]');if(pkc){e.stopPropagation();var pta=document.getElementById('pk-update-content');if(pta)diyCopyText(pta.value,function(ok){pkc.textContent=ok?'✔ 已复制':'复制失败';});return;}
     var btn=e.target.closest('[data-action]');if(btn){var action=btn.getAttribute('data-action');var key=btn.getAttribute('data-key');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p)sendAction(p,action);}
   });
 }
@@ -4116,6 +4161,7 @@ function pkBindAutoRefresh(){
   try{setTimeout(updateDexContext,2500);}catch(e){}
 }
 function safeRender(){
+  try{pkAutoCheckUpdate();}catch(e){}
   try{pkBindAutoRefresh();}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
