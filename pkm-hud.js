@@ -304,17 +304,17 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-close{position:absolute;right:8px;top:8px;z-index:10;width:32px;height:32px;border-radius:50%;border:1px solid var(--frame);background:rgba(43,74,111,.92);color:#fff;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}'+
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}'+
 '#pkm-hud-inline{position:relative;display:block;margin:8px 0 4px;max-width:100%}'+
-'#pkm-hud-inline .hud{max-width:none;margin:0;border-radius:8px}'+
+'#pkm-hud-inline .hud{max-width:600px;margin:0 auto;border-radius:8px}'+
 '#pkm-hud-inline .hud-inner{height:480px}'+
 '@media(max-width:430px){#pkm-hud-inline .hud-inner{height:380px}}'+
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.2.2';
+var PK_VER='1.2.3';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.diy现在可以选择世界书
-2.设置增加自定义悬浮球大小
+1.悬浮球图片自定义
+2.pc内嵌模式适配
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
