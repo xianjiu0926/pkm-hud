@@ -293,7 +293,9 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dt-lv{font-size:clamp(.95rem,3.2vw,1.15rem);color:var(--dim);margin-top:0}'+
 '.dt-big{width:96px;height:96px;background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated}'+
 '.dt-hold{margin-top:0;font-size:.8rem;color:var(--text)}'+'.trainer-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.28);overflow:hidden;filter:none}'+'.trainer-frame .info-inner{padding:8px 12px}'+'.trainer-frame .info-title{margin-left:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px}'+'.trainer-frame .info-row{padding-left:0}'+'.trainer-frame .info-row.cmd,.trainer-frame .info-row:last-child{padding-right:0}'+'.tr-env{font-size:.72rem;font-weight:400;letter-spacing:0;text-shadow:none;color:var(--dim);display:inline-flex;flex-wrap:wrap;gap:2px 8px}'+'.battle-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.battle-frame .info-inner{padding:8px 12px}'+'.battle-frame .info-title{margin-left:0}'+'.plain-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.plain-frame .info-inner{padding:8px 12px}'+'.plain-frame .info-title{margin-left:0}'+'.plain-frame .info-row{padding-left:0}'+'.plain-frame .info-row.cmd,.plain-frame .info-row:last-child,.plain-frame .task-item:last-child,.plain-frame .event-item:last-child{padding-right:0}'+
-'@media(orientation:landscape){.dt-top{justify-content:center}}'+'.nb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding-left:8%;padding-right:7%}'+'.nb-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid rgba(125,149,181,.45);border-radius:6px;background:rgba(43,74,111,.28);cursor:pointer;min-width:0;transition:filter .12s,transform .1s}'+'.nb-cell:hover{filter:brightness(1.2);transform:translateY(-2px)}'+'.nb-icon{width:clamp(38px,11vw,52px);height:clamp(38px,11vw,52px)}'+'.nb-name{font-size:.7rem;font-weight:800;text-align:center;line-height:1.2;max-width:100%;word-break:break-all}'+'.nb-cnt{font-size:.66rem;color:var(--dim)}'+'.nb-toggle{float:right;font-size:.7rem;font-weight:400;color:var(--dim);cursor:pointer;margin-right:2%}'+'.nb-toggle:hover{color:#7cc4f8}'+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more{margin-top:4px}'+'.dt-more>summary{cursor:pointer;font-size:.76rem;color:var(--dim);padding:4px 2px;list-style:none}'+'.dt-more>summary::-webkit-details-marker{display:none}'+'.dt-more[open]>summary{color:#7cc4f8}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.tab-panel .bt-empty{height:auto;min-height:140px}'+'.bt-rule{font-size:.78rem;line-height:1.5;color:#ffe9a8;padding:6px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.28);border-radius:0 6px 6px 0;word-break:break-word}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 7% clamp(10px,2.5vw,14px) 8%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:.74rem;font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
+'@media(orientation:landscape){.dt-top{justify-content:center}}'+'.nb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding-left:8%;padding-right:7%}'+'.nb-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid rgba(125,149,181,.45);border-radius:6px;background:rgba(43,74,111,.28);cursor:pointer;min-width:0;transition:filter .12s,transform .1s}'+'.nb-cell:hover{filter:brightness(1.2);transform:translateY(-2px)}'+'.nb-icon{width:clamp(38px,11vw,52px);height:clamp(38px,11vw,52px)}'+'.nb-name{font-size:.7rem;font-weight:800;text-align:center;line-height:1.2;max-width:100%;word-break:break-all}'+'.nb-cnt{font-size:.66rem;color:var(--dim)}'+'.nb-toggle{float:right;font-size:.7rem;font-weight:400;color:var(--dim);cursor:pointer;margin-right:2%}'+'.nb-toggle:hover{color:#7cc4f8}'+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more-btn{display:block;width:100%;margin-top:6px;padding:5px 10px;font-family:inherit;font-size:.74rem;font-weight:800;color:#7cc4f8;background:rgba(43,74,111,.45);border:1px dashed rgba(124,196,248,.5);border-radius:4px;cursor:pointer}'+
+'.dt-more-btn:hover{background:rgba(124,196,248,.18)}'+
+'.dt-more-list{margin-top:4px}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.tab-panel .bt-empty{height:auto;min-height:140px}'+'.bt-rule{font-size:.78rem;line-height:1.5;color:#ffe9a8;padding:6px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.28);border-radius:0 6px 6px 0;word-break:break-word}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 7% clamp(10px,2.5vw,14px) 8%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:.74rem;font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
 '#pkm-hud-btn{position:fixed;z-index:2147483600;width:54px;height:54px;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);display:flex;align-items:center;justify-content:center;transition:box-shadow .15s;font-size:26px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}'+
 '#pkm-hud-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.6),0 0 18px rgba(124,196,248,.6)}'+
 '#pkm-hud-btn img{width:46px;height:46px;object-fit:cover;border-radius:50%;pointer-events:none}'+
@@ -308,14 +310,17 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-inline .hud{max-width:600px;margin:0 auto;border-radius:8px}'+
 '#pkm-hud-inline .hud-inner{height:480px}'+
 '@media(max-width:430px){#pkm-hud-inline .hud-inner{height:380px}}'+
-'#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
+'#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}'+
+'#pkm-hud-btn .fab-update-dot{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#e05050;border:2px solid #0f1626;box-shadow:0 0 8px rgba(224,80,80,.9);animation:pkm-fab-pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:2}'+
+'@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.2.4';
+var PK_VER='1.2.6';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.更新完毕后，会有按键，可以点开复制内容，防止更新失败
-2.现在有新版本会提示
+1.多技能显示(四个技能以上才会有变化)
+2.优化返回逻辑
+3.如果有新更新，按键界面设置会有提示，悬浮窗模式悬浮球额外小红点提示
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -755,7 +760,7 @@ function diyShare(type,name){
   if(!obj){diyMsg('未找到该自创内容');return;}
   var code=diyLabel(type)+':'+name+'|'+diyEncode(JSON.stringify({v:1,t:type,n:name,d:obj}));
   if(!code){diyMsg('生成分享码失败');return;}
-  moveBackHTML='';
+  clearBack();
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">分享'+esc(diyLabel(type))+'：'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row block"><span class="k">分享码（对方粘贴导入即可）</span><span class="v" style="word-break:break-all;user-select:all">'+esc(code)+'</span></div><div class="action-btns" style="margin-top:10px"><button class="act-btn" data-copy-code="'+esc(code)+'">📋 复制分享码</button></div></div></div>';
   overlay.classList.add('open');
 }
@@ -1590,7 +1595,10 @@ function sideOf(k){if(k.indexOf('敌方')>=0)return 'foe';if(k.indexOf('友方')
 
 function ivsHTML(s){if(!s)return '<span class="dim">-</span>';return '<div class="ivs">'+String(s).split(',').map(function(x){return '<span class="iv">'+esc(x.trim())+'</span>';}).join('')+'</div>';}
 function movesHTML(s){if(!s)return '<span class="dim">-</span>';return '<div class="moves">'+String(s).split(/[,，/、]/).map(function(x){var p=x.split(':');var name=p[0]||'',type=p[1]||'',cat=p[2]||'';var color=TYPE_COLORS[type]||'#888';return '<div class="move-cell" style="border-color:'+color+';background:'+color+'22;cursor:pointer" data-move="'+esc(name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(cat)+'"><div class="move-name">'+esc(name)+'</div><div class="move-meta"><span class="move-type" style="background:'+color+'">'+esc(type)+'</span><span class="move-cat">'+esc(cat)+'</span></div></div>';}).join('')+'</div>';}
-var moveCache={},moveLoading={},moveBackHTML='',preloadQueue=[],preloadTimer=null;
+var moveCache={},moveLoading={},moveBackStack=[],preloadQueue=[],preloadTimer=null;
+function pushBack(){try{if(overlay)moveBackStack.push(overlay.innerHTML);}catch(e){}}
+function popBack(){return (moveBackStack&&moveBackStack.length)?moveBackStack.pop():'';}
+function clearBack(){moveBackStack=[];}
 function cleanText(s){
   return String(s||'')
     .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g,'')
@@ -1815,7 +1823,7 @@ function showMoveInfo(name,type,cat){
     if(d&&d.eff)out+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.eff).replace(/\n/g,'<br>')+'</span></div>';
     return out;
   }
-  moveBackHTML=overlay.innerHTML;
+  pushBack();
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body" id="move-body">'+rows(null)+(name?'<div class="empty">技能数据加载中...</div>':'')+'</div></div>';
   overlay.classList.add('open');
   if(!name)return;
@@ -2425,7 +2433,7 @@ function applyPokeStats(d){
 }
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
-  moveBackHTML='';
+  clearBack();
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body"><div id="pkm-formbar"></div><div class="pkm-big" id="pkm-big" data-shiny-toggle title="点击切换普通/闪光"><div class="empty">加载中...</div></div><div id="pkm-body"></div></div></div>';
   overlay.classList.add('open');
   curPkm=null;curPkmForm=0;curPkmForms=[];curPkmShiny=false;
@@ -2586,7 +2594,7 @@ if(wt){done(parseAbi(wt,html));}
   parsePage(t2s(name)+'（特性）',searchThen);
 }
 function showAbilityInfo(name){
-  moveBackHTML=overlay.innerHTML;
+  pushBack();
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body" id="abi-body"><div class="empty">特性数据加载中...</div></div></div>';
   overlay.classList.add('open');
   fetchAbility(name,function(d){
@@ -2731,7 +2739,7 @@ function fetchItem(name,cb){
   });
 }
 function showItemInfo(name,back){
-  if(back){moveBackHTML=overlay.innerHTML;}else{moveBackHTML='';}
+  if(back){pushBack();}else{clearBack();}
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body" id="item-body"><div class="empty">道具数据加载中...</div></div></div>';
   overlay.classList.add('open');
   fetchItem(name,function(d){
@@ -2856,7 +2864,43 @@ function typeLabel(t){t=t2s(String(t||'').trim());return TYPE_CN[t]||t;}
 function typeChipHTML(t){return '<span class="type-chip" style="background:'+typeColor(t)+'">'+esc(typeLabel(t))+'</span>';}
 function typesHTML(a1,a2){var out='';if(a1)out+=typeChipHTML(a1);if(a2&&a2!=='无')out+=typeChipHTML(a2);if(!out)return '<span class="dim">-</span>';return '<div class="types">'+out+'</div>';}
 function genderText(g){if(g==='♂')return '雄性';if(g==='♀')return '雌性';return '无性别';}
-function hexFold(a){a=a.filter(function(x){return x;});if(!a.length)return '';return a.slice(0,4).join('')+(a.length>4?'<details class="dt-more"><summary>其余 '+(a.length-4)+' 个技能</summary>'+a.slice(4).join('')+'</details>':'');}function moveHexHTML(s){if(!s)return '';return '<div class="dt-hex-list">'+hexFold(String(s).split(/[,，/、]/).map(function(x){var p=x.split(':');var name=p[0]||'',type=p[1]||'',cat=p[2]||'';if(!name)return '';if(!type)type=MOVE_TYPE[name]||'';var lb=typeLabel(type);var cl=typeColor(type);var chip=lb?'<span class="move-type" style="background:'+cl+'">'+esc(lb)+'</span>':'';return '<div class="dt-hex-wrap"><div class="dt-hex" data-move="'+esc(name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(cat)+'">'+chip+'<span class="dt-hex-name">'+esc(name)+'</span></div></div>';}))+'</div>';}
+function movesArr(s){
+  if(!s)return [];
+  return String(s).split(/[,，/、]/).map(function(x){
+    var p=x.split(':');
+    return {name:(p[0]||'').trim(),type:(p[1]||'').trim(),cat:(p[2]||'').trim()};
+  }).filter(function(m){return m.name;});
+}
+function moveHexItemHTML(m){
+  if(!m||!m.name)return '';
+  var type=m.type||MOVE_TYPE[m.name]||'';
+  var lb=typeLabel(type),cl=typeColor(type);
+  var chip=lb?'<span class="move-type" style="background:'+cl+'">'+esc(lb)+'</span>':'';
+  return '<div class="dt-hex-wrap"><div class="dt-hex" data-move="'+esc(m.name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(m.cat)+'">'+chip+'<span class="dt-hex-name">'+esc(m.name)+'</span></div></div>';
+}
+function moveCellHTML(m){
+  if(!m||!m.name)return '';
+  var type=m.type||MOVE_TYPE[m.name]||'';
+  var color=typeColor(type);
+  return '<div class="move-cell" style="border-color:'+color+';background:'+color+'22;cursor:pointer" data-move="'+esc(m.name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(m.cat)+'"><div class="move-name">'+esc(m.name)+'</div><div class="move-meta"><span class="move-type" style="background:'+color+'">'+esc(typeLabel(type))+'</span><span class="move-cat">'+esc(m.cat)+'</span></div></div>';
+}
+function moveHexHTML(s){
+  if(!s)return '';
+  var arr=movesArr(s);
+  if(!arr.length)return '';
+  var html='<div class="dt-hex-list">'+arr.slice(0,4).map(moveHexItemHTML).join('');
+  if(arr.length>4){
+    html+='<button type="button" class="dt-more-btn" data-dt-all="'+esc(s)+'">☰ 全部技能（'+arr.length+'）</button>';
+  }
+  html+='</div>';
+  return html;
+}
+function showAllMoves(s){
+  var arr=movesArr(s);
+  pushBack();
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">全部技能（'+arr.length+'）</div><button class="close" data-move-back>✕</button></div><div class="modal-body"><div class="moves">'+arr.map(moveCellHTML).join('')+'</div></div></div>';
+  overlay.classList.add('open');
+}
 function resolveMoveTypes(scope){var els=(scope||document).querySelectorAll('.dt-hex[data-move]');for(var i=0;i<els.length;i++){(function(el){var name=el.getAttribute('data-move');if(!name)return;fetchMove(name,function(d){if(d&&d.type){var lb=typeLabel(d.type);var cl=typeColor(d.type);if(!lb)return;el.setAttribute('data-mvtype',d.type);var sp=el.querySelector('.move-type');if(!sp){sp=document.createElement('span');sp.className='move-type';el.insertBefore(sp,el.firstChild);}sp.style.background=cl;sp.textContent=lb;}});})(els[i]);}}
 function toggleDtPage(){var p1=document.querySelector('.dt-page[data-dt-page="1"]');var p2=document.querySelector('.dt-page[data-dt-page="2"]');var btn=document.querySelector('[data-dt-next]');if(!p1||!p2||!btn)return;if(p1.classList.contains('active')){p1.classList.remove('active');p2.classList.add('active');btn.classList.remove('right');btn.classList.add('left');btn.textContent='◀';}else{p2.classList.remove('active');p1.classList.add('active');btn.classList.remove('left');btn.classList.add('right');btn.textContent='▶';}}
 var NATURE_MAP={'勤奋':{up:'',down:''},'怕寂寞':{up:'攻击',down:'防御'},'固执':{up:'攻击',down:'特攻'},'顽皮':{up:'攻击',down:'特防'},'勇敢':{up:'攻击',down:'速度'},'大胆':{up:'防御',down:'攻击'},'坦率':{up:'',down:''},'淘气':{up:'防御',down:'特攻'},'乐天':{up:'防御',down:'特防'},'悠闲':{up:'防御',down:'速度'},'内敛':{up:'特攻',down:'攻击'},'慢吞吞':{up:'特攻',down:'防御'},'害羞':{up:'',down:''},'马虎':{up:'特攻',down:'特防'},'冷静':{up:'特攻',down:'速度'},'温和':{up:'特防',down:'攻击'},'温顺':{up:'特防',down:'防御'},'慎重':{up:'特防',down:'特攻'},'浮躁':{up:'',down:''},'自大':{up:'特防',down:'速度'},'胆小':{up:'速度',down:'攻击'},'急躁':{up:'速度',down:'防御'},'爽朗':{up:'速度',down:'特攻'},'天真':{up:'速度',down:'特防'},'认真':{up:'',down:''}};
@@ -2870,7 +2914,7 @@ function natureEffectText(n){
   return (e.up?'+'+e.up:'')+' '+(e.down?'-'+e.down:'');
 }
 function showNatureInfo(name){
-  moveBackHTML=overlay.innerHTML;
+  pushBack();
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body"><div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div></div></div>';
   overlay.classList.add('open');
 }
@@ -2963,7 +3007,7 @@ function applyFabSize(){
   try{localStorage.setItem('pk_fabsize',String(fabSize));}catch(e){}
 }
 function openFabSize(){
-  moveBackHTML='';
+  clearBack();
   overlay.innerHTML='<div class="modal" style="max-width:420px"><div class="modal-head"><div class="modal-name">悬浮球大小</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
     '<div style="display:flex;align-items:center;justify-content:center;padding:14px 0"><span id="fab-pv" style="display:flex;align-items:center;justify-content:center;width:'+fabSize+'px;height:'+fabSize+'px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);overflow:hidden;color:#fff;font-size:26px"><img src="https://img.baibai.cv/f/n5n3fp/1788810124723.png" onerror="this.outerHTML=\'⚪\'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none"></span></div>'+
     '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0"><button class="btn-small" data-fab-minus>－</button><input type="number" id="fab-size" value="'+fabSize+'" min="40" max="100" style="width:80px;box-sizing:border-box;padding:6px 8px;font-family:inherit;font-size:.9rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;text-align:center"><button class="btn-small" data-fab-plus>＋</button></div>'+
@@ -3020,7 +3064,7 @@ function fabImgPreview(src){
   if(pv){pv.innerHTML='<img id="fab-img-pv-img" src="'+esc(src)+'" onerror="this.outerHTML=\'⚪\'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none">';}
 }
 function openFabImg(){
-  moveBackHTML='';
+  clearBack();
   var cur=fabImg||FAB_IMG_DEFAULT;
   overlay.innerHTML='<div class="modal" style="max-width:460px"><div class="modal-head"><div class="modal-name">悬浮球图片</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
     '<div style="display:flex;align-items:center;justify-content:center;padding:14px 0"><span id="fab-img-pv" style="display:flex;align-items:center;justify-content:center;width:'+fabSize+'px;height:'+fabSize+'px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);overflow:hidden;color:#fff;font-size:26px"><img id="fab-img-pv-img" src="'+esc(cur)+'" onerror="this.outerHTML=\'⚪\'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none"></span></div>'+
@@ -3065,7 +3109,7 @@ function fabImgReset(){
   hudMsg('悬浮球图片已恢复默认');
 }
 function openIconSize(){
-  moveBackHTML='';
+  clearBack();
   overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">自定义图标大小</div><button class="close" data-close>✕</button></div><div class="modal-body">'+iconSizeListHTML()+'<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-isz-apply>✔ 应用</button><button class="act-btn" data-isz-reset>↺ 恢复默认</button></div></div></div>';
   overlay.classList.add('open');
 }
@@ -3110,6 +3154,34 @@ return frame('设置','<div class="set-title">功能开关</div><div class="set-
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
 var pkHasUpdate=false;
 function pkSetUpdateMsg(t){ try{ var m=document.getElementById('pk-update-msg'); if(m) m.textContent=t; }catch(e){} }
+function applyFabUpdateBadge(){
+  try{
+    var btn=document.getElementById('pkm-hud-btn');
+    if(!btn)return;
+    var dot=btn.querySelector('.fab-update-dot');
+    var show=(winMode==='1'&&pkHasUpdate);
+    if(show){
+      if(!dot){
+        dot=document.createElement('span');
+        dot.className='fab-update-dot';
+        dot.title='发现新版本，点开悬浮窗可在设置里更新';
+        btn.appendChild(dot);
+      }
+    }else if(dot&&dot.parentNode){
+      dot.parentNode.removeChild(dot);
+    }
+  }catch(e){}
+}
+function pkReadUpdateCache(){
+  try{
+    var s=localStorage.getItem('pk_hasupdate')||'';
+    var parts=s.split('>');
+    if(parts.length===2&&parts[0]===PK_VER&&parts[1]){
+      pkHasUpdate=true;
+      pkLatestVer=parts[1];
+    }
+  }catch(e){}
+}
 function pkMarkHasUpdate(ver){
   pkHasUpdate=true;
   try{localStorage.setItem('pk_hasupdate',PK_VER+'>'+ver);}catch(e){}
@@ -3119,6 +3191,7 @@ function pkMarkHasUpdate(ver){
       var b=document.createElement('span');b.className='menu-badge';b.textContent='新';items[i].appendChild(b);
     }
   }
+  applyFabUpdateBadge();
 }
 function pkAutoCheckUpdate(){
   try{
@@ -3147,7 +3220,7 @@ function showNoticeModal(ver,notice){
 }
 function openUpdateContent(){
   if(!pkLatestContent){ hudMsg('还没有检查到新版本'); return; }
-  moveBackHTML='';
+  clearBack();
   overlay.innerHTML='<div class="modal" style="max-width:560px"><div class="modal-head"><div class="modal-name">新版脚本内容 v'+esc(pkLatestVer||'?')+'</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
     '<div class="dim" style="font-size:.72rem;margin-bottom:6px">若自动更新没生效：打开角色卡【扩展 → Tavern Helper 脚本】，全选后粘贴下面内容并保存</div>'+
     '<textarea id="pk-update-content" readonly style="width:100%;box-sizing:border-box;height:260px;padding:8px;font-family:monospace;font-size:.72rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;resize:vertical">'+esc(pkLatestContent)+'</textarea>'+
@@ -3471,8 +3544,8 @@ function bindHudCmdBar(){
 }
 
 function bindPageInteractions(){
-  pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);}});});
-pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){el.addEventListener('click',function(){var key=el.getAttribute('data-nearby');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);}});});
+  pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);clearBack();overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);}});});
+pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){el.addEventListener('click',function(){var key=el.getAttribute('data-nearby');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);}});});
   pageOverlay.querySelectorAll('.bag-tab[data-bag]').forEach(function(btn){btn.addEventListener('click',function(){activeBag=btn.getAttribute('data-bag');pageOverlay.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===btn);});var list=pageOverlay.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}});});
   pageOverlay.querySelectorAll('.badge-tab[data-bregion]').forEach(function(b){b.addEventListener('click',function(){badgeSel=b.getAttribute('data-bregion');try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:badgeSel}));}catch(e){}var pg=pageOverlay.querySelector('.page');var oldTabs=pageOverlay.querySelector('.badge-tabs');var pageTop=pg?pg.scrollTop:0;var tabsLeft=oldTabs?oldTabs.scrollLeft:0;pageOverlay.querySelector('.page-body').innerHTML=badgePageHTML();bindPageInteractions();if(pg){pg.scrollTop=pageTop;}var newTabs=pageOverlay.querySelector('.badge-tabs');if(newTabs){newTabs.scrollLeft=tabsLeft;}});});
   pageOverlay.querySelectorAll('[data-bag-discard]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();discardBagItemAsk(btn.getAttribute('data-bag-discard'));});});
@@ -3846,8 +3919,8 @@ for(var i=0;i<cards.length;i++){preloadMoves(cards[i].skills);}
   document.querySelectorAll('.menu-item[data-page]').forEach(function(el){el.addEventListener('click',function(){openPage(el.getAttribute('data-page'));});});function bindHomeFold(){var t=document.getElementById('home-fold');if(!t)return;t.querySelectorAll('[data-fold]').forEach(function(el){el.addEventListener('click',function(){var k=el.getAttribute('data-fold');foldState[k]=!foldState[k];t.innerHTML=homeFoldHTML();bindHomeFold();resolveItemImgs(t);resizeFrame();});});t.querySelectorAll('.bag-tab[data-bag]').forEach(function(b){b.addEventListener('click',function(){activeBag=b.getAttribute('data-bag');t.querySelectorAll('.bag-tab').forEach(function(x){x.classList.toggle('active',x===b);});var l=t.querySelector('#bag-list');if(l){l.innerHTML=bagItemsHTML();resolveItemImgs(t);}resizeFrame();});});t.querySelectorAll('[data-bag-discard]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();discardBagItemAsk(btn.getAttribute('data-bag-discard'));});});
 if(!t._itemBound){t._itemBound=true;t.addEventListener('click',function(e){var bagDiscard=e.target.closest('[data-bag-discard]');if(bagDiscard){e.stopPropagation();discardBagItemAsk(bagDiscard.getAttribute('data-bag-discard'));return;}var it=e.target.closest('.item-entry[data-item]');if(it){e.stopPropagation();if(itemClickEnabled)showItemInfo(it.getAttribute('data-item'));}});}}bindHomeFold();
   bindBadge();
-  document.querySelectorAll('.card-frame[data-slot]').forEach(function(el){el.addEventListener('click',function(){var s=parseInt(el.getAttribute('data-slot'),10);for(var i=0;i<cards.length;i++){if(cards[i].slot===s){currentDetailCard=cards[i];overlay.innerHTML=detailHTML(cards[i]);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);break;}}});});
-  function bindNearby(){document.querySelectorAll('[data-nearby-open]').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();var key=el.getAttribute('data-nearby-open');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);}});});var nbt=document.querySelector('[data-nearby-toggle]');if(nbt){nbt.addEventListener('click',function(e){e.stopPropagation();nearbyOpen=!nearbyOpen;var nf=document.querySelector('.nearby-frame');if(nf){nf.outerHTML=nearbyHTML();pkImgFix(document);resolvePkmImgs(document);bindNearby();}resizeFrame();});}}bindNearby();
+  document.querySelectorAll('.card-frame[data-slot]').forEach(function(el){el.addEventListener('click',function(){var s=parseInt(el.getAttribute('data-slot'),10);for(var i=0;i<cards.length;i++){if(cards[i].slot===s){currentDetailCard=cards[i];clearBack();overlay.innerHTML=detailHTML(cards[i]);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);break;}}});});
+  function bindNearby(){document.querySelectorAll('[data-nearby-open]').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();var key=el.getAttribute('data-nearby-open');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);}});});var nbt=document.querySelector('[data-nearby-toggle]');if(nbt){nbt.addEventListener('click',function(e){e.stopPropagation();nearbyOpen=!nearbyOpen;var nf=document.querySelector('.nearby-frame');if(nf){nf.outerHTML=nearbyHTML();pkImgFix(document);resolvePkmImgs(document);bindNearby();}resizeFrame();});}}bindNearby();
 
   pageOverlay.addEventListener('click',function(e){
   var bagDiscard=e.target.closest('[data-bag-discard]');
@@ -3861,10 +3934,10 @@ if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-widt
   if(e.target===pageOverlay||e.target.closest('[data-page-close]')){pageOverlay.classList.remove('open');var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();}}
 });
   overlay.addEventListener('click',function(e){
-    if(e.target.closest('[data-move-back]')){e.stopPropagation();if(moveBackHTML){overlay.innerHTML=moveBackHTML;moveBackHTML='';}else{overlay.classList.remove('open');}return;}
+    if(e.target.closest('[data-move-back]')){e.stopPropagation();var _pb=popBack();if(_pb){overlay.innerHTML=_pb;}else{overlay.classList.remove('open');}return;}
 var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true);return;}
-    if(e.target===overlay){if(moveBackHTML){overlay.innerHTML=moveBackHTML;moveBackHTML='';}else{overlay.classList.remove('open');}return;}
-        if(e.target.closest('[data-close]')){overlay.classList.remove('open');moveBackHTML='';return;}
+    if(e.target===overlay){var _pb2=popBack();if(_pb2){overlay.innerHTML=_pb2;}else{overlay.classList.remove('open');}return;}
+        if(e.target.closest('[data-close]')){overlay.classList.remove('open');clearBack();return;}
 var bnc=e.target.closest('[data-box-new-confirm]');if(bnc){e.stopPropagation();var inp=document.getElementById('box-new-name');createBox(inp?inp.value:'');return;}
 var ps=e.target.closest('[data-pkm-store]');if(ps){e.stopPropagation();if(currentDetailCard)openBoxPicker(currentDetailCard);return;}
 var pw=e.target.closest('[data-pkm-withdraw]');if(pw){e.stopPropagation();if(currentDetailCard)openSlotPicker(currentDetailCard);return;}
@@ -3892,7 +3965,7 @@ var fr=e.target.closest('[data-fab-reset]');if(fr){e.stopPropagation();fabReset(
 var fia=e.target.closest('[data-fab-img-apply]');if(fia){e.stopPropagation();fabImgApply();return;}
 var fip=e.target.closest('[data-fab-img-preview]');if(fip){e.stopPropagation();var fiuv=document.getElementById('fab-img-url');if(fiuv)fabImgPreview(fiuv.value);return;}
 var fir=e.target.closest('[data-fab-img-reset]');if(fir){e.stopPropagation();fabImgReset();return;}
-var dtn=e.target.closest('[data-dt-next]');if(dtn){e.stopPropagation();toggleDtPage();return;}
+var dmb=e.target.closest('[data-dt-all]');if(dmb){e.stopPropagation();showAllMoves(dmb.getAttribute('data-dt-all'));return;}
     var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
     var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{new Audio('https://cdn.jsdelivr.net/gh/PokeAPI/cries@main/cries/pokemon/latest/'+cry.getAttribute('data-cry')+'.ogg').play();}catch(err){}return;}
     var ab=e.target.closest('[data-ability]');if(ab){e.stopPropagation();showAbilityInfo(ab.getAttribute('data-ability'));return;}
@@ -3954,6 +4027,7 @@ btn.innerHTML='<img src="'+esc(fabImg||FAB_IMG_DEFAULT)+'" style="width:'+(fabSi
 btn.style.left=(vw-size-edge)+'px';
 btn.style.top=(vh-140-size)+'px';
 document.body.appendChild(btn);
+applyFabUpdateBadge();
 
   /* 恢复上次拖动的位置 */
   var saved=null;
@@ -4196,6 +4270,7 @@ function showErr(msg){
 }
 WIN.addEventListener('error',function(e){var m=String(e.message||'未知错误');if(m.indexOf('ResizeObserver')>=0)return;showErr(m);});
 WIN.addEventListener('unhandledrejection',function(e){showErr(String((e.reason&&e.reason.message)||e.reason||'未处理的Promise错误'));});
+try{pkReadUpdateCache();}catch(e){}
 try{ensureHud();}catch(e){}
 safeRender();
 })();
