@@ -310,7 +310,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.1.9';
+var PK_VER='1.2.0';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
 1.战场规则
