@@ -1,7 +1,7 @@
 (function(){
-var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;--male:#00BFFF;--female:#FF4500}'+
-':where(#pkm-hud-win) *{box-sizing:border-box;margin:0;padding:0}:where(#pkm-hud-btn){box-sizing:border-box}'+
-'#pkm-hud-win{font-family:"Segoe UI","Helvetica Neue","PingFang SC","Microsoft YaHei",monospace;color:var(--text)}'+
+var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;--male:#00BFFF;--female:#FF4500}'+
+':where(#pkm-hud-win,#pkm-hud-inline) *{box-sizing:border-box;margin:0;padding:0}:where(#pkm-hud-btn){box-sizing:border-box}'+
+'#pkm-hud-win,#pkm-hud-inline{font-family:"Segoe UI","Helvetica Neue","PingFang SC","Microsoft YaHei",monospace;color:var(--text)}'+
 '.hud{--hud-pad:clamp(10px,3vw,14px);max-width:600px;margin:16px auto;padding:var(--hud-pad);border-radius:10px;position:relative;background-color:#0f1626;box-shadow:0 8px 24px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden}'+
 '.hud::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:inherit;z-index:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px),repeating-linear-gradient(90deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px)}'+
 '.hud-inner{position:relative;z-index:1;flex:0 0 auto;height:560px;overflow:hidden}'+'@media(max-width:430px){.hud-inner{height:470px}}'+
@@ -302,10 +302,15 @@ var css='#pkm-hud-win{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0b8;--hp:#32CD32;
 '#pkm-hud-win.open{opacity:1;visibility:visible;transform:none;transition:opacity .18s ease,transform .18s ease,visibility 0s;pointer-events:auto}'+
 '#pkm-hud-win .hud{margin:0;max-width:none;width:100%}'+
 '#pkm-hud-close{position:absolute;right:8px;top:8px;z-index:10;width:32px;height:32px;border-radius:50%;border:1px solid var(--frame);background:rgba(43,74,111,.92);color:#fff;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}'+
-'#pkm-hud-close:hover{background:rgba(150,60,60,.9)}';
+'#pkm-hud-close:hover{background:rgba(150,60,60,.9)}'+
+'#pkm-hud-inline{position:relative;display:block;margin:8px 0 4px;max-width:100%}'+
+'#pkm-hud-inline .hud{max-width:none;margin:0;border-radius:8px}'+
+'#pkm-hud-inline .hud-inner{height:480px}'+
+'@media(max-width:430px){#pkm-hud-inline .hud-inner{height:380px}}'+
+'#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.1.6';
+var PK_VER='1.1.7';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -422,6 +427,8 @@ function loadStatData(){
 }
 
 var stat_data=loadStatData();
+var winMode='0';
+try{winMode=localStorage.getItem('pk_winmode')||'0';}catch(e){winMode='0';}
 function lsGet(key,fb){try{var v=JSON.parse(localStorage.getItem(key));return (v==null)?fb:v;}catch(e){return fb;}}
 function lsSet(key,v){try{localStorage.setItem(key,JSON.stringify(v));}catch(e){}}
 var DIY_INPUT_STYLE='width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:6px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;display:block';
@@ -2892,8 +2899,9 @@ function settingsHTML(){
   var opts=[['mv','招式缓存'],['pm','宝可梦预览缓存'],['sprite','队伍精灵图缓存'],['ab','特性缓存'],['dex','图鉴列表'],['fid','形态ID'],['item','道具缓存'],['seen','图鉴收集进度'],['all','全部缓存']];
   var radios=opts.map(function(o){return '<label class="set-opt"><input type="radio" name="pk-clear" value="'+o[0]+'"'+(clearTarget===o[0]?' checked':'')+' data-clear="'+o[0]+'">'+o[1]+'</label>';}).join('');
   var itemChk=itemClickEnabled?' checked':'';
-  var devOn=devUnlocked();
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
+var winChk=(winMode==='1')?' checked':'';
+var devOn=devUnlocked();
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null;
@@ -3227,6 +3235,8 @@ pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(b){b.addEventL
   pageOverlay.querySelectorAll('input[data-clear]').forEach(function(r){r.addEventListener('change',function(){if(r.checked)clearTarget=r.getAttribute('data-clear');});});
 var ic=pageOverlay.querySelector('input[data-toggle="itemclick"]');
 if(ic){ic.addEventListener('change',function(){itemClickEnabled=ic.checked;try{localStorage.setItem('pk_itemclick',itemClickEnabled?'1':'0');}catch(e){}});}
+var wm=pageOverlay.querySelector('input[data-toggle="winmode"]');
+if(wm){wm.addEventListener('change',function(){winMode=wm.checked?'1':'0';try{localStorage.setItem('pk_winmode',winMode);}catch(e){}});}
   var cs=pageOverlay.querySelector('[data-clear-start]');
 if(cs){cs.addEventListener('click',function(e){e.stopPropagation();clearStep=0;confirmClearModal();});}
 pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(b){b.addEventListener('click',function(){diyType=b.getAttribute('data-diy-tab');pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(x){x.classList.toggle('active',x===b);});var f=pageOverlay.querySelector('#diy-form');if(f)f.innerHTML=diyFormHTML(diyType);var l=pageOverlay.querySelector('#diy-list');if(l)l.innerHTML=diyListHTML(diyType);});});
@@ -3547,8 +3557,9 @@ function openItemPicker(c){
   overlay.classList.add('open');
 }
 function render(){
-  var app=document.getElementById('pkm-hud-slot');
-  if(!app){app=document.createElement('div');app.id='pkm-hud-slot';var win=document.getElementById('pkm-hud-win');if(win)win.appendChild(app);else document.body.appendChild(app);}
+  var inline=(winMode==='0');
+  var app=inline?document.getElementById('pkm-hud-inline'):document.getElementById('pkm-hud-slot');
+  if(!app){app=document.createElement('div');app.id=inline?'pkm-hud-inline':'pkm-hud-slot';if(inline){document.body.appendChild(app);}else{var win=document.getElementById('pkm-hud-win');if(win)win.appendChild(app);else document.body.appendChild(app);}}
   app.innerHTML='<div class="hud"><div class="hud-inner" id="hud-inner">'+
   '<div class="tab-panel active" id="tab-1">'+hudCmdBarHTML()+trainerHTML()+teamHTML()+quickHTML()+nearbyHTML()+'<div id="home-fold">'+homeFoldHTML()+'</div></div>'+
 '<div class="tab-panel" id="tab-2">'+envStripHTML()+worldHTML()+tasksHTML()+rivalsHTML()+'</div>'+
@@ -3559,7 +3570,7 @@ function render(){
 pkImgFix(app);
 resolvePkmImgs(app);
 resolveItemImgs(app);
-  var hudEl=document.querySelector('.hud');
+  var hudEl=app.querySelector('.hud')||document.querySelector('.hud');
 overlay=document.createElement('div');overlay.className='overlay';hudEl.appendChild(overlay);
 pageOverlay=document.createElement('div');pageOverlay.className='page-overlay';hudEl.appendChild(pageOverlay);
   cards=buildCards();
@@ -3652,6 +3663,15 @@ function resizeFrame(){
 }
 function preloadBadges(){var r,t,i,im;for(r in BADGE_MAP){t=BADGE_MAP[r];for(i=0;i<t.length;i++){im=new Image();im.src=badgeUrl(r,t[i][0]);}}}
 function ensureHud(){
+  if(winMode==='0'){
+    try{
+      var b0=document.getElementById('pkm-hud-btn');if(b0)b0.style.display='none';
+      var w0=document.getElementById('pkm-hud-win');if(w0){w0.classList.remove('open');w0.style.display='none';}
+      var m0=document.getElementById('pkm-hud-mask');if(m0)m0.style.display='none';
+  var s0=document.getElementById('pkm-hud-slot');if(s0){s0.innerHTML='';}
+}catch(e){}
+return;
+  }
   if(document.getElementById('pkm-hud-btn'))return;
 
   var size=54, edge=14;
@@ -3814,11 +3834,27 @@ function closeHud(){
   }catch(e){}
 }
 
+function renderStatusBar(){
+  try{
+    if(winMode==='1')return;
+    var all=document.querySelectorAll('.mes[is_user="false"]');
+    if(!all.length){all=document.querySelectorAll('.mes');}
+    if(!all.length)return;
+    var last=all[all.length-1];
+document.querySelectorAll('#pkm-hud-inline').forEach(function(el){el.remove();});
+var ic=document.createElement('div');
+ic.id='pkm-hud-inline';
+var textEl=last.querySelector('.mes_text');
+if(textEl){textEl.insertAdjacentElement('afterend',ic);}else{last.appendChild(ic);}
+render();
+  }catch(e){}
+}
 var pkmAutoRefreshBound=false;
 function pkRefreshData(){
   try{stat_data=loadStatData();}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
+  try{renderStatusBar();}catch(e){}
   try{
     var win=document.getElementById('pkm-hud-win');
     var ov=document.querySelector('.overlay.open,.page-overlay.open');
@@ -3858,9 +3894,11 @@ function safeRender(){
   try{pkBindAutoRefresh();}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
+  try{renderStatusBar();}catch(e){}
+  try{setTimeout(renderStatusBar,1200);}catch(e){}
+  try{setTimeout(renderStatusBar,3000);}catch(e){}
   try{preloadBadges();}catch(e){}
-  try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
-  try{resizeFrame();}catch(e){}
+  if(winMode==='1'){try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}try{resizeFrame();}catch(e){}}
   try{
     if(window.ResizeObserver){
       var _ro=new window.ResizeObserver(function(){if(window._roRaf)return;window._roRaf=requestAnimationFrame(function(){window._roRaf=0;resizeFrame();});});
