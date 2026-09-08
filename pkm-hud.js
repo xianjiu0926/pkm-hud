@@ -310,14 +310,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.2.0';
+var PK_VER='1.2.1';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.战场规则
-2.快速指令
-3.附近宝可梦的互动改为输入回复栏而非直接发送
-4.删除通讯录与呼出论坛
-5.优化
+1.diy现在可以选择世界书
+2.设置增加自定义悬浮球大小
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -543,6 +540,8 @@ function diyLoadAbiOptions(){
 }
 var diyLorebook='宝可梦 战斗爽MVU-大世界终极版';
 try{var _dl=localStorage.getItem('pk_diy_lorebook2');if(_dl)diyLorebook=_dl;}catch(e){}
+var diyLoreMode='select';
+try{var _dlm=localStorage.getItem('pk_diy_loremode');if(_dlm==='input')diyLoreMode='input';}catch(e){}
 var lorebookListCache=null;
 var LORE_ENTRY_TEMPLATE={key:[],keysecondary:[],comment:'',content:'',constant:true,vectorized:false,selective:true,selectiveLogic:0,addMemo:false,order:100,position:0,disable:false,ignoreBudget:false,excludeRecursion:false,preventRecursion:false,matchPersonaDescription:false,matchCharacterDescription:false,matchCharacterPersonality:false,matchCharacterDepthPrompt:false,matchScenario:false,matchCreatorNotes:false,delayUntilRecursion:0,probability:100,useProbability:true,depth:4,outletName:'',group:'',groupOverride:false,groupWeight:100,scanDepth:null,caseSensitive:null,matchWholeWords:null,useGroupScoring:null,automationId:'',role:null,sticky:null,cooldown:null,delay:null,triggers:[],displayIndex:0,characterFilter:{isExclude:false,names:[],tags:[]}};
 function tryParentLorebooks(){
@@ -560,7 +559,33 @@ function tryParentLorebooks(){
 }
 function fetchLorebookList(cb){
   if(lorebookListCache){cb&&cb(lorebookListCache);return;}
-  lorebookListCache=['当前世界信息'];
+  var names=[];
+  try{
+    var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;
+    if(ctx&&typeof ctx.getWorldInfoNames==='function'){
+      var gl=ctx.getWorldInfoNames();
+      if(Array.isArray(gl))gl.forEach(function(n){if(n)names.push(String(n));});
+    }
+  }catch(e){}
+  try{
+    var par=tryParentLorebooks();
+    if(par)par.forEach(function(n){if(names.indexOf(n)<0)names.push(n);});
+  }catch(e){}
+  try{
+    [].slice.call(document.querySelectorAll('#world_info,select[name="world_info"],#world_info_select,#world_editor_select')).forEach(function(sel){
+      Array.prototype.slice.call(sel.options||[]).forEach(function(o){
+        var v=String(o.value||o.text||'').trim();
+        if(v&&v!=='---'&&!/^select/i.test(v)&&names.indexOf(v)<0)names.push(v);
+      });
+    });
+  }catch(e){}
+  var out=['当前世界信息'];
+  names.forEach(function(n){
+    var s=String(n==null?'':n).trim();
+    if(!s||/^\d+$/.test(s))return;
+    if(out.indexOf(s)<0)out.push(s);
+  });
+  lorebookListCache=out;
   cb&&cb(lorebookListCache);
 }
 function getCsrfToken(cb){
@@ -625,14 +650,58 @@ function diyLoreText(type,obj){
 if(obj.chain&&obj.chain.length>1)p+='\n进化链：'+diyChainText(obj);
   return p;
 }
+function diyLorebookValue(){
+  if(diyLoreMode==='input'){
+    var custom=document.getElementById('diy-lorebook-custom');
+    var cv=custom?custom.value.trim():'';
+    return cv||diyLorebook;
+  }
+  var sel=document.getElementById('diy-lorebook');
+  return (sel&&sel.value)?sel.value:diyLorebook;
+}
+function diySetLoreMode(mode){
+  diyLoreMode=(mode==='input')?'input':'select';
+  try{localStorage.setItem('pk_diy_loremode',diyLoreMode);}catch(e){}
+  var selWrap=document.getElementById('diy-lore-select-wrap');
+  var inWrap=document.getElementById('diy-lore-input-wrap');
+  var btnSel=document.getElementById('diy-lore-mode-select');
+  var btnIn=document.getElementById('diy-lore-mode-input');
+  var on='border-color:#7cc4f8;color:#fff;background:rgba(43,74,111,.9)';
+  if(selWrap)selWrap.style.display=(diyLoreMode==='select')?'':'none';
+  if(inWrap)inWrap.style.display=(diyLoreMode==='input')?'':'none';
+  if(btnSel)btnSel.style.cssText=(diyLoreMode==='select')?on:'';
+  if(btnIn)btnIn.style.cssText=(diyLoreMode==='input')?on:'';
+}
+function diyFillLorebookOptions(){
+  var sel=document.getElementById('diy-lorebook');
+  if(!sel)return;
+  fetchLorebookList(function(list){
+    if(!sel||!document.body.contains(sel))return;
+    var cur=sel.value||diyLorebook;
+    var h='<option value="">—— 请选择世界书 ——</option>';
+    (list||[]).forEach(function(n){
+      var s=String(n==null?'':n).trim();
+      if(!s||/^\d+$/.test(s))return;
+      h+='<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>';
+    });
+    sel.innerHTML=h;
+  });
+}
 function diyLorebookHTML(){
-  return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">写入世界书(推荐自建外挂世界书，方便删除，删除缓存不会删除世界书条目，只会关闭)</div><input type="text" id="diy-lorebook" placeholder="世界书文件名，如 宝可梦DIY" value="'+esc(diyLorebook)+'" style="'+DIY_INPUT_STYLE+'"></div></div>';
+  var selActive=diyLoreMode==='select';
+  var modeBtn='<div style="display:flex;gap:6px;margin-bottom:6px">'+
+    '<button type="button" id="diy-lore-mode-select" class="btn-small" style="'+(selActive?'border-color:#7cc4f8;color:#fff;background:rgba(43,74,111,.9)':'')+'">📖 选择世界书</button>'+
+    '<button type="button" id="diy-lore-mode-input" class="btn-small" style="'+(!selActive?'border-color:#7cc4f8;color:#fff;background:rgba(43,74,111,.9)':'')+'">⌨ 手动输入</button>'+
+    '</div>';
+  var selectHtml='<div id="diy-lore-select-wrap"'+(selActive?'':' style="display:none"')+'><select id="diy-lorebook" style="'+DIY_INPUT_STYLE+'"><option value="">—— 正在读取世界书列表… ——</option></select></div>';
+  var inputHtml='<div id="diy-lore-input-wrap"'+(selActive?' style="display:none"':'')+'><input type="text" id="diy-lorebook-custom" placeholder="世界书文件名，如 宝可梦DIY" value="'+esc(diyLorebook)+'" style="'+DIY_INPUT_STYLE+'"></div>';
+  return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">写入世界书(推荐自建外挂世界书，方便删除，删除缓存不会删除世界书条目，只会关闭)</div>'+modeBtn+selectHtml+inputHtml+'</div></div>';
 }
 function diyWriteLorebook(type,name){
   var obj=diyGet(type,name);
   if(!obj){diyDoneMsg();return;}
-  var book=diyVal('diy-lorebook')||diyLorebook;
-  if(!book){diyMsg('已保存 DIY（未填写世界书文件名，未写入）');return;}
+  var book=diyLorebookValue();
+if(!book){diyMsg('已保存 DIY（未填写世界书文件名，未写入）');return;}
   var text=diyLoreText(type,obj);
   var one=text.replace(/"/g,'＂').replace(/\|/g,'｜');
   var title=('自创'+diyLabel(type)+'：'+name).replace(/"/g,'＂').replace(/\|/g,'｜');
@@ -643,8 +712,8 @@ function diyWriteLorebook(type,name){
 }
 function diyDisableLorebook(type,name){
   try{
-    var book=diyVal('diy-lorebook')||diyLorebook;
-    if(!book)return;
+    var book=diyLorebookValue();
+if(!book)return;
     var title=('自创'+diyLabel(type)+'：'+name).replace(/"/g,'＂').replace(/\|/g,'｜');
     var book2=book.replace(/"/g,'＂').replace(/\|/g,'｜');
     var cmd='/findentry file="'+book2+'" field=comment "'+title+'" | /setentryfield file="'+book2+'" uid={{pipe}} field=disable true';
@@ -2864,6 +2933,63 @@ function iconSizeListHTML(){
   }
   return h;
 }
+var fabSize=54;
+try{var _fs=parseInt(localStorage.getItem('pk_fabsize'),10);if(_fs>=40&&_fs<=100)fabSize=_fs;}catch(e){}
+function applyFabSize(){
+  var btn=document.getElementById('pkm-hud-btn');
+  if(btn){
+    btn.style.width=fabSize+'px';
+    btn.style.height=fabSize+'px';
+    btn.style.fontSize=Math.round(fabSize*0.48)+'px';
+    var im=btn.querySelector('img');
+    if(im){im.style.width=(fabSize-8)+'px';im.style.height=(fabSize-8)+'px';}
+    try{
+      var vw2=WIN.innerWidth||360, vh2=WIN.innerHeight||640;
+      var l=parseFloat(btn.style.left)||0;
+      var t=parseFloat(btn.style.top)||0;
+      var nl=Math.max(0,Math.min(l,vw2-fabSize));
+      var nt=Math.max(0,Math.min(t,vh2-fabSize));
+      if(nl!==l||nt!==t){
+        btn.style.left=nl+'px';
+        btn.style.top=nt+'px';
+        try{localStorage.setItem('pkm_fab_pos',JSON.stringify({l:nl,t:nt}));}catch(e){}
+      }
+    }catch(e){}
+  }
+  try{localStorage.setItem('pk_fabsize',String(fabSize));}catch(e){}
+}
+function openFabSize(){
+  moveBackHTML='';
+  overlay.innerHTML='<div class="modal" style="max-width:420px"><div class="modal-head"><div class="modal-name">悬浮球大小</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    '<div style="display:flex;align-items:center;justify-content:center;padding:14px 0"><span id="fab-pv" style="display:flex;align-items:center;justify-content:center;width:'+fabSize+'px;height:'+fabSize+'px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);overflow:hidden;color:#fff;font-size:26px"><img src="https://img.baibai.cv/f/n5n3fp/1788810124723.png" onerror="this.outerHTML=\'⚪\'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none"></span></div>'+
+    '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0"><button class="btn-small" data-fab-minus>－</button><input type="number" id="fab-size" value="'+fabSize+'" min="40" max="100" style="width:80px;box-sizing:border-box;padding:6px 8px;font-family:inherit;font-size:.9rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;text-align:center"><button class="btn-small" data-fab-plus>＋</button></div>'+
+    '<div class="dim" style="font-size:.72rem;text-align:center;margin-bottom:4px">范围 40 ~ 100 px（默认 54）</div>'+
+    '<div class="action-btns" style="margin-top:12px"><button class="act-btn" data-fab-apply>✔ 应用</button><button class="act-btn" data-fab-reset>↺ 恢复默认</button></div>'+
+    '</div></div>';
+  overlay.classList.add('open');
+}
+function fabStep(d){
+  var v=Math.max(40,Math.min(100,fabSize+d));
+  fabSize=v;
+  var el=document.getElementById('fab-size');
+  if(el)el.value=v;
+  var pv=document.getElementById('fab-pv');
+  if(pv){pv.style.width=v+'px';pv.style.height=v+'px';}
+}
+function fabApply(){
+  var el=document.getElementById('fab-size');
+  var v=el?parseInt(el.value,10):NaN;
+  if(!isNaN(v))fabSize=Math.max(40,Math.min(100,v));
+  applyFabSize();
+  overlay.classList.remove('open');
+  hudMsg('悬浮球大小已应用：'+fabSize+'px');
+}
+function fabReset(){
+  fabSize=54;
+  applyFabSize();
+  overlay.classList.remove('open');
+  hudMsg('悬浮球大小已恢复默认 54px');
+}
 function openIconSize(){
   moveBackHTML='';
   overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">自定义图标大小</div><button class="close" data-close>✕</button></div><div class="modal-body">'+iconSizeListHTML()+'<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-isz-apply>✔ 应用</button><button class="act-btn" data-isz-reset>↺ 恢复默认</button></div></div></div>';
@@ -2904,7 +3030,7 @@ function settingsHTML(){
   var itemChk=itemClickEnabled?' checked':'';
 var winChk=(winMode==='1')?' checked':'';
 var devOn=devUnlocked();
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -3255,8 +3381,15 @@ var df=pageOverlay.querySelector('#diy-form');if(df){df.addEventListener('click'
 var dl=pageOverlay.querySelector('#diy-list');if(dl){dl.addEventListener('click',function(e){var del=e.target.closest('[data-diy-del]');if(del){diyDelStart(diyType,del.getAttribute('data-diy-del'));return;}var sh=e.target.closest('[data-diy-share]');if(sh){diyShare(diyType,sh.getAttribute('data-diy-share'));return;}var vw=e.target.closest('[data-diy-view]');if(vw){diyView(diyType,vw.getAttribute('data-diy-view'));}});}
 var dib=pageOverlay.querySelector('[data-diy-import]');if(dib){dib.addEventListener('click',function(e){e.stopPropagation();diyImport();});}
 var dii=pageOverlay.querySelector('#diy-import-code');if(dii){dii.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();diyImport();}});}
+var bms=pageOverlay.querySelector('#diy-lore-mode-select');
+if(bms){bms.addEventListener('click',function(e){e.stopPropagation();diySetLoreMode('select');});}
+var bmi=pageOverlay.querySelector('#diy-lore-mode-input');
+if(bmi){bmi.addEventListener('click',function(e){e.stopPropagation();diySetLoreMode('input');});}
 var ls=pageOverlay.querySelector('#diy-lorebook');
-if(ls){ls.addEventListener('input',function(){diyLorebook=ls.value;try{localStorage.setItem('pk_diy_lorebook2',diyLorebook);}catch(e){}});}
+if(ls){ls.addEventListener('change',function(){diyLorebook=ls.value;try{localStorage.setItem('pk_diy_lorebook2',diyLorebook);}catch(e){}});}
+var lsc=pageOverlay.querySelector('#diy-lorebook-custom');
+if(lsc){lsc.addEventListener('input',function(){diyLorebook=lsc.value.trim();try{localStorage.setItem('pk_diy_lorebook2',diyLorebook);}catch(e){}});}
+diyFillLorebookOptions();
 diyEvoSyncNext();
 diyEvoLoadAbi();
 var tc1=pageOverlay.querySelector('#tc-def-1');
@@ -3266,6 +3399,8 @@ if(tc2){tc2.addEventListener('change',typeChartCalc);}
 typeChartCalc();
 var iso=pageOverlay.querySelector('[data-isz-open]');
 if(iso){iso.addEventListener('click',function(e){e.stopPropagation();openIconSize();});}
+var fbo=pageOverlay.querySelector('[data-fab-open]');
+if(fbo){fbo.addEventListener('click',function(e){e.stopPropagation();openFabSize();});}
 var pku=pageOverlay.querySelector('[data-pk-check-update]');
 if(pku){pku.addEventListener('click',function(e){e.stopPropagation();pkCheckUpdate();});}
 var pkd=pageOverlay.querySelector('[data-pk-do-update]');
@@ -3631,6 +3766,10 @@ var ip=e.target.closest('[data-isz-plus]');if(ip){e.stopPropagation();iszStep(ip
 var im=e.target.closest('[data-isz-minus]');if(im){e.stopPropagation();iszStep(im.getAttribute('data-isz-minus'),-1);return;}
 var ia=e.target.closest('[data-isz-apply]');if(ia){e.stopPropagation();iszApply();return;}
 var ir=e.target.closest('[data-isz-reset]');if(ir){e.stopPropagation();iszReset();return;}
+var fp=e.target.closest('[data-fab-plus]');if(fp){e.stopPropagation();fabStep(1);return;}
+var fm=e.target.closest('[data-fab-minus]');if(fm){e.stopPropagation();fabStep(-1);return;}
+var fa=e.target.closest('[data-fab-apply]');if(fa){e.stopPropagation();fabApply();return;}
+var fr=e.target.closest('[data-fab-reset]');if(fr){e.stopPropagation();fabReset();return;}
 var dtn=e.target.closest('[data-dt-next]');if(dtn){e.stopPropagation();toggleDtPage();return;}
     var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
     var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{new Audio('https://cdn.jsdelivr.net/gh/PokeAPI/cries@main/cries/pokemon/latest/'+cry.getAttribute('data-cry')+'.ogg').play();}catch(err){}return;}
@@ -3679,16 +3818,19 @@ function ensureHud(){
   }
   if(document.getElementById('pkm-hud-btn'))return;
 
-  var size=54, edge=14;
-  var vw=WIN.innerWidth||360, vh=WIN.innerHeight||640;
+  var size=fabSize, edge=14;
+var vw=WIN.innerWidth||360, vh=WIN.innerHeight||640;
 
-  var btn=document.createElement('div');
-  btn.id='pkm-hud-btn';
-  btn.title='宝可梦 HUD（可拖动）';
-  btn.innerHTML='<img src="https://img.baibai.cv/f/n5n3fp/1788810124723.png" onerror="this.remove();this.parentNode.textContent=\'⚪\'">';
-  btn.style.left=(vw-size-edge)+'px';
-  btn.style.top=(vh-140-size)+'px';
-  document.body.appendChild(btn);
+var btn=document.createElement('div');
+btn.id='pkm-hud-btn';
+btn.title='宝可梦 HUD（可拖动）';
+btn.style.width=fabSize+'px';
+btn.style.height=fabSize+'px';
+btn.style.fontSize=Math.round(fabSize*0.48)+'px';
+btn.innerHTML='<img src="https://img.baibai.cv/f/n5n3fp/1788810124723.png" style="width:'+(fabSize-8)+'px;height:'+(fabSize-8)+'px" onerror="this.remove();this.parentNode.textContent=\'⚪\'">';
+btn.style.left=(vw-size-edge)+'px';
+btn.style.top=(vh-140-size)+'px';
+document.body.appendChild(btn);
 
   /* 恢复上次拖动的位置 */
   var saved=null;
