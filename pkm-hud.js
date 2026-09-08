@@ -310,7 +310,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.2.1';
+var PK_VER='1.2.2';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
 1.diy现在可以选择世界书
@@ -2935,6 +2935,9 @@ function iconSizeListHTML(){
 }
 var fabSize=54;
 try{var _fs=parseInt(localStorage.getItem('pk_fabsize'),10);if(_fs>=40&&_fs<=100)fabSize=_fs;}catch(e){}
+var FAB_IMG_DEFAULT='https://img.baibai.cv/f/n5n3fp/1788810124723.png';
+var fabImg='';
+try{fabImg=localStorage.getItem('pk_fabimg')||'';}catch(e){fabImg='';}
 function applyFabSize(){
   var btn=document.getElementById('pkm-hud-btn');
   if(btn){
@@ -2990,6 +2993,76 @@ function fabReset(){
   overlay.classList.remove('open');
   hudMsg('悬浮球大小已恢复默认 54px');
 }
+function applyFabImg(){
+  var btn=document.getElementById('pkm-hud-btn');
+  if(btn){
+    var src=fabImg||FAB_IMG_DEFAULT;
+    var im=btn.querySelector('img');
+    if(!im){
+      btn.textContent='';
+      im=document.createElement('img');
+      im.style.width=(fabSize-8)+'px';
+      im.style.height=(fabSize-8)+'px';
+      im.style.objectFit='cover';
+      im.style.borderRadius='50%';
+      im.style.pointerEvents='none';
+      im.onerror=function(){this.remove();this.parentNode.textContent='⚪';};
+      btn.appendChild(im);
+    }
+    im.src=src;
+  }
+  try{if(fabImg){localStorage.setItem('pk_fabimg',fabImg);}else{localStorage.removeItem('pk_fabimg');}}catch(e){}
+}
+function fabImgPreview(src){
+  src=String(src||'').trim();
+  var pv=document.getElementById('fab-img-pv');
+  if(pv){pv.innerHTML='<img id="fab-img-pv-img" src="'+esc(src)+'" onerror="this.outerHTML=\'⚪\'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none">';}
+}
+function openFabImg(){
+  moveBackHTML='';
+  var cur=fabImg||FAB_IMG_DEFAULT;
+  overlay.innerHTML='<div class="modal" style="max-width:460px"><div class="modal-head"><div class="modal-name">悬浮球图片</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    '<div style="display:flex;align-items:center;justify-content:center;padding:14px 0"><span id="fab-img-pv" style="display:flex;align-items:center;justify-content:center;width:'+fabSize+'px;height:'+fabSize+'px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);overflow:hidden;color:#fff;font-size:26px"><img id="fab-img-pv-img" src="'+esc(cur)+'" onerror="this.outerHTML=\'⚪\'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none"></span></div>'+
+    '<div class="set-title" style="margin-left:0;margin-top:4px">选择图片</div>'+
+    '<input type="text" id="fab-img-url" placeholder="粘贴图片链接（http/https 或 data:image/...）" value="'+esc(fabImg)+'" style="'+DIY_INPUT_STYLE+'">'+
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><button class="btn-small" id="fab-img-upload" type="button">📁 上传本地图片</button><input type="file" id="fab-img-file" accept="image/*" style="display:none"><span class="dim" style="font-size:.7rem">建议 ≤800KB</span></div>'+
+    '<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-fab-img-apply>✔ 应用</button><button class="act-btn" data-fab-img-preview>👁 预览</button><button class="act-btn" data-fab-img-reset>↺ 恢复默认</button></div>'+
+    '</div></div>';
+  overlay.classList.add('open');
+  var file=document.getElementById('fab-img-file');
+  var up=document.getElementById('fab-img-upload');
+  if(up&&file){
+    up.addEventListener('click',function(){file.click();});
+    file.addEventListener('change',function(){
+      if(!file.files||!file.files.length)return;
+      var f=file.files[0];
+      if(f.size>800*1024){hudMsg('图片超过 800KB，请换一张更小的');return;}
+      var rd=new FileReader();
+      rd.onload=function(){
+        var data=String(rd.result||'');
+        var url=document.getElementById('fab-img-url');
+        if(url)url.value=data;
+        fabImgPreview(data);
+      };
+      rd.readAsDataURL(f);
+    });
+  }
+}
+function fabImgApply(){
+  var url=document.getElementById('fab-img-url');
+  var v=url?url.value.trim():'';
+  fabImg=v;
+  applyFabImg();
+  overlay.classList.remove('open');
+  hudMsg(fabImg?'悬浮球图片已应用':'已恢复默认悬浮球图片');
+}
+function fabImgReset(){
+  fabImg='';
+  try{localStorage.removeItem('pk_fabimg');}catch(e){}
+  applyFabImg();
+  overlay.classList.remove('open');
+  hudMsg('悬浮球图片已恢复默认');
+}
 function openIconSize(){
   moveBackHTML='';
   overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">自定义图标大小</div><button class="close" data-close>✕</button></div><div class="modal-body">'+iconSizeListHTML()+'<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-isz-apply>✔ 应用</button><button class="act-btn" data-isz-reset>↺ 恢复默认</button></div></div></div>';
@@ -3030,7 +3103,7 @@ function settingsHTML(){
   var itemChk=itemClickEnabled?' checked':'';
 var winChk=(winMode==='1')?' checked':'';
 var devOn=devUnlocked();
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div><button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -3401,6 +3474,8 @@ var iso=pageOverlay.querySelector('[data-isz-open]');
 if(iso){iso.addEventListener('click',function(e){e.stopPropagation();openIconSize();});}
 var fbo=pageOverlay.querySelector('[data-fab-open]');
 if(fbo){fbo.addEventListener('click',function(e){e.stopPropagation();openFabSize();});}
+var fio=pageOverlay.querySelector('[data-fab-img-open]');
+if(fio){fio.addEventListener('click',function(e){e.stopPropagation();openFabImg();});}
 var pku=pageOverlay.querySelector('[data-pk-check-update]');
 if(pku){pku.addEventListener('click',function(e){e.stopPropagation();pkCheckUpdate();});}
 var pkd=pageOverlay.querySelector('[data-pk-do-update]');
@@ -3770,6 +3845,9 @@ var fp=e.target.closest('[data-fab-plus]');if(fp){e.stopPropagation();fabStep(1)
 var fm=e.target.closest('[data-fab-minus]');if(fm){e.stopPropagation();fabStep(-1);return;}
 var fa=e.target.closest('[data-fab-apply]');if(fa){e.stopPropagation();fabApply();return;}
 var fr=e.target.closest('[data-fab-reset]');if(fr){e.stopPropagation();fabReset();return;}
+var fia=e.target.closest('[data-fab-img-apply]');if(fia){e.stopPropagation();fabImgApply();return;}
+var fip=e.target.closest('[data-fab-img-preview]');if(fip){e.stopPropagation();var fiuv=document.getElementById('fab-img-url');if(fiuv)fabImgPreview(fiuv.value);return;}
+var fir=e.target.closest('[data-fab-img-reset]');if(fir){e.stopPropagation();fabImgReset();return;}
 var dtn=e.target.closest('[data-dt-next]');if(dtn){e.stopPropagation();toggleDtPage();return;}
     var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
     var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{new Audio('https://cdn.jsdelivr.net/gh/PokeAPI/cries@main/cries/pokemon/latest/'+cry.getAttribute('data-cry')+'.ogg').play();}catch(err){}return;}
@@ -3827,7 +3905,7 @@ btn.title='宝可梦 HUD（可拖动）';
 btn.style.width=fabSize+'px';
 btn.style.height=fabSize+'px';
 btn.style.fontSize=Math.round(fabSize*0.48)+'px';
-btn.innerHTML='<img src="https://img.baibai.cv/f/n5n3fp/1788810124723.png" style="width:'+(fabSize-8)+'px;height:'+(fabSize-8)+'px" onerror="this.remove();this.parentNode.textContent=\'⚪\'">';
+btn.innerHTML='<img src="'+esc(fabImg||FAB_IMG_DEFAULT)+'" style="width:'+(fabSize-8)+'px;height:'+(fabSize-8)+'px" onerror="this.remove();this.parentNode.textContent=\'⚪\'">';
 btn.style.left=(vw-size-edge)+'px';
 btn.style.top=(vh-140-size)+'px';
 document.body.appendChild(btn);
