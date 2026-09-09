@@ -295,10 +295,12 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dt-hold{margin-top:0;font-size:.8rem;color:var(--text)}'+'.trainer-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.28);overflow:hidden;filter:none}'+'.trainer-frame .info-inner{padding:8px 12px}'+'.trainer-frame .info-title{margin-left:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px}'+'.trainer-frame .info-row{padding-left:0}'+'.trainer-frame .info-row.cmd,.trainer-frame .info-row:last-child{padding-right:0}'+'.tr-env{font-size:.72rem;font-weight:400;letter-spacing:0;text-shadow:none;color:var(--dim);display:inline-flex;flex-wrap:wrap;gap:2px 8px}'+'.battle-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.battle-frame .info-inner{padding:8px 12px}'+'.battle-frame .info-title{margin-left:0}'+'.plain-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.plain-frame .info-inner{padding:8px 12px}'+'.plain-frame .info-title{margin-left:0}'+'.plain-frame .info-row{padding-left:0}'+'.plain-frame .info-row.cmd,.plain-frame .info-row:last-child,.plain-frame .task-item:last-child,.plain-frame .event-item:last-child{padding-right:0}'+
 '@media(orientation:landscape){.dt-top{justify-content:center}}'+'.nb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding-left:8%;padding-right:7%}'+'.nb-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid rgba(125,149,181,.45);border-radius:6px;background:rgba(43,74,111,.28);cursor:pointer;min-width:0;transition:filter .12s,transform .1s}'+'.nb-cell:hover{filter:brightness(1.2);transform:translateY(-2px)}'+'.nb-icon{width:clamp(38px,11vw,52px);height:clamp(38px,11vw,52px)}'+'.nb-name{font-size:.7rem;font-weight:800;text-align:center;line-height:1.2;max-width:100%;word-break:break-all}'+'.nb-cnt{font-size:.66rem;color:var(--dim)}'+'.nb-toggle{float:right;font-size:.7rem;font-weight:400;color:var(--dim);cursor:pointer;margin-right:2%}'+'.nb-toggle:hover{color:#7cc4f8}'+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more-btn{display:block;width:100%;margin-top:6px;padding:5px 10px;font-family:inherit;font-size:.74rem;font-weight:800;color:#7cc4f8;background:rgba(43,74,111,.45);border:1px dashed rgba(124,196,248,.5);border-radius:4px;cursor:pointer}'+
 '.dt-more-btn:hover{background:rgba(124,196,248,.18)}'+
-'.dt-more-list{margin-top:4px}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.tab-panel .bt-empty{height:auto;min-height:140px}'+'.bt-rule{font-size:.78rem;line-height:1.5;color:#ffe9a8;padding:6px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.28);border-radius:0 6px 6px 0;word-break:break-word}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 7% clamp(10px,2.5vw,14px) 8%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:.74rem;font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
+'.dt-more-list{margin-top:4px}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.tab-panel .bt-empty{height:auto;min-height:140px}'+'.bt-rule{font-size:.78rem;line-height:1.5;color:#ffe9a8;padding:6px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.28);border-radius:0 6px 6px 0;word-break:break-word}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:0 3% clamp(10px,2.5vw,14px) 3%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 2px;font-size:clamp(.58rem,2.3vw,.7rem);font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
 '#pkm-hud-btn{position:fixed;z-index:2147483600;width:54px;height:54px;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);display:flex;align-items:center;justify-content:center;transition:box-shadow .15s;font-size:26px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}'+
 '#pkm-hud-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.6),0 0 18px rgba(124,196,248,.6)}'+
 '#pkm-hud-btn img{width:46px;height:46px;object-fit:cover;border-radius:50%;pointer-events:none}'+
+'#pkm-hud-mapfab{position:fixed;z-index:2147483600;width:44px;height:44px;border-radius:50%;border:2px solid #7d95b5;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);color:#fff;font-size:22px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);user-select:none;-webkit-user-select:none;touch-action:none}'+
+'#pkm-hud-mapfab.show{display:flex}'+
 '#pkm-hud-mask{position:fixed;inset:0;z-index:2147483500;background:rgba(8,12,24,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:block;opacity:0;visibility:hidden;transition:opacity .18s ease,visibility 0s linear .18s;pointer-events:none}'+
 '#pkm-hud-mask.open{opacity:1;visibility:visible;transition:opacity .18s ease,visibility 0s;pointer-events:auto}'+
 '#pkm-hud-win{position:fixed;left:0;top:0;z-index:2147483600;width:min(94vw,650px);max-height:86vh;overflow-y:auto;display:block;border-radius:12px;overscroll-behavior:contain;-webkit-overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(14px) scale(.98);transform-origin:center;transition:opacity .18s ease,transform .18s ease,visibility 0s linear .18s;pointer-events:none}'+
@@ -311,16 +313,35 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-inline .hud-inner{height:480px}'+
 '@media(max-width:430px){#pkm-hud-inline .hud-inner{height:380px}}'+
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}'+
+'.map-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}'+
+'.map-tab{flex:0 0 auto;padding:2px 12px;font-family:inherit;font-size:.72rem;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer}'+
+'.map-tab.active{background:rgba(43,74,111,.8);color:#fff}'+
+'.map-wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--frame);border-radius:8px;background:#0a1020;touch-action:none;cursor:grab}'+
+'.map-wrap.dragging{cursor:grabbing}'+
+'.map-stage{position:relative;width:100%;transform-origin:0 0}'+
+'.map-img{display:block;width:100%;height:auto;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}'+
+'.map-pin{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#7cc4f8;border:2px solid #fff;box-shadow:0 0 10px rgba(124,196,248,.9);animation:map-pin-pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:2}'+
+'.map-pin-label{position:absolute;transform:translate(-50%,-135%);white-space:nowrap;padding:1px 6px;border-radius:4px;background:rgba(15,22,38,.92);border:1px solid var(--frame);font-size:.68rem;font-weight:800;color:#fff;pointer-events:none;z-index:2}'+
+'.map-no-loc{padding:10px;text-align:center;color:var(--dim);font-size:.78rem;letter-spacing:1px}'+
+'.map-page{display:flex;flex-direction:column;gap:8px;margin:-14px -14px 0}'+
+'.map-toolbar{display:flex;align-items:center;gap:8px;padding:0 12px}'+
+'.map-toolbar .map-tabs{flex:1;margin-bottom:0}'+
+'.map-eye{flex:0 0 auto;padding:4px 14px;font-family:inherit;font-size:.85rem;font-weight:800;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}'+
+'.map-eye:active{background:rgba(43,74,111,.8);color:#fff}'+
+'.map-eye.on{background:rgba(43,74,111,.8);color:#fff;border-color:#7cc4f8}'+
+'.map-zoom-hint{padding:4px 12px;font-size:.68rem;color:var(--dim);text-align:center;letter-spacing:1px}'+
+'.map-spot-label{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;padding:1px 5px;border-radius:4px;background:rgba(15,22,38,.85);border:1px solid rgba(124,196,248,.5);font-size:.62rem;font-weight:800;color:#fff;pointer-events:auto;cursor:pointer;z-index:3;display:none}'+
+'.map-spot-label.top{z-index:99;background:rgba(43,74,111,.95);border-color:#7cc4f8;box-shadow:0 0 8px rgba(124,196,248,.6)}'+
+'.map-wrap.show-all .map-spot-label{display:block}'+
+'@keyframes map-pin-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}'+
 '#pkm-hud-btn .fab-update-dot{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#e05050;border:2px solid #0f1626;box-shadow:0 0 8px rgba(224,80,80,.9);animation:pkm-fab-pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:2}'+
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.2.6';
+var PK_VER='1.2.7';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.多技能显示(四个技能以上才会有变化)
-2.优化返回逻辑
-3.如果有新更新，按键界面设置会有提示，悬浮窗模式悬浮球额外小红点提示
+更新关都地图
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -341,6 +362,7 @@ var MENU=[
   {key:'pokedex',label:'图鉴',emoji:'📖',img:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png'},
   {key:'badge',label:'徽章盒',emoji:'🏅',img:''},
   {key:'diy',label:'DIY',emoji:'🛠️',img:''},
+  {key:'map',label:'地图',emoji:'🗺️',img:''},
   {key:'settings',label:'设置',emoji:'⚙️',img:''}
 ];
 
@@ -1582,9 +1604,163 @@ var activeBag='道具';
 function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0);var icon;if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var ov=itemImgOf(it.name);
 if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=(isTM||!itemClickEnabled)?'':' data-item="'+esc(it.name)+'" style="cursor:pointer"';return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
 function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return frame('背包','<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
+/* ===== 地图功能（坐标内置，用户直接看） ===== */
+var MAPS_DATA=[
+  {
+    name:'关都',
+    img:'https://img.baibai.cv/f/OMKnsy/CI_NSwitch_PokemonLetsGoPikachuPokemonLetsGoEevee_01_Map.jpeg',
+    spots:[
+      {name:'真新镇',x:23.9,y:64.9},
+      {name:'常青市',x:24.4,y:45.4},
+      {name:'深灰市',x:25.1,y:20.9},
+      {name:'华蓝市',x:64.7,y:17.6},
+      {name:'月见山',x:42.9,y:11.6},
+      {name:'常青森林',x:23.5,y:31.3},
+      {name:'紫苑镇',x:88.8,y:36.1},
+      {name:'金黄市',x:64.6,y:34.9},
+      {name:'玉虹市',x:47.7,y:35.1},
+      {name:'浅红市',x:50.5,y:74.5},
+      {name:'伙伴公园',x:50.4,y:62.3},
+      {name:'正辉灯塔',x:81.3,y:4.7},
+      {name:'枯叶市',x:64.4,y:56},
+      {name:'圣特安努号',x:64.5,y:66.3},
+      {name:'小明的道馆',x:64.5,y:43.3},
+      {name:'宝可梦研究学院',x:64.6,y:47.5},
+      {name:'红莲镇',x:23.8,y:91.4},
+      {name:'胜利之路',x:12.5,y:32.3},
+      {name:'白银山',x:5,y:6.4},
+      {name:'蓝普尔其',x:59.7,y:56.2},
+      {name:'少女峡',x:69.6,y:58.5},
+      {name:'霓虹镇',x:49.9,y:83.6},
+      {name:'大傻谷',x:34.2,y:92.4},
+      {name:'石英高原',x:12.9,y:5.2},
+      {name:'自行车道',x:35.6,y:58.2}
+    ]
+  }
+];
+var MAPS=JSON.parse(JSON.stringify(MAPS_DATA));
+var activeMap='';
+function normLoc(s){return t2s(String(s||'').trim());}
+function findSpot(map,loc){
+  if(!map||!map.spots||!loc)return null;
+  var l=normLoc(loc);
+  if(!l)return null;
+  for(var i=0;i<map.spots.length;i++){if(normLoc(map.spots[i].name)===l)return map.spots[i];}
+  for(var j=0;j<map.spots.length;j++){
+    var n=normLoc(map.spots[j].name);
+    if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0))return map.spots[j];
+  }
+  return null;
+}
+function mapHTML(){
+  if(!MAPS.length)return '<div class="map-page"><div class="empty">暂未配置地图</div></div>';
+  if(!MAPS.some(function(x){return x.name===activeMap;}))activeMap=MAPS[0].name;
+  var m=MAPS.filter(function(x){return x.name===activeMap;})[0]||MAPS[0];
+  var loc=(stat_data.环境&&stat_data.环境.当前地点)||'';
+  var spot=findSpot(m,loc);
+  var tabs=MAPS.map(function(x){return '<button class="map-tab'+(x.name===m.name?' active':'')+'" data-map="'+esc(x.name)+'">'+esc(x.name)+'</button>';}).join('');
+  var curName=spot?normLoc(spot.name):'';
+  var spotLabels=(m.spots||[]).map(function(sp){
+    if(curName&&normLoc(sp.name)===curName)return '';
+    return '<div class="map-spot-label" style="left:'+sp.x+'%;top:'+sp.y+'%">'+esc(sp.name)+'</div>';
+  }).join('');
+  var inner='';
+  if(m.img){
+    var pin='';
+    if(spot){
+      pin='<div class="map-pin-label" style="left:'+spot.x+'%;top:'+spot.y+'%">'+esc(spot.name)+'</div><div class="map-pin" style="left:'+spot.x+'%;top:'+spot.y+'%"></div>';
+    }
+    inner='<div class="map-wrap" data-mapwrap><div class="map-stage">'+spotLabels+pin+'<img class="map-img" src="'+esc(m.img)+'" draggable="false" onerror="this.style.display=\'none\'"></div></div>';
+    if(!spot)inner+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+'（本图未匹配到坐标）</div>';
+  }else{
+    inner='<div class="empty">该地图没配图片链接</div>';
+  }
+  return '<div class="map-page"><div class="map-toolbar"><div class="map-tabs">'+tabs+'</div><button class="map-eye" data-map-eye title="点击显示/隐藏所有地点">👁</button></div>'+inner+'<div class="map-zoom-hint">👁 点击显示/隐藏全部地点 · 双指/滚轮缩放 · 拖动平移 · 双击复位</div></div>';
+}
+function bindMapViewer(wrap){
+  if(!wrap)return;
+  var stage=wrap.querySelector('.map-stage');
+  if(!stage)return;
+  var scale=1,tx=0,ty=0,MIN=1,MAX=8;
+  function apply(){
+    var rw=wrap.clientWidth||1, rh=wrap.clientHeight||1;
+    var sw=stage.offsetWidth*scale, sh=stage.offsetHeight*scale;
+    if(sw<=rw){tx=0;}else{tx=Math.min(0,Math.max(tx,rw-sw));}
+    if(sh<=rh){ty=0;}else{ty=Math.min(0,Math.max(ty,rh-sh));}
+    stage.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  }
+  var pts={};
+  var panStart=null,pinchStart=null;
+  function npts(){return Object.keys(pts).length;}
+  function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy);}
+  wrap.addEventListener('pointerdown',function(e){
+    try{wrap.setPointerCapture(e.pointerId);}catch(err){}
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    if(npts()===1){
+      panStart={x:e.clientX,y:e.clientY,tx:tx,ty:ty};
+      pinchStart=null;
+      wrap.classList.add('dragging');
+    }else if(npts()===2){
+      panStart=null;
+      var ks=Object.keys(pts);
+      pinchStart={d:dist(pts[ks[0]],pts[ks[1]]),scale:scale};
+    }
+    e.preventDefault();
+  });
+  wrap.addEventListener('pointermove',function(e){
+    if(!pts[e.pointerId])return;
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    if(npts()===1&&panStart){
+      tx=panStart.tx+(e.clientX-panStart.x);
+      ty=panStart.ty+(e.clientY-panStart.y);
+      apply();
+    }else if(npts()===2&&pinchStart){
+      var ks=Object.keys(pts);
+      var d=dist(pts[ks[0]],pts[ks[1]]);
+      if(pinchStart.d>0){
+        var ns=Math.max(MIN,Math.min(MAX,pinchStart.scale*d/pinchStart.d));
+        var mid={x:(pts[ks[0]].x+pts[ks[1]].x)/2,y:(pts[ks[0]].y+pts[ks[1]].y)/2};
+        var r=wrap.getBoundingClientRect();
+        var ox=mid.x-r.left, oy=mid.y-r.top;
+        var k=ns/scale;
+        tx=ox-(ox-tx)*k;
+        ty=oy-(oy-ty)*k;
+        scale=ns;
+        apply();
+      }
+    }
+  });
+  function rel(e){
+    delete pts[e.pointerId];
+    if(npts()===0){panStart=null;pinchStart=null;wrap.classList.remove('dragging');}
+    else if(npts()===1){
+      pinchStart=null;
+      var k0=Object.keys(pts)[0];
+      panStart={x:pts[k0].x,y:pts[k0].y,tx:tx,ty:ty};
+    }
+  }
+  wrap.addEventListener('pointerup',rel);
+  wrap.addEventListener('pointercancel',rel);
+  wrap.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var r=wrap.getBoundingClientRect();
+    var ox=e.clientX-r.left, oy=e.clientY-r.top;
+    var f=e.deltaY<0?1.15:1/1.15;
+    var ns=Math.max(MIN,Math.min(MAX,scale*f));
+    var k=ns/scale;
+    tx=ox-(ox-tx)*k;
+    ty=oy-(oy-ty)*k;
+    scale=ns;
+    apply();
+  },{passive:false});
+  wrap.addEventListener('dblclick',function(){
+    scale=1;tx=0;ty=0;apply();
+  });
+  apply();
+}
 
 var activeBox='1';var nearbyOpen=false;var foldState={};function foldHTML(key,label,fn){var open=!!foldState[key];return '<div class="fold-box"><div class="fold-head" data-fold="'+key+'"><span>'+label+'</span><span class="fold-arrow">'+(open?'▾':'▸')+'</span></div>'+(open?'<div class="fold-body">'+fn()+'</div>':'')+'</div>';}function bagPlainHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return '<div class="fold-inner"><div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div></div>';}function relPlainHTML(){var rel=stat_data.人际关系||{};var ks=Object.keys(rel);if(!ks.length)return '<div class="fold-inner"><div class="empty">暂无</div></div>';return '<div class="fold-inner">'+ks.map(function(k){var val=rel[k];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(k)+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('')+'</div>';}
-function quickHTML(){var Q=[['box','q-box','https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png','盒子'],['pokedex','q-pokedex','https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png','图鉴'],['breeding','q-breeding','https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png','繁育'],['typechart','q-typechart','⚡','克制表']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="https://img.baibai.cv/f/3o2qte/1788188339193.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img box-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img box-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
+function quickHTML(){var Q=[['box','q-box','https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png','盒子'],['pokedex','q-pokedex','https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png','图鉴'],['breeding','q-breeding','https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png','繁育'],['typechart','q-typechart','⚡','克制表'],['map','q-map','🗺️','地图']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="https://img.baibai.cv/f/3o2qte/1788188339193.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img box-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img box-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
 
 function tasksHTML(){var t=stat_data.任务||{},html='';if(t.主线)html+='<div class="task-item"><span class="task-tag main">主线</span><div class="task-text">'+esc(t.主线)+'</div></div>';if(t.传说)html+='<div class="task-item"><span class="task-tag legend">传说</span><div class="task-text">'+esc(t.传说)+'</div></div>';if(t.支线)html+='<div class="task-item"><span class="task-tag random">支线</span><div class="task-text">'+esc(t.支线)+'</div></div>';if(!html)html='<div class="empty">暂无任务</div>';return frameP('任务',html);}
 function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){return esc(String(v||'')).split(/[；;]/).join('<br>');}if(w.附近遭遇)html+='<div class="event-item"><span class="event-type">📍 附近遭遇</span><p>'+ln(w.附近遭遇)+'</p></div>';if(w.地区新闻)html+='<div class="event-item"><span class="event-type">📰 地区新闻</span><p>'+ln(w.地区新闻)+'</p></div>';if(w.区域动态)html+='<div class="event-item"><span class="event-type">🌍 区域动态</span><p>'+ln(w.区域动态)+'</p></div>';if(!html)html='<div class="empty">暂无世界事件</div>';return '<div class="info-frame world-frame plain-frame"><div class="info-inner"><div class="info-title">世界动态</div>'+html+'</div></div>';}
@@ -2954,6 +3130,7 @@ var ICON_CFG=[
   {id:'q-pokedex',label:'快捷·图鉴',src:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png',def:16},
   {id:'q-breeding',label:'快捷·繁育',src:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',def:16},
   {id:'q-typechart',label:'快捷·克制表',emoji:'⚡',def:15},
+{id:'q-map',label:'快捷·地图',emoji:'🗺️',def:15},
   {id:'m-bag',label:'菜单·背包',src:'https://img.baibai.cv/f/3o2qte/1788188339193.png',def:30},
   {id:'m-box',label:'菜单·盒子',src:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png',def:30},
   {id:'m-breeding',label:'菜单·繁育',src:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',def:20},
@@ -2962,6 +3139,7 @@ var ICON_CFG=[
   {id:'m-rivals',label:'菜单·劲敌',emoji:'👥',def:22},
   {id:'m-badge',label:'菜单·徽章盒',emoji:'🏅',def:22},
   {id:'m-diy',label:'菜单·DIY',emoji:'🛠️',def:22},
+  {id:'m-map',label:'菜单·地图',emoji:'🗺️',def:22},
   {id:'m-settings',label:'菜单·设置',emoji:'⚙️',def:22}
 ];
 function getIconSize(id){
@@ -3406,10 +3584,11 @@ function confirmClearModal(){
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">确认清理（'+clearStep+'/3）</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row"><span class="v">确认清理「'+(names[clearTarget]||'')+'」缓存？</span></div><div class="action-btns"><button class="act-btn" data-clear-confirm>✔ 确认（第 '+clearStep+' 次）</button><button class="act-btn" data-close>取消</button></div></div></div>';
   overlay.classList.add('open');
 }
-function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':return boxHTML();case 'rel':return relHTML();case 'rivals':return rivalsHTML();case 'breeding':return breedingHTML();case 'pokedex':return pokedexHTML();case 'badge':return badgePageHTML();case 'diy':return diyHTML();case 'settings':return settingsHTML();case 'typechart':return typeChartHTML();default:return '<div class="empty">暂无</div>';}}
+function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':return boxHTML();case 'rel':return relHTML();case 'rivals':return rivalsHTML();case 'breeding':return breedingHTML();case 'pokedex':return pokedexHTML();case 'badge':return badgePageHTML();case 'diy':return diyHTML();case 'map':return mapHTML();case 'settings':return settingsHTML();case 'typechart':return typeChartHTML();default:return '<div class="empty">暂无</div>';}}
 function pageHTML(title,content){return '<div class="page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body">'+content+'</div></div>';}
 
 var overlay,pageOverlay,cards;
+var quickMapFromFab=false;
 var hudActionCard=null;
 var hudConfirmCb=null;
 var currentDetailCard=null;
@@ -3580,6 +3759,26 @@ if(lsc){lsc.addEventListener('input',function(){diyLorebook=lsc.value.trim();try
 diyFillLorebookOptions();
 diyEvoSyncNext();
 diyEvoLoadAbi();
+pageOverlay.querySelectorAll('[data-map]').forEach(function(b){b.addEventListener('click',function(){activeMap=b.getAttribute('data-map');pageOverlay.querySelector('.page-body').innerHTML=mapHTML();bindPageInteractions();});});
+var mvw=pageOverlay.querySelector('[data-mapwrap]');
+if(mvw){bindMapViewer(mvw);}
+var eye=pageOverlay.querySelector('[data-map-eye]');
+if(eye){
+  var wrap=pageOverlay.querySelector('[data-mapwrap]');
+  eye.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    var on=false;
+    if(wrap){wrap.classList.toggle('show-all');on=wrap.classList.contains('show-all');}
+    eye.classList.toggle('on',on);
+  });
+}
+pageOverlay.querySelectorAll('.map-spot-label').forEach(function(lb){
+  lb.addEventListener('click',function(e){
+    e.stopPropagation();
+    pageOverlay.querySelectorAll('.map-spot-label').forEach(function(x){x.classList.remove('top');});
+    lb.classList.add('top');
+  });
+});
 var tc1=pageOverlay.querySelector('#tc-def-1');
 if(tc1){tc1.addEventListener('change',typeChartCalc);}
 var tc2=pageOverlay.querySelector('#tc-def-2');
@@ -3931,7 +4130,19 @@ var it=e.target.closest('.item-entry[data-item]');
 if(it){e.stopPropagation();if(itemClickEnabled)showItemInfo(it.getAttribute('data-item'));return;}
 var tb=e.target.closest('[data-tc-big]');
 if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-width:none;width:100%"><div class="modal-head"><div class="modal-name">属性克制表（可滚动查看）</div><button class="close" data-close>✕</button></div><div class="modal-body" style="padding:8px;overflow:auto;text-align:center"><img src="'+tb.getAttribute('data-tc-big')+'" style="width:200%;max-width:none;height:auto"></div></div>';overlay.classList.add('open');return;}
-  if(e.target===pageOverlay||e.target.closest('[data-page-close]')){pageOverlay.classList.remove('open');var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();}}
+  if(e.target===pageOverlay||e.target.closest('[data-page-close]')){
+  pageOverlay.classList.remove('open');
+  if(quickMapFromFab){
+    quickMapFromFab=false;
+    var _win=document.getElementById('pkm-hud-win');
+    var _mask=document.getElementById('pkm-hud-mask');
+    if(_win)_win.classList.remove('open');
+    if(_mask)_mask.classList.remove('open');
+    try{document.body.style.overflow='';}catch(e2){}
+  }
+  var tf=document.querySelector('.trainer-frame');
+  if(tf){tf.outerHTML=trainerHTML();bindBadge();}
+}
 });
   overlay.addEventListener('click',function(e){
     if(e.target.closest('[data-move-back]')){e.stopPropagation();var _pb=popBack();if(_pb){overlay.innerHTML=_pb;}else{overlay.classList.remove('open');}return;}
@@ -4120,31 +4331,76 @@ function closeHud(){
 }
   function toggleHud(){ if(win.classList.contains('open'))closeHud(); else open(); }
 
-  /* 拖动：手机触摸 + 桌面鼠标 */
-  var drag=null;
-  function startDrag(cx,cy){
-    drag={x:cx,y:cy,l:parseFloat(btn.style.left)||0,t:parseFloat(btn.style.top)||0,moved:false};
-  }
-  function moveDrag(cx,cy){
-    if(!drag)return;
-    var dx=cx-drag.x, dy=cy-drag.y;
-    if(Math.abs(dx)>8||Math.abs(dy)>8)drag.moved=true;
-    if(drag.moved){
-      btn.style.left=(drag.l+dx)+'px';
-      btn.style.top=(drag.t+dy)+'px';
+  /* 拖动：手机触摸 + 桌面鼠标（长按弹地图按钮） */
+var drag=null;
+var longPressTimer=null,longPressFired=false;
+var mapFab=document.createElement('button');
+mapFab.id='pkm-hud-mapfab';
+mapFab.type='button';
+mapFab.innerHTML='🗺️';
+mapFab.title='打开地图';
+document.body.appendChild(mapFab);
+function showMapFab(){
+  try{
+    var r=btn.getBoundingClientRect();
+    mapFab.style.left=(r.left + r.width/2 - 22)+'px';
+    mapFab.style.top=(r.top - 52)+'px';
+  }catch(e){}
+  mapFab.classList.add('show');
+}
+function hideMapFab(){mapFab.classList.remove('show');}
+mapFab.addEventListener('click',function(e){
+  e.stopPropagation();
+  hideMapFab();
+  try{
+    quickMapFromFab=true;
+    if(!win.classList.contains('open')){open();}
+    openPage('map');
+  }catch(err){}
+});
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#pkm-hud-mapfab') && !e.target.closest('#pkm-hud-btn')){hideMapFab();}
+});
+function startDrag(cx,cy){
+  hideMapFab();
+  clearTimeout(longPressTimer);
+  longPressFired=false;
+  drag={x:cx,y:cy,l:parseFloat(btn.style.left)||0,t:parseFloat(btn.style.top)||0,moved:false};
+  longPressTimer=setTimeout(function(){
+    if(drag && !drag.moved){
+      longPressFired=true;
+      showMapFab();
+      try{if(navigator.vibrate)navigator.vibrate(30);}catch(e2){}
     }
+  },500);
+}
+function moveDrag(cx,cy){
+  if(!drag)return;
+  var dx=cx-drag.x, dy=cy-drag.y;
+  if(Math.abs(dx)>8||Math.abs(dy)>8){
+    drag.moved=true;
+    clearTimeout(longPressTimer);longPressTimer=null;
+    hideMapFab();
   }
-  function endDrag(e){
-    if(!drag)return;
-    var wasMove=drag.moved;
-    drag=null;
-    if(wasMove){
-      try{ localStorage.setItem('pkm_fab_pos', JSON.stringify({l:parseFloat(btn.style.left), t:parseFloat(btn.style.top)})); }catch(err){}
-      if(e && e.cancelable){ e.preventDefault(); }
-    }else{
-      toggleHud();
-    }
+  if(drag.moved){
+    btn.style.left=(drag.l+dx)+'px';
+    btn.style.top=(drag.t+dy)+'px';
   }
+}
+function endDrag(e){
+  if(!drag)return;
+  var wasMove=drag.moved;
+  var fired=longPressFired;
+  drag=null;
+  clearTimeout(longPressTimer);longPressTimer=null;
+  if(wasMove){
+    try{ localStorage.setItem('pkm_fab_pos', JSON.stringify({l:parseFloat(btn.style.left), t:parseFloat(btn.style.top)})); }catch(err){}
+    if(e && e.cancelable){ e.preventDefault(); }
+  }else if(!fired){
+    hideMapFab();
+    toggleHud();
+  }
+}
 
   btn.addEventListener('touchstart', function(e){ var t=e.touches[0]; startDrag(t.clientX,t.clientY); }, {passive:true});
   btn.addEventListener('touchmove', function(e){
