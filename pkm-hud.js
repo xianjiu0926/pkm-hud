@@ -296,10 +296,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@media(orientation:landscape){.dt-top{justify-content:center}}'+'.nb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding-left:8%;padding-right:7%}'+'.nb-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid rgba(125,149,181,.45);border-radius:6px;background:rgba(43,74,111,.28);cursor:pointer;min-width:0;transition:filter .12s,transform .1s}'+'.nb-cell:hover{filter:brightness(1.2);transform:translateY(-2px)}'+'.nb-icon{width:clamp(38px,11vw,52px);height:clamp(38px,11vw,52px)}'+'.nb-name{font-size:.7rem;font-weight:800;text-align:center;line-height:1.2;max-width:100%;word-break:break-all}'+'.nb-cnt{font-size:.66rem;color:var(--dim)}'+'.nb-toggle{float:right;font-size:.7rem;font-weight:400;color:var(--dim);cursor:pointer;margin-right:2%}'+'.nb-toggle:hover{color:#7cc4f8}'+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more-btn{display:block;width:100%;margin-top:6px;padding:5px 10px;font-family:inherit;font-size:.74rem;font-weight:800;color:#7cc4f8;background:rgba(43,74,111,.45);border:1px dashed rgba(124,196,248,.5);border-radius:4px;cursor:pointer}'+
 '.dt-more-btn:hover{background:rgba(124,196,248,.18)}'+
 '.dt-more-list{margin-top:4px}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.tab-panel .bt-empty{height:auto;min-height:140px}'+'.bt-rule{font-size:.78rem;line-height:1.5;color:#ffe9a8;padding:6px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.28);border-radius:0 6px 6px 0;word-break:break-word}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:0 3% clamp(10px,2.5vw,14px) 3%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 2px;font-size:clamp(.58rem,2.3vw,.7rem);font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
-'#pkm-hud-btn{position:fixed;z-index:2147483600;width:54px;height:54px;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);display:flex;align-items:center;justify-content:center;transition:box-shadow .15s;font-size:26px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}'+
+'#pkm-hud-btn{position:fixed;z-index:2147483647;width:54px;height:54px;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);display:flex;align-items:center;justify-content:center;transition:box-shadow .15s;font-size:26px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}'+
 '#pkm-hud-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.6),0 0 18px rgba(124,196,248,.6)}'+
 '#pkm-hud-btn img{width:46px;height:46px;object-fit:cover;border-radius:50%;pointer-events:none}'+
-'#pkm-hud-mapfab{position:fixed;z-index:2147483600;width:44px;height:44px;border-radius:50%;border:2px solid #7d95b5;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);color:#fff;font-size:22px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);user-select:none;-webkit-user-select:none;touch-action:none}'+
+'#pkm-hud-mapfab{position:fixed;z-index:2147483647;width:44px;height:44px;border-radius:50%;border:2px solid #7d95b5;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);color:#fff;font-size:22px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);user-select:none;-webkit-user-select:none;touch-action:none}'+
 '#pkm-hud-mapfab.show{display:flex}'+
 '#pkm-hud-mask{position:fixed;inset:0;z-index:2147483500;background:rgba(8,12,24,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:block;opacity:0;visibility:hidden;transition:opacity .18s ease,visibility 0s linear .18s;pointer-events:none}'+
 '#pkm-hud-mask.open{opacity:1;visibility:visible;transition:opacity .18s ease,visibility 0s;pointer-events:auto}'+
@@ -338,15 +338,19 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.2.7';
+var PK_VER='1.2.9';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-更新关都地图
+1.优化复制更新内容卡顿
+2.设置加个诊断助手（没什么用，不过能看缓存占用）
+3.优化手机悬浮窗太靠上的问题
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
+if(WIN.__pkmHudLoaded){return;}
+try{WIN.__pkmHudLoaded=true;}catch(e){}
 
 var st=document.createElement('style');
 st.type='text/css';
@@ -3320,13 +3324,43 @@ function iszReset(){
   render();
   resizeFrame();
 }
+function diagInfo(){
+  var d={styles:'?',cache:'?',scripts:'?'};
+  try{
+    d.styles=0;
+    document.querySelectorAll('style').forEach(function(s){if(s.textContent.indexOf('pkm-hud')>=0||s.textContent.indexOf('map-pin')>=0)d.styles++;});
+  }catch(e){}
+  try{
+    var cnt=0,bytes=0;
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('pk_')===0){cnt++;bytes+=String(localStorage.getItem(k)||'').length;}}
+    d.cache=cnt+'项 / '+Math.round(bytes/1024)+'KB';
+  }catch(e){}
+  try{
+    var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;
+    var ch=ctx&&ctx.characters?ctx.characters[ctx.characterId]:null;
+    var sc=(ch&&ch.data&&ch.data.extensions&&ch.data.extensions.tavern_helper&&ch.data.extensions.tavern_helper.scripts)||[];
+    var n=0;sc.forEach(function(s){if(s&&s.content&&s.content.indexOf('pkm-hud-btn')>=0)n++;});
+    d.scripts=n;
+  }catch(e){}
+  return d;
+}
+function diagHTML(){
+  var d=diagInfo();
+  var ok=(d.scripts===1&&d.styles===1);
+  var h='';
+  h+='<div class="info-row"><span class="k">HUD脚本份数</span><span class="v">'+d.scripts+'（正常1）</span></div>';
+  h+='<div class="info-row"><span class="k">HUD样式注入</span><span class="v">'+d.styles+'（正常1）</span></div>';
+  h+='<div class="info-row"><span class="k">缓存占用</span><span class="v">'+d.cache+'</span></div>';
+  h+='<div class="info-row"><span class="k">诊断结论</span><span class="v" style="color:'+(ok?'#4ade80':'#f87171')+'">'+(ok?'✅ 正常，脚本只跑了一次':'⚠️ 异常：脚本被重复执行/注入')+'</span></div>';
+  return h+'<button class="btn-small" data-diag-refresh>🔍 重新检测</button>';
+}
 function settingsHTML(){
   var opts=[['mv','招式缓存'],['pm','宝可梦预览缓存'],['sprite','队伍精灵图缓存'],['ab','特性缓存'],['dex','图鉴列表'],['fid','形态ID'],['item','道具缓存'],['seen','图鉴收集进度'],['all','全部缓存']];
   var radios=opts.map(function(o){return '<label class="set-opt"><input type="radio" name="pk-clear" value="'+o[0]+'"'+(clearTarget===o[0]?' checked':'')+' data-clear="'+o[0]+'">'+o[1]+'</label>';}).join('');
   var itemChk=itemClickEnabled?' checked':'';
 var winChk=(winMode==='1')?' checked':'';
 var devOn=devUnlocked();
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 查看新版内容（更新没成功可复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -3399,10 +3433,11 @@ function showNoticeModal(ver,notice){
 function openUpdateContent(){
   if(!pkLatestContent){ hudMsg('还没有检查到新版本'); return; }
   clearBack();
-  overlay.innerHTML='<div class="modal" style="max-width:560px"><div class="modal-head"><div class="modal-name">新版脚本内容 v'+esc(pkLatestVer||'?')+'</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
-    '<div class="dim" style="font-size:.72rem;margin-bottom:6px">若自动更新没生效：打开角色卡【扩展 → Tavern Helper 脚本】，全选后粘贴下面内容并保存</div>'+
-    '<textarea id="pk-update-content" readonly style="width:100%;box-sizing:border-box;height:260px;padding:8px;font-family:monospace;font-size:.72rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;resize:vertical">'+esc(pkLatestContent)+'</textarea>'+
-    '<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-pk-copy-content>📋 复制全部内容</button></div>'+
+  var kb=Math.max(1,Math.round(pkLatestContent.length/1024));
+  overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">新版脚本内容 v'+esc(pkLatestVer||'?')+'</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    '<div class="row"><span class="k">内容大小</span><span class="v">约 '+kb+' KB</span></div>'+
+    '<div class="dim" style="font-size:.72rem;margin-bottom:10px">内容较大，不再内嵌显示。点下面按钮复制后，到角色卡【扩展 → Tavern Helper 脚本】全选粘贴保存。</div>'+
+    '<div class="action-btns"><button class="act-btn" data-pk-copy-content>📋 复制全部内容</button><button class="act-btn" data-pk-copy-content-close>📋 复制并关闭</button></div>'+
     '</div></div>';
   overlay.classList.add('open');
 }
@@ -3760,6 +3795,8 @@ diyFillLorebookOptions();
 diyEvoSyncNext();
 diyEvoLoadAbi();
 pageOverlay.querySelectorAll('[data-map]').forEach(function(b){b.addEventListener('click',function(){activeMap=b.getAttribute('data-map');pageOverlay.querySelector('.page-body').innerHTML=mapHTML();bindPageInteractions();});});
+var dr=pageOverlay.querySelector('[data-diag-refresh]');
+if(dr){dr.addEventListener('click',function(e){e.stopPropagation();openPage('settings');});}
 var mvw=pageOverlay.querySelector('[data-mapwrap]');
 if(mvw){bindMapViewer(mvw);}
 var eye=pageOverlay.querySelector('[data-map-eye]');
@@ -4133,13 +4170,15 @@ if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-widt
   if(e.target===pageOverlay||e.target.closest('[data-page-close]')){
   pageOverlay.classList.remove('open');
   if(quickMapFromFab){
-    quickMapFromFab=false;
-    var _win=document.getElementById('pkm-hud-win');
-    var _mask=document.getElementById('pkm-hud-mask');
-    if(_win)_win.classList.remove('open');
-    if(_mask)_mask.classList.remove('open');
-    try{document.body.style.overflow='';}catch(e2){}
-  }
+  quickMapFromFab=false;
+  var _win=document.getElementById('pkm-hud-win');
+  var _mask=document.getElementById('pkm-hud-mask');
+  var _btn=document.getElementById('pkm-hud-btn');
+  if(_win)_win.classList.remove('open');
+  if(_mask)_mask.classList.remove('open');
+  if(_btn)_btn.style.display='';
+  try{document.body.style.overflow='';}catch(e2){}
+}
   var tf=document.querySelector('.trainer-frame');
   if(tf){tf.outerHTML=trainerHTML();bindBadge();}
 }
@@ -4185,12 +4224,22 @@ var st=e.target.closest('[data-shiny-toggle]');if(st){e.stopPropagation();if(cur
     var fm=e.target.closest('[data-form]');if(fm){e.stopPropagation();renderPkmForm(parseInt(fm.getAttribute('data-form'),10));return;}
 var cc=e.target.closest('[data-clear-confirm]');if(cc){e.stopPropagation();confirmClearModal();return;}
 var pdu=e.target.closest('[data-notice-update]');if(pdu){e.stopPropagation();overlay.classList.remove('open');pkDoUpdate();return;}
-var pkc=e.target.closest('[data-pk-copy-content]');if(pkc){e.stopPropagation();var pta=document.getElementById('pk-update-content');if(pta)diyCopyText(pta.value,function(ok){pkc.textContent=ok?'✔ 已复制':'复制失败';});return;}
+var pkc=e.target.closest('[data-pk-copy-content]');if(pkc){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc.textContent=ok?'✔ 已复制':'复制失败';});}else{pkc.textContent='无内容';}return;}
+var pkc2=e.target.closest('[data-pk-copy-content-close]');if(pkc2){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc2.textContent=ok?'✔ 已复制':'复制失败';setTimeout(function(){overlay.classList.remove('open');clearBack();},400);});}else{pkc2.textContent='无内容';}return;}
     var btn=e.target.closest('[data-action]');if(btn){var action=btn.getAttribute('data-action');var key=btn.getAttribute('data-key');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p)sendAction(p,action);}
   });
 }
 
 function fail(msg){try{var a=document.getElementById('pkm-hud-slot')||document.body;a.insertAdjacentHTML('beforeend','<div style="color:#faa;background:#300;padding:12px;font-family:monospace">'+msg+'</div>');}catch(e2){}}
+function vpSize(){
+  var w=WIN.innerWidth||360, h=WIN.innerHeight||640, ox=0, oy=0;
+  try{
+    var vv=WIN.visualViewport||window.visualViewport;
+    if(vv&&vv.width&&vv.height){ w=vv.width; h=vv.height; ox=vv.offsetLeft||0; oy=vv.offsetTop||0; }
+  }catch(e){}
+  return {w:w,h:h,ox:ox,oy:oy};
+}
+var VP_Y=0.6;
 function resizeFrame(){
   try{
     var hud=document.querySelector('.hud');
@@ -4205,8 +4254,8 @@ function resizeFrame(){
       return;
     }
     var win=document.getElementById('pkm-hud-win');
-    if(win){
-      var maxH=Math.floor((WIN.innerHeight||800)*0.86);
+if(win){
+  var maxH=Math.floor(vpSize().h*0.86);
       win.style.maxHeight=maxH+'px';
       hud.style.maxHeight=(Math.min(hud.scrollHeight+20,maxH))+'px';
     }
@@ -4226,7 +4275,7 @@ function ensureHud(){
   if(document.getElementById('pkm-hud-btn'))return;
 
   var size=fabSize, edge=14;
-var vw=WIN.innerWidth||360, vh=WIN.innerHeight||640;
+var vp=vpSize();
 
 var btn=document.createElement('div');
 btn.id='pkm-hud-btn';
@@ -4235,8 +4284,8 @@ btn.style.width=fabSize+'px';
 btn.style.height=fabSize+'px';
 btn.style.fontSize=Math.round(fabSize*0.48)+'px';
 btn.innerHTML='<img src="'+esc(fabImg||FAB_IMG_DEFAULT)+'" style="width:'+(fabSize-8)+'px;height:'+(fabSize-8)+'px" onerror="this.remove();this.parentNode.textContent=\'⚪\'">';
-btn.style.left=(vw-size-edge)+'px';
-btn.style.top=(vh-140-size)+'px';
+btn.style.left=(vp.w-size-edge)+'px';
+btn.style.top=(vp.oy+vp.h-140-size)+'px';
 document.body.appendChild(btn);
 applyFabUpdateBadge();
 
@@ -4258,7 +4307,7 @@ applyFabUpdateBadge();
       btn.style.top=(t+(wantY-r.y))+'px';
     }catch(e){}
   }
-  if(!saved){ fixPos(vw-size-edge, vh-140-size); }
+  if(!saved){ fixPos(vp.w-size-edge, vp.oy+vp.h-140-size); }
 
   var mask=document.createElement('div');
   mask.id='pkm-hud-mask';
@@ -4276,12 +4325,13 @@ applyFabUpdateBadge();
   document.body.appendChild(win);
 
   function centerWin(){
-  try{
-    var vw=WIN.innerWidth||360, vh=WIN.innerHeight||640;
-    var w=win.offsetWidth, h=win.offsetHeight;
-    if(w<10||h<10){ w=Math.min(vw*0.94,650); h=Math.min(vh*0.86,560); }
-    var wantX=Math.max(4,(vw-w)/2);
-    var wantY=Math.max(4,(vh-h)/2);
+try{
+  var vp2=vpSize();
+  var cw=vp2.w, ch=vp2.h;
+  var w=win.offsetWidth, h=win.offsetHeight;
+  if(w<10||h<10){ w=Math.min(cw*0.94,650); h=Math.min(ch*0.86,560); }
+  var wantX=Math.max(4, vp2.ox+(cw-w)/2);
+  var wantY=Math.max(4, vp2.oy+(ch-h)*VP_Y);
     win.style.left=wantX+'px';
     win.style.top=wantY+'px';
     var r=win.getBoundingClientRect();
@@ -4316,6 +4366,8 @@ function open(){
 try{recordSeen();}catch(e){}
 try{updateDexContext();}catch(e){}
 try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
+  btn.style.display='none';
+  hideMapFab();
   mask.classList.add('open');
   win.classList.add('open');
   try{ document.body.style.overflow='hidden'; }catch(e){}
@@ -4325,6 +4377,8 @@ try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
   }, 30);
 }
 function closeHud(){
+  btn.style.display='';
+  hideMapFab();
   mask.classList.remove('open');
   win.classList.remove('open');
   try{ document.body.style.overflow=''; }catch(e){}
@@ -4418,21 +4472,33 @@ function endDrag(e){
   mask.addEventListener('click', closeHud);
   close.addEventListener('click', function(e){ e.stopPropagation(); closeHud(); });
 
-  /* 旋转屏幕/窗口变化时，球跑出屏幕就拉回右下角 */
+  /* 旋转屏幕/键盘弹出时重新定位 */
   try{
-    WIN.addEventListener('resize', function(){
+    var _repos=function(){
       try{
-        var r=btn.getBoundingClientRect();
-        var vw2=WIN.innerWidth, vh2=WIN.innerHeight;
-        if(r.x< -40 || r.y< -40 || r.x>vw2+10 || r.y>vh2+10){
-          btn.style.left=(vw2-size-edge)+'px';
-          btn.style.top=(vh2-140-size)+'px';
-          fixPos(vw2-size-edge, vh2-140-size);
-        }
+        var vp3=vpSize();
+        btn.style.left=(vp3.w-size-edge)+'px';
+        btn.style.top=(vp3.oy+vp3.h-140-size)+'px';
+        fixPos(vp3.w-size-edge, vp3.oy+vp3.h-140-size);
+        if(win.classList.contains('open')){ centerWin(); }
       }catch(e){}
-    });
+    };
+    var vv=WIN.visualViewport||window.visualViewport;
+    if(vv){
+      vv.addEventListener('resize', _repos);
+      vv.addEventListener('scroll', _repos);
+    }
+    WIN.addEventListener('resize', _repos);
   }catch(e){}
 }
+try{
+  var vv=WIN.visualViewport||window.visualViewport;
+  if(vv){
+    vv.addEventListener('resize', repositionFab);
+    vv.addEventListener('scroll', repositionFab);
+  }
+  WIN.addEventListener('resize', repositionFab);
+}catch(e){}
 
 function renderStatusBar(){
   try{
