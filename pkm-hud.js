@@ -338,13 +338,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.3.0';
+var PK_VER='1.3.1';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-@胖丁
-1.优化支线换行。
-2.分档缓存，聊天分别存,不会串档。
-3.切版本刷新状态栏，切版本时也重新读一次数据。
+1.修复关闭悬浮窗悬浮球不见的问题
+2.丰缘地图
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1640,6 +1638,47 @@ var MAPS_DATA=[
       {name:'大傻谷',x:34.2,y:92.4},
       {name:'石英高原',x:12.9,y:5.2},
       {name:'自行车道',x:35.6,y:58.2}
+    ]
+  },
+  {
+    name:'丰缘',
+    img:'https://img.baibai.cv/f/ovRNiO/%E4%B8%B0%E7%BC%98.jpg',
+    spots:[
+      {name:'末白镇',x:20.1,y:70.8},
+      {name:'古玫镇',x:20.2,y:62.1},
+      {name:'橙华市',x:13,y:62.7},
+      {name:'橙华森林',x:7,y:57.6},
+      {name:'卡那兹市',x:8.5,y:45.8},
+      {name:'石之洞窟',x:7.4,y:86.1},
+      {name:'武斗镇',x:11.4,y:89.8},
+      {name:'凯那市',x:30.9,y:66.8},
+      {name:'紫堇市',x:31.4,y:38.3},
+      {name:'海紫堇',x:23.9,y:83},
+      {name:'新紫堇',x:33.9,y:42.4},
+      {name:'绿茵镇',x:20.3,y:37.7},
+      {name:'卡绿隧道',x:16.3,y:38.7},
+      {name:'釜炎镇',x:23.7,y:21.8},
+      {name:'烟囱山',x:24.6,y:11},
+      {name:'凹凸山道',x:24.5,y:14.9},
+      {name:'烈焰小径',x:27.5,y:17.8},
+      {name:'秋叶镇',x:20.4,y:8.4},
+      {name:'流星瀑布',x:11.3,y:22.5},
+      {name:'茵郁市',x:46,y:11.4},
+      {name:'狩猎地带',x:59.1,y:19.2},
+      {name:'水静市',x:68,y:22.5},
+      {name:'送神山',x:61,y:29},
+      {name:'浅滩洞穴',x:88.8,y:14.8},
+      {name:'绿岭市',x:88.2,y:25.3},
+      {name:'琉璃市',x:76,y:43.8},
+      {name:'天空之柱',x:75.1,y:60.5},
+      {name:'南方孤岛',x:46.8,y:85.7},
+      {name:'暮水镇',x:63.5,y:64.3},
+      {name:'秘密海滨',x:86.2,y:68.7},
+      {name:'彩悠市',x:94,y:46.6},
+      {name:'冠军之路',x:93.9,y:39.9},
+      {name:'起源洞窟',x:84,y:47.7},
+      {name:'对战度假地',x:78.7,y:77.2},
+      {name:'幻影岛',x:61,y:91.6}
     ]
   }
 ];
@@ -4383,6 +4422,18 @@ function closeHud(){
   mask.classList.remove('open');
   win.classList.remove('open');
   try{ document.body.style.overflow=''; }catch(e){}
+  try{
+    var _vp=vpSize();
+    var _l=parseFloat(btn.style.left);
+    var _t=parseFloat(btn.style.top);
+    var _maxL=Math.max(0,_vp.w-size);
+    var _maxT=Math.max(0,_vp.h-size);
+    if(isNaN(_l)||_l<0||_l>_maxL)_l=_vp.w-size-edge;
+    if(isNaN(_t)||_t<0||_t>_maxT)_t=_vp.h-140-size;
+    btn.style.left=Math.min(Math.max(0,_l),_maxL)+'px';
+    btn.style.top=Math.min(Math.max(0,_t),_maxT)+'px';
+    try{localStorage.setItem('pkm_fab_pos',JSON.stringify({l:parseFloat(btn.style.left),t:parseFloat(btn.style.top)}));}catch(e3){}
+  }catch(e2){}
 }
   function toggleHud(){ if(win.classList.contains('open'))closeHud(); else open(); }
 
@@ -4476,14 +4527,14 @@ function endDrag(e){
   /* 旋转屏幕/键盘弹出时重新定位 */
   try{
     var _repos=function(){
-      try{
-        var vp3=vpSize();
-        btn.style.left=(vp3.w-size-edge)+'px';
-        btn.style.top=(vp3.oy+vp3.h-140-size)+'px';
-        fixPos(vp3.w-size-edge, vp3.oy+vp3.h-140-size);
-        if(win.classList.contains('open')){ centerWin(); }
-      }catch(e){}
-    };
+  try{
+    var vp3=vpSize();
+    btn.style.left=(vp3.w-size-edge)+'px';
+    btn.style.top=(vp3.oy+vp3.h-140-size)+'px';
+    if(btn.style.display!=='none'){ fixPos(vp3.w-size-edge, vp3.oy+vp3.h-140-size); }
+    if(win.classList.contains('open')){ centerWin(); }
+  }catch(e){}
+};
     var vv=WIN.visualViewport||window.visualViewport;
     if(vv){
       vv.addEventListener('resize', _repos);
@@ -4492,14 +4543,6 @@ function endDrag(e){
     WIN.addEventListener('resize', _repos);
   }catch(e){}
 }
-try{
-  var vv=WIN.visualViewport||window.visualViewport;
-  if(vv){
-    vv.addEventListener('resize', repositionFab);
-    vv.addEventListener('scroll', repositionFab);
-  }
-  WIN.addEventListener('resize', repositionFab);
-}catch(e){}
 
 function renderStatusBar(){
   try{
