@@ -326,23 +326,35 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.map-page{display:flex;flex-direction:column;gap:8px;margin:-14px -14px 0}'+
 '.map-toolbar{display:flex;align-items:center;gap:8px;padding:0 12px}'+
 '.map-toolbar .map-tabs{flex:1;margin-bottom:0}'+
+'.map-controls{display:flex;align-items:center;gap:6px;padding:2px 12px;min-height:34px;position:relative;flex-wrap:nowrap;overflow:hidden}'+
+'.map-size-btn{flex:0 0 auto;padding:3px 10px;font-family:inherit;font-size:.72rem;font-weight:800;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer;white-space:nowrap}'+
+'.map-size-btn:active{background:rgba(43,74,111,.8);color:#fff}'+
 '.map-eye{flex:0 0 auto;padding:4px 14px;font-family:inherit;font-size:.85rem;font-weight:800;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}'+
 '.map-eye:active{background:rgba(43,74,111,.8);color:#fff}'+
 '.map-eye.on{background:rgba(43,74,111,.8);color:#fff;border-color:#7cc4f8}'+
 '.map-zoom-hint{padding:4px 12px;font-size:.68rem;color:var(--dim);text-align:center;letter-spacing:1px}'+
 '.map-spot-label{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;padding:1px 5px;border-radius:4px;background:rgba(15,22,38,.85);border:1px solid rgba(124,196,248,.5);font-size:.62rem;font-weight:800;color:#fff;pointer-events:auto;cursor:pointer;z-index:3;display:none}'+
 '.map-spot-label.top{z-index:99;background:rgba(43,74,111,.95);border-color:#7cc4f8;box-shadow:0 0 8px rgba(124,196,248,.6)}'+
-'.map-wrap.show-all .map-spot-label{display:block}'+
+'.map-wrap.show-all.show-town .map-spot-label[data-cat="town"],.map-wrap.show-all.show-road .map-spot-label[data-cat="road"],.map-wrap.show-all.show-special .map-spot-label[data-cat="special"]{display:block}'+
+'.map-filter{display:none;align-items:center;gap:4px;min-width:0;white-space:nowrap}'+
+'.map-filter.show{display:flex}'+
+'.map-size-pop{display:none;position:absolute;inset:0;align-items:center;gap:8px;padding:0 12px;background:#0f1626;z-index:5}'+
+'.map-size-pop.open{display:flex}'+
+'.map-size-pop input[type=range]{flex:1;min-width:60px;accent-color:#7cc4f8}'+
+'.map-size-pop .dim{flex:0 0 auto;white-space:nowrap}'+
+'.map-size-done{flex:0 0 auto;padding:2px 10px;font-family:inherit;font-size:.75rem;font-weight:800;border:1px solid var(--frame);background:rgba(43,74,111,.8);color:#fff;border-radius:4px;cursor:pointer}'+
+'.map-labels{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none}'+
 '@keyframes map-pin-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}'+
 '#pkm-hud-btn .fab-update-dot{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#e05050;border:2px solid #0f1626;box-shadow:0 0 8px rgba(224,80,80,.9);animation:pkm-fab-pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:2}'+
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.3.1';
+var PK_VER='1.3.2';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.修复关闭悬浮窗悬浮球不见的问题
-2.丰缘地图
+1.地图分为三类，城镇/道路/特殊地点
+2.地图字号自定义
+3.适配TT
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -355,6 +367,17 @@ var st=document.createElement('style');
 st.type='text/css';
 st.textContent=css;
 (document.head||document.body).appendChild(st);
+/* Tauri/安卓 WebView 适配：仅在该环境下去掉图片请求 Referer（浏览器用户不受影响） */
+try{
+  var _isTauri=!!(WIN.__TAURI_INTERNALS__||WIN.__TAURI__)||/^tauri:/.test(WIN.location.protocol)||/tauri\.localhost/.test(WIN.location.hostname)||/Tauri/i.test(navigator.userAgent||'');
+  if(_isTauri){
+    var _rm=document.createElement('meta');
+    _rm.name='referrer';
+    _rm.content='no-referrer';
+    var _hd=document.head||document.documentElement;
+    if(_hd)_hd.insertBefore(_rm,_hd.firstChild);
+  }
+}catch(e){}
 
 var MENU=[
   {key:'bag',label:'背包',emoji:'🎒',img:'https://img.baibai.cv/f/3o2qte/1788188339193.png'},
@@ -1285,6 +1308,7 @@ function itemImgErr(el){
 var NAME_EN={'蛋':'egg','皮卡丘':'pikachu','伊布':'eevee','喷火龙':'charizard','路卡利欧':'lucario','烈咬陆鲨':'garchomp','巨金怪':'metagross','班基拉斯':'tyranitar','快龙':'dragonite'};
 function pkmEnName(n){if(!n)return '';var b=baseName(String(n).trim());return NAME_EN[b]||'';}
 var pkmSlugCache={};
+var pkmDexCache={};
 var pkmSpriteCache={};
 function spriteCacheKey(name,shiny){return (shiny?'s:':'n:')+baseName(String(name||'').trim());}
 function cachedSpriteCss(name,shiny){
@@ -1338,6 +1362,7 @@ function fetchPkmSlug(name,cb){
         var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
         var d=wt?parsePkmn(wt):null;
         var slug=(d&&d.enname)?String(d.enname).toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,''):'';
+        if(d&&d.ndex){pkmDexCache[b]=String(d.ndex);lsSet('pk_ndex_'+b,String(d.ndex));}
         if(slug){finish(slug);}else{onFail();}
       })
       .catch(onFail);
@@ -1391,10 +1416,19 @@ function slugCandidates(n){
   for(var j=0;j<out.length;j++){if(!seen[out[j]]){seen[out[j]]=1;res.push(out[j]);}}
   return res;
 }
+var PKM_SPRITE_BASE='https://play.pokemonshowdown.com/sprites/';
+var PA_POKE_MIRRORS=[
+  'https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/',
+  'https://fastly.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/',
+  'https://raw.gitmirror.com/PokeAPI/sprites/master/sprites/pokemon/',
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'
+];
+function noRefImg(){var im=new Image();try{im.referrerPolicy='no-referrer';}catch(e){}return im;}
 function resolvePkmBg(el,slug,shiny,name){
   var cands=slugCandidates(fixSlug(slug));
   var i=0;
-  var base='https://play.pokemonshowdown.com/sprites/';
+  var dexNo='';
+  if(name){var bn=baseName(String(name).trim());dexNo=(pkmDexCache[bn]||lsGet('pk_ndex_'+bn,''))||'';}
   function apply(url){
     el.style.backgroundImage="url('"+url+"')";
     el.classList.remove('no-img');
@@ -1402,15 +1436,25 @@ function resolvePkmBg(el,slug,shiny,name){
     el.removeAttribute('data-pkm');
     if(name){setCachedSprite(name,shiny,url);}
   }
+  function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';}
+  function tryPokeApi(mi){
+    var n=parseInt(dexNo,10);
+    if(!n||mi>=PA_POKE_MIRRORS.length){fail();return;}
+    var u=PA_POKE_MIRRORS[mi]+(shiny?'shiny/':'')+n+'.png';
+    var im=noRefImg();
+    im.onload=function(){apply(u);};
+    im.onerror=function(){tryPokeApi(mi+1);};
+    im.src=u;
+  }
   function next(){
-    if(i>=cands.length){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';return;}
+    if(i>=cands.length){tryPokeApi(0);return;}
     var s=cands[i++];
-    var ani=base+(shiny?'ani-shiny/':'ani/')+s+'.gif';
-    var png=base+(shiny?'gen5-shiny/':'gen5/')+s+'.png';
-    var im=new Image();
+    var ani=PKM_SPRITE_BASE+(shiny?'ani-shiny/':'ani/')+s+'.gif';
+    var png=PKM_SPRITE_BASE+(shiny?'gen5-shiny/':'gen5/')+s+'.png';
+    var im=noRefImg();
     im.onload=function(){apply(ani);};
     im.onerror=function(){
-      var im2=new Image();
+      var im2=noRefImg();
       im2.onload=function(){apply(png);};
       im2.onerror=next;
       im2.src=png;
@@ -1610,116 +1654,275 @@ function bagHTML(){var tabs=bagCategories().map(function(c){return '<button clas
 /* ===== 地图功能（坐标内置，用户直接看） ===== */
 var MAPS_DATA=[
   {
-    name:'关都',
-    img:'https://img.baibai.cv/f/OMKnsy/CI_NSwitch_PokemonLetsGoPikachuPokemonLetsGoEevee_01_Map.jpeg',
-    spots:[
-      {name:'真新镇',x:23.9,y:64.9},
-      {name:'常青市',x:24.4,y:45.4},
-      {name:'深灰市',x:25.1,y:20.9},
-      {name:'华蓝市',x:64.7,y:17.6},
-      {name:'月见山',x:42.9,y:11.6},
-      {name:'常青森林',x:23.5,y:31.3},
-      {name:'紫苑镇',x:88.8,y:36.1},
-      {name:'金黄市',x:64.6,y:34.9},
-      {name:'玉虹市',x:47.7,y:35.1},
-      {name:'浅红市',x:50.5,y:74.5},
-      {name:'伙伴公园',x:50.4,y:62.3},
-      {name:'正辉灯塔',x:81.3,y:4.7},
-      {name:'枯叶市',x:64.4,y:56},
-      {name:'圣特安努号',x:64.5,y:66.3},
-      {name:'小明的道馆',x:64.5,y:43.3},
-      {name:'宝可梦研究学院',x:64.6,y:47.5},
-      {name:'红莲镇',x:23.8,y:91.4},
-      {name:'胜利之路',x:12.5,y:32.3},
-      {name:'白银山',x:5,y:6.4},
-      {name:'蓝普尔其',x:59.7,y:56.2},
-      {name:'少女峡',x:69.6,y:58.5},
-      {name:'霓虹镇',x:49.9,y:83.6},
-      {name:'大傻谷',x:34.2,y:92.4},
-      {name:'石英高原',x:12.9,y:5.2},
-      {name:'自行车道',x:35.6,y:58.2}
-    ]
-  },
+  name:'关都',
+  img:'https://img.baibai.cv/f/OMKnsy/CI_NSwitch_PokemonLetsGoPikachuPokemonLetsGoEevee_01_Map.jpeg',
+  towns:[
+    {name:'真新镇',x:23.9,y:64.9},
+    {name:'常青市',x:24.4,y:45.4},
+    {name:'深灰市',x:25.1,y:20.9},
+    {name:'华蓝市',x:64.7,y:17.6},
+    {name:'紫苑镇',x:88.8,y:36.1},
+    {name:'金黄市',x:64.6,y:34.9},
+    {name:'玉虹市',x:47.7,y:35.1},
+    {name:'浅红市',x:50.5,y:74.5},
+    {name:'枯叶市',x:64.4,y:56},
+    {name:'红莲镇',x:23.8,y:91.4},
+    {name:'霓虹镇',x:49.9,y:83.6}
+  ],
+  roads:[
+    {name:'1号道路',x:23.9,y:56.2},
+    {name:'2号道路',x:24.8,y:33.6},
+    {name:'3号道路',x:36.4,y:20.8},
+    {name:'4号道路',x:52.4,y:17.8},
+    {name:'5号道路',x:64.7,y:26.3},
+    {name:'6号道路',x:64.7,y:45},
+    {name:'7号道路',x:56.9,y:35.3},
+    {name:'8号道路',x:77,y:35.4},
+    {name:'9号道路',x:77.3,y:16.6},
+    {name:'10号道路',x:88.2,y:29.8},
+    {name:'11号道路',x:78.5,y:54.8},
+    {name:'12号道路',x:89.5,y:55},
+    {name:'13号道路',x:79.3,y:69.5},
+    {name:'14号道路',x:72.9,y:73.3},
+    {name:'15号道路',x:65,y:76.4},
+    {name:'16号道路',x:37.4,y:35.4},
+    {name:'17号道路',x:35.9,y:52.1},
+    {name:'18号道路',x:38.2,y:75.8},
+    {name:'19号水道',x:49.6,y:89.8},
+    {name:'20号水道',x:33.3,y:93},
+    {name:'21号水道',x:23.9,y:78},
+    {name:'22号道路',x:16.6,y:45.9},
+    {name:'24号道路',x:64.6,y:9.2},
+    {name:'25号道路',x:73.5,y:5.9}
+  ],
+  specials:[
+    {name:'月见山',x:42.9,y:11.6},
+    {name:'常青森林',x:23.5,y:31.3},
+    {name:'伙伴公园',x:50.4,y:62.3},
+    {name:'正辉灯塔',x:81.3,y:4.7},
+    {name:'圣特安努号',x:64.5,y:66.3},
+    {name:'小明的道馆',x:64.5,y:43.3},
+    {name:'宝可梦研究学院',x:64.6,y:47.5},
+    {name:'胜利之路',x:12.5,y:32.3},
+    {name:'白银山',x:5,y:6.4},
+    {name:'蓝普尔其',x:59.7,y:56.2},
+    {name:'少女峡',x:69.6,y:58.5},
+    {name:'大傻谷',x:34.2,y:92.4},
+    {name:'石英高原',x:12.9,y:5.2},
+    {name:'自行车道',x:35.6,y:58.2},
+    {name:'地鼠洞穴出入口',x:26.6,y:27.6},
+    {name:'地鼠洞穴出入口',x:66.2,y:44.3},
+    {name:'双子岛',x:38.5,y:92.8},
+    {name:'华蓝洞窟',x:56.3,y:12.8},
+    {name:'岩山隧道',x:86.4,y:19.6}
+  ]
+},
   {
     name:'丰缘',
     img:'https://img.baibai.cv/f/ovRNiO/%E4%B8%B0%E7%BC%98.jpg',
-    spots:[
+    towns:[
       {name:'末白镇',x:20.1,y:70.8},
       {name:'古玫镇',x:20.2,y:62.1},
       {name:'橙华市',x:13,y:62.7},
-      {name:'橙华森林',x:7,y:57.6},
       {name:'卡那兹市',x:8.5,y:45.8},
-      {name:'石之洞窟',x:7.4,y:86.1},
       {name:'武斗镇',x:11.4,y:89.8},
       {name:'凯那市',x:30.9,y:66.8},
       {name:'紫堇市',x:31.4,y:38.3},
+      {name:'绿茵镇',x:20.3,y:37.7},
+      {name:'釜炎镇',x:23.7,y:21.8},
+      {name:'秋叶镇',x:20.4,y:8.4},
+      {name:'茵郁市',x:46,y:11.4},
+      {name:'水静市',x:68,y:22.5},
+      {name:'绿岭市',x:88.2,y:25.3},
+      {name:'琉璃市',x:76,y:43.8},
+      {name:'暮水镇',x:63.5,y:64.3},
+      {name:'彩悠市',x:94,y:46.6}
+    ],
+    roads:[
+      {name:'101号道路',x:20.1,y:67.1},
+      {name:'102号道路',x:16.8,y:62.5},
+      {name:'103号道路',x:24.2,y:54.4},
+      {name:'104号道路',x:8.7,y:63.2},
+      {name:'105号水路',x:7.6,y:74.2},
+      {name:'106号水路',x:10.9,y:84.5},
+      {name:'107号水路',x:17,y:89.4},
+      {name:'108号水路',x:24.6,y:88.5},
+      {name:'109号水路',x:31.6,y:83.5},
+      {name:'110号道路',x:31.2,y:47.5},
+      {name:'111号道路',x:34.4,y:17},
+      {name:'112号道路',x:29.3,y:21.8},
+      {name:'113号道路',x:28.6,y:8.7},
+      {name:'114号道路',x:15,y:13.7},
+      {name:'115号道路',x:9.8,y:34.2},
+      {name:'116号道路',x:13.2,y:41.4},
+      {name:'117号道路',x:26.5,y:38.7},
+      {name:'118号道路',x:41.7,y:38.1},
+      {name:'119号道路',x:40,y:21.1},
+      {name:'120号道路',x:54.6,y:18.2},
+      {name:'121号道路',x:59.4,y:23.3},
+      {name:'122号水路',x:58.4,y:29.3},
+      {name:'123号道路',x:50.7,y:39.1},
+      {name:'124号水路',x:75.2,y:22.5},
+      {name:'125号水路',x:80.9,y:26.4},
+      {name:'126号水路',x:77.7,y:39.1},
+      {name:'127号水路',x:83.9,y:46.4},
+      {name:'128号水路',x:85.3,y:54.5},
+      {name:'129号水路',x:83.8,y:64.8},
+      {name:'130号水路',x:75.7,y:65.1},
+      {name:'131号水路',x:69.6,y:65.5},
+      {name:'132号水路',x:53.9,y:64.1},
+      {name:'133号水路',x:45.7,y:65.3},
+      {name:'134号水路',x:38.6,y:64.2}
+    ],
+    specials:[
+      {name:'橙华森林',x:7,y:57.6},
+      {name:'石之洞窟',x:7.4,y:86.1},
       {name:'海紫堇',x:23.9,y:83},
       {name:'新紫堇',x:33.9,y:42.4},
-      {name:'绿茵镇',x:20.3,y:37.7},
       {name:'卡绿隧道',x:16.3,y:38.7},
-      {name:'釜炎镇',x:23.7,y:21.8},
       {name:'烟囱山',x:24.6,y:11},
       {name:'凹凸山道',x:24.5,y:14.9},
       {name:'烈焰小径',x:27.5,y:17.8},
-      {name:'秋叶镇',x:20.4,y:8.4},
       {name:'流星瀑布',x:11.3,y:22.5},
-      {name:'茵郁市',x:46,y:11.4},
       {name:'狩猎地带',x:59.1,y:19.2},
-      {name:'水静市',x:68,y:22.5},
       {name:'送神山',x:61,y:29},
       {name:'浅滩洞穴',x:88.8,y:14.8},
-      {name:'绿岭市',x:88.2,y:25.3},
-      {name:'琉璃市',x:76,y:43.8},
       {name:'天空之柱',x:75.1,y:60.5},
       {name:'南方孤岛',x:46.8,y:85.7},
-      {name:'暮水镇',x:63.5,y:64.3},
       {name:'秘密海滨',x:86.2,y:68.7},
-      {name:'彩悠市',x:94,y:46.6},
       {name:'冠军之路',x:93.9,y:39.9},
       {name:'起源洞窟',x:84,y:47.7},
       {name:'对战度假地',x:78.7,y:77.2},
-      {name:'幻影岛',x:61,y:91.6}
+      {name:'幻影岛',x:61,y:91.6},
+      {name:'觉醒神殿',x:76,y:43},
+      {name:'秘密小岛',x:71,y:49.4}
     ]
   }
 ];
 var MAPS=JSON.parse(JSON.stringify(MAPS_DATA));
 var activeMap='';
+var mapSpotOn=false;
+var mapFilter={town:false,road:false,special:false};
+var mapLabelSize=10;
+try{var _mls=parseInt(localStorage.getItem('pk_maplabelsize'),10);if(_mls>=6&&_mls<=24)mapLabelSize=_mls;}catch(e){}
+function updateMapLabels(wrap){
+  if(!wrap)return;
+  var scale=wrap._mapScale||1;
+  var tx=wrap._mapTx||0;
+  var ty=wrap._mapTy||0;
+  var stage=wrap.querySelector('.map-stage');
+  var sw=(stage&&stage.offsetWidth)||wrap.clientWidth||1;
+  var sh=(stage&&stage.offsetHeight)||1;
+  var els=wrap.querySelectorAll('[data-x][data-y]');
+  for(var i=0;i<els.length;i++){
+    var el=els[i];
+    var x=parseFloat(el.getAttribute('data-x'))||0;
+    var y=parseFloat(el.getAttribute('data-y'))||0;
+    el.style.left=(x/100*sw*scale+tx)+'px';
+    el.style.top=(y/100*sh*scale+ty)+'px';
+  }
+  var lbls=wrap.querySelectorAll('.map-spot-label,.map-pin-label');
+var fs=(mapLabelSize||10)*Math.pow(scale/8,0.25);
+if(fs<4)fs=4;
+for(var j=0;j<lbls.length;j++){lbls[j].style.fontSize=fs+'px';}
+}
+function mapAllSpots(map){
+  var out=[];
+  var cats=[['towns','town'],['roads','road'],['specials','special']];
+  for(var i=0;i<cats.length;i++){
+    var list=map[cats[i][0]]||[];
+    for(var j=0;j<list.length;j++){
+      var s=list[j];
+      out.push({name:s.name,x:s.x,y:s.y,cat:cats[i][1]});
+    }
+  }
+  return out;
+}
 function normLoc(s){return t2s(String(s||'').trim());}
 function findSpot(map,loc){
-  if(!map||!map.spots||!loc)return null;
+  if(!map||!loc)return null;
   var l=normLoc(loc);
   if(!l)return null;
-  for(var i=0;i<map.spots.length;i++){if(normLoc(map.spots[i].name)===l)return map.spots[i];}
-  for(var j=0;j<map.spots.length;j++){
-    var n=normLoc(map.spots[j].name);
-    if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0))return map.spots[j];
+  var all=mapAllSpots(map);
+  for(var i=0;i<all.length;i++){if(normLoc(all[i].name)===l)return all[i];}
+  for(var j=0;j<all.length;j++){
+    var n=normLoc(all[j].name);
+    if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0))return all[j];
   }
   return null;
+}
+function regionOfLocation(loc){
+  var s=String(loc||'').trim();
+  if(!s)return '';
+  var r=regionFromLocation(s);
+  if(r)return r;
+  var l=normLoc(s);
+  var hits=[];
+  for(var i=0;i<MAPS.length;i++){
+    var all=mapAllSpots(MAPS[i]);
+    for(var j=0;j<all.length;j++){
+      if(normLoc(all[j].name)===l){hits.push(MAPS[i].name);break;}
+    }
+  }
+  if(hits.length===1)return hits[0];
+  if(!hits.length){
+    var hits2=[];
+    for(var i2=0;i2<MAPS.length;i2++){
+      var all2=mapAllSpots(MAPS[i2]);
+      for(var j2=0;j2<all2.length;j2++){
+        var n=normLoc(all2[j2].name);
+        if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0)){hits2.push(MAPS[i2].name);break;}
+      }
+    }
+    if(hits2.length===1)return hits2[0];
+  }
+  return '';
 }
 function mapHTML(){
   if(!MAPS.length)return '<div class="map-page"><div class="empty">暂未配置地图</div></div>';
   if(!MAPS.some(function(x){return x.name===activeMap;}))activeMap=MAPS[0].name;
   var m=MAPS.filter(function(x){return x.name===activeMap;})[0]||MAPS[0];
   var loc=(stat_data.环境&&stat_data.环境.当前地点)||'';
-  var spot=findSpot(m,loc);
+var locRegion=regionOfLocation(loc);
+var spot=null,pinNote='';
+if(locRegion){
+  if(m.name===locRegion){spot=findSpot(m,loc);}
+  else{pinNote='（当前位置在'+esc(locRegion)+'，不在此图）';}
+}else{
+  spot=findSpot(m,loc);
+}
   var tabs=MAPS.map(function(x){return '<button class="map-tab'+(x.name===m.name?' active':'')+'" data-map="'+esc(x.name)+'">'+esc(x.name)+'</button>';}).join('');
   var curName=spot?normLoc(spot.name):'';
-  var spotLabels=(m.spots||[]).map(function(sp){
-    if(curName&&normLoc(sp.name)===curName)return '';
-    return '<div class="map-spot-label" style="left:'+sp.x+'%;top:'+sp.y+'%">'+esc(sp.name)+'</div>';
-  }).join('');
+  var all=mapAllSpots(m);
+  var spotLabels=all.map(function(sp){
+  if(curName&&normLoc(sp.name)===curName)return '';
+  return '<div class="map-spot-label" data-cat="'+esc(sp.cat)+'" data-x="'+sp.x+'" data-y="'+sp.y+'">'+esc(sp.name)+'</div>';
+}).join('');
+  var wrapCls='map-wrap';
+  if(mapSpotOn){
+    wrapCls+=' show-all';
+    for(var k in mapFilter){if(mapFilter[k])wrapCls+=' show-'+k;}
+  }
   var inner='';
   if(m.img){
     var pin='';
     if(spot){
-      pin='<div class="map-pin-label" style="left:'+spot.x+'%;top:'+spot.y+'%">'+esc(spot.name)+'</div><div class="map-pin" style="left:'+spot.x+'%;top:'+spot.y+'%"></div>';
-    }
-    inner='<div class="map-wrap" data-mapwrap><div class="map-stage">'+spotLabels+pin+'<img class="map-img" src="'+esc(m.img)+'" draggable="false" onerror="this.style.display=\'none\'"></div></div>';
-    if(!spot)inner+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+'（本图未匹配到坐标）</div>';
+  pin='<div class="map-pin-label" data-x="'+spot.x+'" data-y="'+spot.y+'">'+esc(spot.name)+'</div><div class="map-pin" data-x="'+spot.x+'" data-y="'+spot.y+'"></div>';
+}
+    inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" src="'+esc(m.img)+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
+    if(!spot)inner+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+(pinNote||'（本图未匹配到坐标）')+'</div>';
   }else{
     inner='<div class="empty">该地图没配图片链接</div>';
   }
-  return '<div class="map-page"><div class="map-toolbar"><div class="map-tabs">'+tabs+'</div><button class="map-eye" data-map-eye title="点击显示/隐藏所有地点">👁</button></div>'+inner+'<div class="map-zoom-hint">👁 点击显示/隐藏全部地点 · 双指/滚轮缩放 · 拖动平移 · 双击复位</div></div>';
+  var filterBar='<div class="map-filter'+(mapSpotOn?' show':'')+'" data-map-filter>'+
+  '<button class="map-tab'+(mapFilter.town?' active':'')+'" data-mcat="town">🏙 城镇</button>'+
+  '<button class="map-tab'+(mapFilter.road?' active':'')+'" data-mcat="road">🛣 道路</button>'+
+  '<button class="map-tab'+(mapFilter.special?' active':'')+'" data-mcat="special">✨ 特殊地点</button>'+
+  '</div>';
+var sizeBtn='<button class="map-size-btn" data-map-size-btn>🔤 字号 '+mapLabelSize+'</button>';
+var sizePop='<div class="map-size-pop" data-map-size-pop><span class="dim">名称字号</span><input type="range" min="6" max="24" step="1" value="'+mapLabelSize+'" data-map-size><span class="dim" data-map-size-val>'+mapLabelSize+'px</span><button class="map-size-done" data-map-size-done>✓</button></div>';
+var controls='<div class="map-controls">'+sizeBtn+filterBar+sizePop+'</div>';
+return '<div class="map-page"><div class="map-toolbar"><div class="map-tabs">'+tabs+'</div><button class="map-eye'+(mapSpotOn?' on':'')+'" data-map-eye title="点击显示/隐藏地点">👁</button></div>'+controls+inner+'<div class="map-zoom-hint">👁 开启地点显示 · 城镇/道路/特殊地点可组合点选 · 点击「字号」弹出滑条 · 双指/滚轮缩放（名称随缩放反向缩小） · 拖动平移 · 双击复位</div></div>';
 }
 function bindMapViewer(wrap){
   if(!wrap)return;
@@ -1727,12 +1930,16 @@ function bindMapViewer(wrap){
   if(!stage)return;
   var scale=1,tx=0,ty=0,MIN=1,MAX=8;
   function apply(){
-    var rw=wrap.clientWidth||1, rh=wrap.clientHeight||1;
-    var sw=stage.offsetWidth*scale, sh=stage.offsetHeight*scale;
-    if(sw<=rw){tx=0;}else{tx=Math.min(0,Math.max(tx,rw-sw));}
-    if(sh<=rh){ty=0;}else{ty=Math.min(0,Math.max(ty,rh-sh));}
-    stage.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
-  }
+  var rw=wrap.clientWidth||1, rh=wrap.clientHeight||1;
+  var sw=stage.offsetWidth*scale, sh=stage.offsetHeight*scale;
+  if(sw<=rw){tx=0;}else{tx=Math.min(0,Math.max(tx,rw-sw));}
+  if(sh<=rh){ty=0;}else{ty=Math.min(0,Math.max(ty,rh-sh));}
+  stage.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  wrap._mapScale=scale;
+  wrap._mapTx=tx;
+  wrap._mapTy=ty;
+  updateMapLabels(wrap);
+}
   var pts={};
   var panStart=null,pinchStart=null;
   function npts(){return Object.keys(pts).length;}
@@ -1800,6 +2007,8 @@ function bindMapViewer(wrap){
   wrap.addEventListener('dblclick',function(){
     scale=1;tx=0;ty=0;apply();
   });
+  var mapImgEl=wrap.querySelector('.map-img');
+  if(mapImgEl){mapImgEl.addEventListener('load',function(){apply();});}
   apply();
 }
 
@@ -3616,7 +3825,7 @@ function doClear(target){
   try{
     if(target==='seen'){recordOwnedOnly();setDevUnlock(false);var st=document.querySelector('#dev-status');if(st)st.textContent='未解锁';return;}
     if(target==='sprite'){
-      pkmSpriteCache={};pkmSlugCache={};
+      pkmSpriteCache={};pkmSlugCache={};pkmDexCache={};
       var dels=[];
       for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(k.indexOf('pk_sprite_')===0||k.indexOf('pk_slug_')===0)){dels.push(k);}}
       dels.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
@@ -3643,7 +3852,7 @@ function doClear(target){
     if(target==='all'||target==='ab')abiCache={};
     if(target==='all'||target==='dex')dexCache=null;
     if(target==='all'||target==='fid')formIdCache={};
-    if(target==='all'){itemListCache=null;itemSpriteCache={};itemCache={};pkmSpriteCache={};pkmSlugCache={};}
+    if(target==='all'){itemListCache=null;itemSpriteCache={};itemCache={};pkmSpriteCache={};pkmSlugCache={};pkmDexCache={};}
   }catch(e){}
 }
 function confirmClearModal(){
@@ -3842,11 +4051,46 @@ if(mvw){bindMapViewer(mvw);}
 var eye=pageOverlay.querySelector('[data-map-eye]');
 if(eye){
   var wrap=pageOverlay.querySelector('[data-mapwrap]');
+  var fb=pageOverlay.querySelector('[data-map-filter]');
   eye.addEventListener('click',function(e){
     e.preventDefault();e.stopPropagation();
-    var on=false;
-    if(wrap){wrap.classList.toggle('show-all');on=wrap.classList.contains('show-all');}
-    eye.classList.toggle('on',on);
+    mapSpotOn=!mapSpotOn;
+    if(wrap)wrap.classList.toggle('show-all',mapSpotOn);
+    eye.classList.toggle('on',mapSpotOn);
+    if(fb)fb.classList.toggle('show',mapSpotOn);
+  });
+}
+var szb=pageOverlay.querySelector('[data-map-size-btn]');
+var szp=pageOverlay.querySelector('[data-map-size-pop]');
+if(szb&&szp){
+  szb.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    szp.classList.toggle('open');
+  });
+  var szd=pageOverlay.querySelector('[data-map-size-done]');
+  if(szd){szd.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();szp.classList.remove('open');});}
+}
+pageOverlay.querySelectorAll('[data-mcat]').forEach(function(b){
+  b.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    var cat=b.getAttribute('data-mcat');
+    mapFilter[cat]=!mapFilter[cat];
+    b.classList.toggle('active',mapFilter[cat]);
+    var wrap=pageOverlay.querySelector('[data-mapwrap]');
+    if(wrap)wrap.classList.toggle('show-'+cat,mapFilter[cat]);
+  });
+});
+var msz=pageOverlay.querySelector('[data-map-size]');
+if(msz){
+  msz.addEventListener('input',function(){
+    mapLabelSize=parseInt(msz.value,10)||10;
+    var v=pageOverlay.querySelector('[data-map-size-val]');
+    if(v)v.textContent=mapLabelSize+'px';
+    var sb=pageOverlay.querySelector('[data-map-size-btn]');
+    if(sb)sb.textContent='🔤 字号 '+mapLabelSize;
+    try{localStorage.setItem('pk_maplabelsize',String(mapLabelSize));}catch(e){}
+    var wrap=pageOverlay.querySelector('[data-mapwrap]');
+    if(wrap)updateMapLabels(wrap);
   });
 }
 pageOverlay.querySelectorAll('.map-spot-label').forEach(function(lb){
@@ -3895,6 +4139,11 @@ function badgeClick(e){e.stopPropagation();var rs=parseBadges();if(rs.length>1){
 
 function openPage(key){
   var m=MENU.find(function(x){return x.key===key;})||(key==='typechart'?{label:'克制表'}:null);if(!m)return;
+  if(key==='map'){
+    var _loc=(stat_data.环境&&stat_data.环境.当前地点)||'';
+    var _reg=regionOfLocation(_loc);
+    if(_reg&&MAPS.some(function(x){return x.name===_reg;}))activeMap=_reg;
+  }
   pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);resolveItemImgs(pageOverlay);
 }
 
