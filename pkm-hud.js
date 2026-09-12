@@ -355,10 +355,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.3.3';
+var PK_VER='1.3.4';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-修改技能布局
+修复图片对照组bug
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -3212,8 +3212,11 @@ function fetchItemSprite(name,cb){
   if(!name){cb&&cb('');return;}
   if(itemSpriteCache[name]){cb&&cb(itemSpriteCache[name]);return;}
   var _c=lsGet('pk_itemimg_'+name,'');if(_c){itemSpriteCache[name]=_c;cb&&cb(_c);return;}
-  var key=String(name||'').trim();
-  if(!key){cb&&cb('');return;}
+  var cands=itemCands(name);
+  var ci=0;
+  function _try(){
+  if(ci>=cands.length){itemSpriteCache[name]='';cb&&cb('');return;}
+  var key=cands[ci++];
   fetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(t2s(key)+'（道具）')+'&format=json&prop=wikitext|text&variant=zh-hans&origin=*')
     .then(function(r){return r.ok?r.json():Promise.reject();})
     .then(function(j){
@@ -3238,9 +3241,11 @@ function fetchItemSprite(name,cb){
         if(!url){var m2=html.match(/https?:\/\/[^"']*?Sprite\.png[^"']*/);url=m2?m2[0]:'';}
       }
       if(url){itemSpriteCache[name]=url;lsSet('pk_itemimg_'+name,url);cb&&cb(url);}
-      else{itemSpriteCache[name]='';cb&&cb('');}
+      else{_try();}
     })
-    .catch(function(){itemSpriteCache[name]='';cb&&cb('');});
+    .catch(function(){_try();});
+  }
+  _try();
 }
 function resolveItemImgs(scope){
   var els=(scope||document).querySelectorAll('.item-wiki[data-item]');
