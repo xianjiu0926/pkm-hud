@@ -364,10 +364,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.0';
+var PK_VER='1.5.1';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-创意工坊兼容
+1.改刷新键，现在如果有未执行指令，就只重绘，不重新读取变量
+2.适配TT鸿蒙版
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -380,10 +381,12 @@ var st=document.createElement('style');
 st.type='text/css';
 st.textContent=css;
 (document.head||document.body).appendChild(st);
-/* Tauri/安卓 WebView 适配：仅在该环境下去掉图片请求 Referer（浏览器用户不受影响） */
+/* Tauri/安卓 WebView + 鸿蒙(TavernNext/ArkWeb) 适配：仅在这些环境下去掉图片请求 Referer（浏览器用户不受影响） */
 try{
-  var _isTauri=!!(WIN.__TAURI_INTERNALS__||WIN.__TAURI__)||/^tauri:/.test(WIN.location.protocol)||/tauri\.localhost/.test(WIN.location.hostname)||/Tauri/i.test(navigator.userAgent||'');
-  if(_isTauri){
+  var _ua2=(navigator.userAgent||'');
+  var _isTauri=!!(WIN.__TAURI_INTERNALS__||WIN.__TAURI__)||/^tauri:/.test(WIN.location.protocol)||/tauri\.localhost/.test(WIN.location.hostname)||/Tauri/i.test(_ua2);
+  var _isHarmony=/ArkWeb/i.test(_ua2)||/HarmonyOS/i.test(_ua2)||/OpenHarmony/i.test(_ua2);
+  if(_isTauri||_isHarmony){
     var _rm=document.createElement('meta');
     _rm.name='referrer';
     _rm.content='no-referrer';
@@ -5247,7 +5250,8 @@ function hudRefresh(){
   try{var at=document.querySelector('.tab-btn.active');if(at)activeTab=at.getAttribute('data-tab')||'1';}catch(e){}
   var btn=document.querySelector('[data-hud-refresh]');
   if(btn){btn.classList.add('spin');btn.disabled=true;}
-  try{stat_data=loadStatData();}catch(e){}
+  // 有未完成的“下回合指令”（卸道具/移精灵等）时，保留本地乐观修改，只重绘，不重新读变量覆盖
+  try{if(!hudPendingActions.length){stat_data=loadStatData();}}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
   try{
