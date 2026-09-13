@@ -364,11 +364,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.4.5';
+var PK_VER='1.5.0';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.修bug
-2.已自创支持编辑了
+创意工坊兼容
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -505,13 +504,33 @@ function lsSet(key,v){try{localStorage.setItem(key,JSON.stringify(v));}catch(e){
 var DIY_INPUT_STYLE='width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:6px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;display:block';
 var diyType='move';
 var diyData=diyLoad();
+/* 供外部脚本（如创意工坊）直接抓取当前内存 DIY 数据，无需分享码 */
+try{WIN.__pkmDiyData=function(){return diyData;};}catch(e){}
+try{if(window!==WIN)window.__pkmDiyData=function(){return diyData;};}catch(e){}
 var diyDelStep=0,diyDelType='move',diyDelName='';
 var diyEditingName='';
 var diyClearStep=0;
 function diyLoad(){try{var d=JSON.parse(localStorage.getItem('pk_diy')||'null');if(d&&typeof d==='object')return d;}catch(e){}return {move:{},ability:{},item:{},pokemon:{}};}
 function diySave(){try{localStorage.setItem('pk_diy',JSON.stringify(diyData));}catch(e){}}
 function diyGet(type,name){if(!name)return null;var t=diyData[type]||{};return t[name]||null;}
-function diyHas(type,name){if(!name)return false;var p=diyData[type]||{};return !!(p[name]||p[baseName(name)]);}
+function diyHas(type,name){
+  if(!name)return false;
+  var p=diyData[type]||{};
+  if(p[name]||p[baseName(name)])return true;
+  if(type==='pokemon'){
+    var bn=baseName(name);
+    for(var k in p){
+      var o=p[k];
+      if(o&&o.chain){
+        for(var i=0;i<o.chain.length;i++){
+          var st=o.chain[i];
+          if(st&&st.name&&(st.name===name||baseName(st.name)===bn))return true;
+        }
+      }
+    }
+  }
+  return false;
+}
 function diyLabel(type){return {move:'技能',ability:'特性',item:'道具',pokemon:'精灵'}[type]||'';}
 function diyVal(id){var e=document.getElementById(id);return e?e.value.trim():'';}
 function diyInput(id,ph){return '<input type="text" id="'+id+'" placeholder="'+esc(ph)+'" style="'+DIY_INPUT_STYLE+'">';}
@@ -1282,25 +1301,9 @@ function diyCopyText(txt,done){
     }else{diyCopyFallback(txt,done);}
   }catch(e){diyCopyFallback(txt,done);}
 }
-function diyHasLocalImg(type,obj){
-  if(type==='item'){
-    return /^data:/i.test(String(obj&&obj.img||'').trim());
-  }
-  if(type==='pokemon'){
-    var arr=[];
-    if(obj&&obj.img)arr.push(obj.img);
-    if(obj&&obj.chain){for(var i=0;i<obj.chain.length;i++){if(obj.chain[i]&&obj.chain[i].img)arr.push(obj.chain[i].img);}}
-    for(var j=0;j<arr.length;j++){if(/^data:/i.test(String(arr[j]).trim()))return true;}
-  }
-  return false;
-}
 function diyShare(type,name){
   var obj=diyGet(type,name);
   if(!obj){diyMsg('未找到该自创内容');return;}
-  if((type==='item'||type==='pokemon')&&diyHasLocalImg(type,obj)){
-    diyMsg('该自创'+diyLabel(type)+'使用了本地图片，请先换成图床图片链接（http/https）后再生成分享码');
-    return;
-  }
   var code=diyLabel(type)+':'+name+'|'+diyEncode(JSON.stringify({v:1,t:type,n:name,d:obj}));
   if(!code){diyMsg('生成分享码失败');return;}
   clearBack();
@@ -1532,7 +1535,7 @@ function diyListHTML(type){
   var head='<div class="set-title" style="margin-left:8px">已自创的'+diyLabel(type)+(ks.length?'（'+ks.length+'）':'')+'</div>';
   if(!ks.length)return head+'<div class="empty">暂无</div>';
   return head+ks.map(function(name){
-    return '<div class="nearby-item" style="cursor:default"><div class="nearby-info"><div class="nearby-name" data-diy-view="'+esc(name)+'" style="cursor:pointer;color:#7cc4f8">'+esc(name)+'</div></div><button class="btn-small" data-diy-share="'+esc(name)+'">分享</button><button class="btn-small" data-diy-del="'+esc(name)+'">✕</button></div>';
+    return '<div class="nearby-item" style="cursor:default"><div class="nearby-info"><div class="nearby-name" data-diy-view="'+esc(name)+'" style="cursor:pointer;color:#7cc4f8">'+esc(name)+'</div></div><button class="btn-small" data-diy-share="'+esc(name)+'" style="display:none" aria-hidden="true">分享</button><button class="btn-small" data-diy-del="'+esc(name)+'">✕</button></div>';
   }).join('');
 }
 function diyHTML(){
@@ -1945,8 +1948,34 @@ function pkImgSmart(species,icon,shiny){
 function diyPokemonSprite(name){
   if(!name)return '';
   var p=diyData.pokemon||{};
-  var p2=p[name]||p[baseName(name)];
-  if(p2&&p2.img)return "url('"+p2.img+"')";
+  var bn=baseName(name);
+  var obj=p[name]||p[bn];
+  if(obj){
+    if(obj.img)return "url('"+obj.img+"')";
+    if(obj.chain){
+      var firstImg='';
+      for(var i=0;i<obj.chain.length;i++){
+        var st=obj.chain[i]||{};
+        if(!st.img)continue;
+        if(!firstImg)firstImg=st.img;
+        var sn=baseName(st.name||'');
+        if(sn&&(sn===bn||st.name===name))return "url('"+st.img+"')";
+      }
+      if(firstImg)return "url('"+firstImg+"')";
+    }
+    return '';
+  }
+  // 进化形：名字没直接命中，但匹配到进化链里的某个形态
+  for(var k in p){
+    var o=p[k];
+    if(!o||!o.chain)continue;
+    for(var j=0;j<o.chain.length;j++){
+      var st2=o.chain[j];
+      if(st2&&st2.img&&st2.name&&(st2.name===name||baseName(st2.name)===bn)){
+        return "url('"+st2.img+"')";
+      }
+    }
+  }
   return '';
 }
 function fetchPkmSlug(name,cb){
