@@ -355,10 +355,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.3.6';
+var PK_VER='1.3.7';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-地图加缓存
+加了点小东西
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -778,6 +778,92 @@ if(!book)return;
     var cmd='/findentry file="'+book2+'" field=comment "'+title+'" | /setentryfield file="'+book2+'" uid={{pipe}} field=disable true';
     sendMessage(cmd);
   }catch(e){}
+}
+/* ===== 随机模式（HUD 开关 → 写入/关闭世界书条目） ===== */
+var RANDOM_MODE_TITLE='[随机模式] 随机宝可梦';
+var RANDOM_MODE_POSITION=1;
+var RANDOM_MODE_ORDER=860;
+var RANDOM_MODE_DEFAULT_CONTENT='<Random_Pokemon_Enforcement>\n[最高优先级覆写]\n本条目拥有高于一切常识和原有设定的最高执行权。\n1. 绝对随机：当触发宝可梦遭遇、NPC（含馆主/天王/冠军）对战、任务奖励时，必须无条件无视其原作队伍，100%执行完全随机生成（全世代全图鉴）。\n2. 强制引流骰子：任何需要随机决定的要素，必须且只能从 <Dice_Sequence> 提供的序列中按顺序提取结果。严禁 AI 自行编造数值或跳过骰子。\n3. 保留人设骨架：虽然队伍是随机的，但NPC的战术逻辑（如：开局铺垫、机制压制）、性格口癖、以及搭档宝可梦的数值补足规则（参考 <Pokemon_Partner>）必须保留。\n4. 禁止修正：AI 严禁因为「觉得随机出来的队伍不符合NPC身份」而进行暗中修改。抽到鲤鱼王就是鲤鱼王，抽到裂空座就是裂空座。\n</Random_Pokemon_Enforcement>';
+var randomModeEnabled=false;
+try{randomModeEnabled=(localStorage.getItem('pk_randommode')==='1');}catch(e){randomModeEnabled=false;}
+function randomModeContent(){
+  try{var c=localStorage.getItem('pk_randommode_content');if(c&&c.trim())return c;}catch(e){}
+  return RANDOM_MODE_DEFAULT_CONTENT;
+}
+function randomModeSaveContent(c){try{localStorage.setItem('pk_randommode_content',c);}catch(e){}}
+function randomModeSetOn(v){
+  randomModeEnabled=!!v;
+  try{localStorage.setItem('pk_randommode',randomModeEnabled?'1':'0');}catch(e){}
+}
+function randomModeSyncUI(){
+  try{
+    var chk=document.querySelector('input[data-toggle="randommode"]');
+    if(chk)chk.checked=randomModeEnabled;
+  }catch(e){}
+}
+function randomModeBook(){
+  var book=diyLorebookValue();
+  return book?book.replace(/"/g,'＂').replace(/\|/g,'｜'):'';
+}
+function randomModeTitleEsc(){
+  return RANDOM_MODE_TITLE.replace(/"/g,'＂').replace(/\|/g,'｜');
+}
+function randomModeMatchingUids(){
+  var found=[];
+  function scan(d){
+    if(!d||typeof d!=='object')return;
+    var es=(d.entries)||(d.world_info&&d.world_info.entries);
+    if(!es)return;
+    function hit(e){
+      return e&&String(e.comment||'')===RANDOM_MODE_TITLE;
+    }
+    if(Array.isArray(es)){
+      for(var i=0;i<es.length;i++){var e=es[i];if(hit(e)&&e.uid!=null)found.push(e.uid);}
+    }else{
+      for(var k in es){var e2=es[k];if(hit(e2))found.push(e2.uid!=null?e2.uid:k);}
+    }
+  }
+  try{scan(JSON.parse(localStorage.getItem('world_info')||'null'));}catch(e){}
+  try{
+    var w=WIN;
+    if(w&&w!==window){
+      var wd=null;
+      try{wd=w.world_info;}catch(e){}
+      if(!wd){try{wd=JSON.parse(w.localStorage.getItem('world_info')||'null');}catch(e){}}
+      scan(wd);
+    }
+  }catch(e){}
+  var seen={},out=[];
+  for(var j=0;j<found.length;j++){var u=String(found[j]);if(!seen[u]){seen[u]=1;out.push(u);}}
+  return out;
+}
+function randomModeDisableCmd(book,uids){
+  return uids.map(function(u){return '/setentryfield file="'+book+'" uid='+u+' field=disable true';}).join(' | ');
+}
+function randomModeOn(){
+  var book=randomModeBook();
+  if(!book){randomModeSyncUI();hudMsg('请先在「DIY → 写入世界书」里选择世界书文件名');return;}
+  var one=randomModeContent().replace(/"/g,'＂').replace(/\|/g,'｜');
+  var title=randomModeTitleEsc();
+  var pre='';
+  var uids=randomModeMatchingUids();
+  if(uids.length)pre=randomModeDisableCmd(book,uids)+' | ';
+  var cmd=pre+'/createentry file="'+book+'" '+one+' | /setvar key=uid {{pipe}} | /setentryfield file="'+book+'" uid={{pipe}} field=comment '+title+' | /getvar uid | /setentryfield file="'+book+'" uid={{pipe}} field=constant true | /getvar uid | /setentryfield file="'+book+'" uid={{pipe}} field=position '+RANDOM_MODE_POSITION+' | /getvar uid | /setentryfield file="'+book+'" uid={{pipe}} field=order '+RANDOM_MODE_ORDER;
+  sendMessage(cmd);
+  randomModeSetOn(true);
+  randomModeSyncUI();
+  hudMsg('随机模式已开启：已写入世界书「'+diyLorebookValue()+'」（蓝灯常驻·高权重，顺序'+RANDOM_MODE_ORDER+'）');
+}
+function randomModeOff(){
+  var book=randomModeBook();
+  if(!book){randomModeSyncUI();hudMsg('请先在「DIY → 写入世界书」里选择世界书文件名');return;}
+  var title=randomModeTitleEsc();
+  var uids=randomModeMatchingUids();
+  var cmd=uids.length?randomModeDisableCmd(book,uids):('/findentry file="'+book+'" field=comment "'+title+'" | /setentryfield file="'+book+'" uid={{pipe}} field=disable true');
+  sendMessage(cmd);
+  randomModeSetOn(false);
+  randomModeSyncUI();
+  hudMsg('随机模式已关闭：已关闭世界书「'+diyLorebookValue()+'」对应条目');
 }
 function diyFormHTML(type){
   diyTypeCount=2;
@@ -3566,6 +3652,31 @@ var itemClickEnabled=true;
 try{var _ic=localStorage.getItem('pk_itemclick');itemClickEnabled=(_ic==null)||(_ic==='1');}catch(e){itemClickEnabled=true;}
 function devUnlocked(){try{return localStorage.getItem('pk_dev_unlock')==='1';}catch(e){return false;}}
 function setDevUnlock(v){try{if(v)localStorage.setItem('pk_dev_unlock','1');else localStorage.removeItem('pk_dev_unlock');}catch(e){}}
+function devPanelOn(){try{return localStorage.getItem('pk_dev_panel')==='1';}catch(e){return false;}}
+function setDevPanelOn(v){try{if(v)localStorage.setItem('pk_dev_panel','1');else localStorage.removeItem('pk_dev_panel');}catch(e){}}
+function devPanelHTML(errMsg){
+  if(!devPanelOn()){
+    return '<div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(errMsg?esc(errMsg):'未解锁（输入密码后出现「全图鉴」与「随机模式」选项）')+'</div>';
+  }
+  var fullChk=devUnlocked()?' checked':'';
+  var randChk=randomModeEnabled?' checked':'';
+  var randContent=esc(randomModeContent());
+  return '<div class="dim" style="font-size:.72rem;margin-top:6px">✨ 开发者选项已解锁</div>'+
+    '<div class="set-title" style="margin-top:10px">全图鉴</div>'+
+    '<div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="devfull"'+fullChk+'>解锁全部图鉴（图鉴里可见全宝可梦）</label></div>'+
+    '<div class="set-title" style="margin-top:10px">随机模式</div>'+
+    '<div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="randommode"'+randChk+'>随机宝可梦模式（开启→写入世界书条目，关闭→关闭该条目）</label></div>'+
+    '<div class="set-opts"><textarea id="random-mode-content" style="'+DIY_INPUT_STYLE+'min-height:120px;resize:vertical">'+randContent+'</textarea></div>'+
+    '<div class="dim" style="font-size:.72rem;margin:4px 0 6px">写入目标为「DIY → 写入世界书」所选的世界书；条目常驻（蓝灯），权重已调高（插入位置1·顺序'+RANDOM_MODE_ORDER+'，高于机制与随机遭遇条目）。规则文本可自行修改。</div>';
+}
+function bindDevPanel(){
+  var df=pageOverlay.querySelector('input[data-toggle="devfull"]');
+  if(df){df.addEventListener('change',function(){setDevUnlock(df.checked);});}
+  var rm=pageOverlay.querySelector('input[data-toggle="randommode"]');
+  if(rm){rm.addEventListener('change',function(){if(rm.checked){if(randomModeEnabled)return;randomModeOn();}else{if(!randomModeEnabled)return;randomModeOff();}});}
+  var rmc=pageOverlay.querySelector('#random-mode-content');
+  if(rmc){rmc.addEventListener('input',function(){randomModeSaveContent(rmc.value);});}
+}
 var ICON_CFG=[
   {id:'q-box',label:'快捷·盒子',src:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png',def:22},
   {id:'q-pokedex',label:'快捷·图鉴',src:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png',def:16},
@@ -3796,8 +3907,7 @@ function settingsHTML(){
   var radios=opts.map(function(o){return '<label class="set-opt"><input type="radio" name="pk-clear" value="'+o[0]+'"'+(clearTarget===o[0]?' checked':'')+' data-clear="'+o[0]+'">'+o[1]+'</label>';}).join('');
   var itemChk=itemClickEnabled?' checked':'';
 var winChk=(winMode==='1')?' checked':'';
-var devOn=devUnlocked();
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁全部图鉴</button></div><div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(devOn?'✨ 已解锁全部图鉴':'未解锁')+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -4011,7 +4121,7 @@ function recordOwnedOnly(){
 }
 function doClear(target){
   try{
-    if(target==='seen'){recordOwnedOnly();setDevUnlock(false);var st=document.querySelector('#dev-status');if(st)st.textContent='未解锁';return;}
+    if(target==='seen'){recordOwnedOnly();setDevUnlock(false);var dp=document.querySelector('#dev-panel');if(dp){dp.innerHTML=devPanelHTML();bindDevPanel();}return;}
     if(target==='sprite'){
       pkmSpriteCache={};pkmSlugCache={};pkmDexCache={};
       var dels=[];
@@ -4309,17 +4419,18 @@ var db=pageOverlay.querySelector('[data-dev-unlock]');
 if(db){db.addEventListener('click',function(e){
   e.stopPropagation();
   var pwd=pageOverlay.querySelector('#dev-pwd');
-  var st=pageOverlay.querySelector('#dev-status');
+  var panel=pageOverlay.querySelector('#dev-panel');
   var v=pwd?pwd.value.trim():'';
   if(v==='3525442929'){
-    setDevUnlock(true);
-    if(st)st.textContent='✨ 已解锁全部图鉴（打开图鉴即可查看全部）';
+    setDevPanelOn(true);
+    if(panel){panel.innerHTML=devPanelHTML();bindDevPanel();}
     if(pwd)pwd.value='';
   }else{
-    if(st)st.textContent='❌ 密码错误';
+    if(panel){panel.innerHTML=devPanelHTML('❌ 密码错误');}
     if(pwd){pwd.value='';pwd.focus();}
   }
 });}
+bindDevPanel();
 }
 
 function bindBadge(){var bc=document.getElementById('badge-cycle');if(bc){bc.addEventListener('click',badgeClick);}var bo=document.querySelector('[data-badge-open]');if(bo){bo.addEventListener('click',function(e){e.stopPropagation();openPage('badge');});}}
