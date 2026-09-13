@@ -355,10 +355,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.3.5';
+var PK_VER='1.3.6';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-神奥地图
+地图加缓存
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1903,6 +1903,87 @@ var MAPS_DATA=[
   }
 ];
 var MAPS=JSON.parse(JSON.stringify(MAPS_DATA));
+/* ===== 地图底图缓存（IndexedDB 持久化，避免每次打开地图都重新下载） ===== */
+var _mapImgBlobUrl={};
+var _mapImgDbP=null;
+var _MAP_IMG_TTL=30*24*60*60*1000;
+function _mapImgDb(){
+  if(_mapImgDbP)return _mapImgDbP;
+  _mapImgDbP=new Promise(function(res,rej){
+    try{
+      if(!window.indexedDB){rej(new Error('no-idb'));return;}
+      var rq=indexedDB.open('pkm_hud_mapcache',1);
+      rq.onupgradeneeded=function(){var db=rq.result;if(!db.objectStoreNames.contains('img'))db.createObjectStore('img');};
+      rq.onsuccess=function(){res(rq.result);};
+      rq.onerror=function(){rej(rq.error||new Error('idb-open'));};
+    }catch(e){rej(e);}
+  });
+  return _mapImgDbP;
+}
+function _mapImgGet(url){
+  return _mapImgDb().then(function(db){
+    return new Promise(function(res,rej){
+      try{
+        var tx=db.transaction('img','readonly');
+        var rq=tx.objectStore('img').get(url);
+        rq.onsuccess=function(){res(rq.result||null);};
+        rq.onerror=function(){rej(rq.error);};
+      }catch(e){rej(e);}
+    });
+  });
+}
+function _mapImgPut(url,blob){
+  return _mapImgDb().then(function(db){
+    return new Promise(function(res,rej){
+      try{
+        var tx=db.transaction('img','readwrite');
+        tx.objectStore('img').put({b:blob,t:Date.now()},url);
+        tx.oncomplete=function(){res();};
+        tx.onerror=function(){rej(tx.error);};
+      }catch(e){rej(e);}
+    });
+  });
+}
+function mapImgSrc(url){
+  if(!url)return '';
+  return _mapImgBlobUrl[url]||url;
+}
+function _mapImgApply(url,blob){
+  if(!url||!blob||typeof blob.size!=='number'||blob.size<1)return;
+  var old=_mapImgBlobUrl[url];
+  var u;
+  try{u=URL.createObjectURL(blob);}catch(e){return;}
+  _mapImgBlobUrl[url]=u;
+  if(old){try{URL.revokeObjectURL(old);}catch(e){}}
+  try{
+    var els=document.querySelectorAll('.map-img[data-src]');
+    for(var i=0;i<els.length;i++){
+      var el=els[i];
+      if(el.getAttribute('data-src')===url)el.src=u;
+    }
+  }catch(e){}
+}
+function _mapImgFetch(url){
+  try{
+    fetch(url,{mode:'cors'}).then(function(resp){
+      if(!resp.ok)throw new Error('http '+resp.status);
+      var ct=(resp.headers.get('content-type')||'').toLowerCase();
+      if(ct.indexOf('image/')!==0)throw new Error('not-image');
+      return resp.blob();
+    }).then(function(blob){
+      _mapImgPut(url,blob).catch(function(){});
+      _mapImgApply(url,blob);
+    }).catch(function(){});
+  }catch(e){}
+}
+function _mapImgPreload(url){
+  if(!url||_mapImgBlobUrl[url])return;
+  _mapImgGet(url).then(function(rec){
+    if(rec&&rec.b&&typeof rec.b.size==='number'&&rec.b.size>0&&(Date.now()-rec.t<_MAP_IMG_TTL)){_mapImgApply(url,rec.b);}
+    else{_mapImgFetch(url);}
+  }).catch(function(){_mapImgFetch(url);});
+}
+MAPS.forEach(function(m){if(m.img)_mapImgPreload(m.img);});
 var activeMap='';
 var mapSpotOn=false;
 var mapFilter={town:false,road:false,special:false};
@@ -2012,7 +2093,7 @@ if(locRegion){
     if(spot){
   pin='<div class="map-pin-label" data-x="'+spot.x+'" data-y="'+spot.y+'">'+esc(spot.name)+'</div><div class="map-pin" data-x="'+spot.x+'" data-y="'+spot.y+'"></div>';
 }
-    inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" src="'+esc(m.img)+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
+    inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(m.img)+'" src="'+esc(mapImgSrc(m.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
     if(!spot)inner+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+(pinNote||'（本图未匹配到坐标）')+'</div>';
   }else{
     inner='<div class="empty">该地图没配图片链接</div>';
