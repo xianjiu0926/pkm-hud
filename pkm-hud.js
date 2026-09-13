@@ -355,11 +355,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.4.0';
+var PK_VER='1.4.1';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.diy精灵支持上传本地图片/GIF
-2.(测试)-diy精灵可配置API识图
+1.优化diy精灵
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -548,29 +547,119 @@ function diyVisionProviderChange(v){
   var c=diyVisionCfg();
   c.provider=v;c.baseUrl='';c.model='';
   diyVisionSave({provider:c.provider,baseUrl:'',apiKey:c.apiKey,model:'',prompt:c.prompt});
-  diyVisionUpdatePlaceholders(v);
-}
-function diyVisionUpdatePlaceholders(provider){
   var b=document.getElementById('vision-base');
-  if(b)b.placeholder='API 地址，如 '+diyVisionDefaultBase(provider);
+  if(b){b.value='';b.placeholder='API 地址，如 '+diyVisionDefaultBase(v);}
   var m=document.getElementById('vision-model');
-  if(m)m.placeholder='模型名，如 '+diyVisionDefaultModel(provider);
+  if(m){m.value='';m.placeholder='模型名，如 '+diyVisionDefaultModel(v);}
+  var dl=document.getElementById('vision-model-list');
+  if(dl)dl.innerHTML='';
+  diyVisionModelsMsg('已切换服务商，可重新点「读取模型」获取列表');
 }
-function diyVisionHTML(){
+function diyVisionBtnHTML(){
+  return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">AI 识图</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" class="btn-small" data-vision-settings style="background:rgba(43,74,111,.7)">🤖 AI 识图设置</button><span class="dim" style="font-size:.72rem">配置 API 后，可在精灵表单里点「AI识图」自动生成外观描述</span></div></div></div>';
+}
+function openVisionSettings(){
+  clearBack();
   var c=diyVisionCfg();
   var provSel='<select id="vision-provider" style="'+DIY_INPUT_STYLE+'">'+
     '<option value="openai"'+(c.provider==='openai'?' selected':'')+'>OpenAI 兼容（GPT-4o 等 / 中转站）</option>'+
     '<option value="gemini"'+(c.provider==='gemini'?' selected':'')+'>Google Gemini</option>'+
     '<option value="claude"'+(c.provider==='claude'?' selected':'')+'>Anthropic Claude</option>'+
     '</select>';
-  return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">AI 识图设置（给精灵图片自动生成外观描述并填入描述栏）</div>'+
-    provSel+
-    '<input type="text" id="vision-base" placeholder="API 地址，如 '+esc(diyVisionDefaultBase(c.provider))+'" value="'+esc(c.baseUrl)+'" style="'+DIY_INPUT_STYLE+'">'+
-    '<input type="password" id="vision-key" placeholder="API Key（必填）" value="'+esc(c.apiKey)+'" style="'+DIY_INPUT_STYLE+'">'+
-    '<input type="text" id="vision-model" placeholder="模型名，如 '+esc(diyVisionDefaultModel(c.provider))+'" value="'+esc(c.model)+'" style="'+DIY_INPUT_STYLE+'">'+
-    '<textarea id="vision-prompt" placeholder="识别提示词（可留空用默认）" style="'+DIY_INPUT_STYLE+'min-height:56px;resize:vertical">'+esc(c.prompt)+'</textarea>'+
-    '<div class="dim" style="font-size:.72rem;margin-top:2px">填写后自动保存在本地浏览器；只有点「AI识图」时才会把图片发给上面填的 API。</div>'+
+  var modelRow='<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">'+
+    '<input type="text" id="vision-model" list="vision-model-list" placeholder="模型名，如 '+esc(diyVisionDefaultModel(c.provider))+'" value="'+esc(c.model)+'" style="flex:1;min-width:0;box-sizing:border-box;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none">'+
+    '<datalist id="vision-model-list"></datalist>'+
+    '<button type="button" class="btn-small" data-vision-loadmodels style="flex-shrink:0;background:rgba(43,74,111,.7)">📡 读取模型</button>'+
+    '</div><div id="vision-models-msg" class="dim" style="font-size:.72rem;margin-bottom:6px">配置好 API 地址和 Key 后点「读取模型」，在模型输入框里选择；也可直接手填。</div>';
+  overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">AI 识图设置</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    '<div class="set-title" style="margin-left:0">服务商</div>'+provSel+
+    '<div class="set-title" style="margin-left:0">API 地址</div><input type="text" id="vision-base" placeholder="API 地址，如 '+esc(diyVisionDefaultBase(c.provider))+'" value="'+esc(c.baseUrl)+'" style="'+DIY_INPUT_STYLE+'">'+
+    '<div class="set-title" style="margin-left:0">API Key</div><input type="password" id="vision-key" placeholder="API Key（必填）" value="'+esc(c.apiKey)+'" style="'+DIY_INPUT_STYLE+'">'+
+    '<div class="set-title" style="margin-left:0">模型</div>'+modelRow+
+    '<div class="set-title" style="margin-left:0">识别提示词（可留空用默认）</div><textarea id="vision-prompt" placeholder="识别提示词" style="'+DIY_INPUT_STYLE+'min-height:56px;resize:vertical">'+esc(c.prompt)+'</textarea>'+
+    '<div class="dim" style="font-size:.72rem;margin-top:2px">设置会自动保存在本地浏览器；只有点「AI识图」时才会把图片发给所填 API。</div>'+
+    '<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-vision-save>✔ 完成</button><button class="act-btn" data-close>返回</button></div>'+
     '</div></div>';
+  overlay.classList.add('open');
+  var vp=document.getElementById('vision-provider');
+  if(vp)vp.addEventListener('change',function(){diyVisionProviderChange(vp.value);});
+  var vb=document.getElementById('vision-base');
+  if(vb)vb.addEventListener('input',function(){diyVisionSet('baseUrl',vb.value.trim());});
+  var vk=document.getElementById('vision-key');
+  if(vk)vk.addEventListener('input',function(){diyVisionSet('apiKey',vk.value.trim());});
+  var vm=document.getElementById('vision-model');
+  if(vm)vm.addEventListener('input',function(){diyVisionSet('model',vm.value.trim());});
+  var vp2=document.getElementById('vision-prompt');
+  if(vp2)vp2.addEventListener('input',function(){diyVisionSet('prompt',vp2.value);});
+  var lm=document.querySelector('[data-vision-loadmodels]');
+  if(lm)lm.addEventListener('click',function(e){e.stopPropagation();diyVisionLoadModels();});
+}
+function diyVisionSaveFromModal(){
+  var cfg=diyVisionCfg();
+  var prov=document.getElementById('vision-provider');
+  var base=document.getElementById('vision-base');
+  var key=document.getElementById('vision-key');
+  var model=document.getElementById('vision-model');
+  var prompt=document.getElementById('vision-prompt');
+  if(prov)cfg.provider=prov.value;
+  if(base)cfg.baseUrl=base.value.trim();
+  if(key)cfg.apiKey=key.value.trim();
+  if(model)cfg.model=model.value.trim();
+  if(prompt)cfg.prompt=prompt.value;
+  diyVisionSave({provider:cfg.provider,baseUrl:cfg.baseUrl,apiKey:cfg.apiKey,model:cfg.model,prompt:cfg.prompt});
+  overlay.classList.remove('open');
+  clearBack();
+}
+function diyVisionLoadModels(){
+  var cfg=diyVisionCfg();
+  var prov=document.getElementById('vision-provider');
+  var base=document.getElementById('vision-base');
+  var key=document.getElementById('vision-key');
+  if(prov)cfg.provider=prov.value;
+  if(base)cfg.baseUrl=base.value.trim();
+  if(key)cfg.apiKey=key.value.trim();
+  if(!cfg.apiKey){diyVisionModelsMsg('请先填写 API Key');return;}
+  var url=diyVisionModelsURL(cfg);
+  var btn=document.querySelector('[data-vision-loadmodels]');
+  if(btn){btn.textContent='⏳ 读取中…';btn.disabled=true;}
+  diyVisionModelsMsg('正在读取可用模型…');
+  diyVisionFetchModels(url,cfg,function(list){
+    var dl=document.getElementById('vision-model-list');
+    if(dl)dl.innerHTML=(list&&list.length?list.map(function(m){return '<option value="'+esc(m)+'">';}).join(''):'');
+    if(btn){btn.textContent='📡 读取模型';btn.disabled=false;}
+    diyVisionModelsMsg(list&&list.length?('已读取 '+list.length+' 个模型，点击模型输入框即可选择'):'未读取到模型，可手动填写');
+  },function(err){
+    if(btn){btn.textContent='📡 读取模型';btn.disabled=false;}
+    diyVisionModelsMsg('读取失败：'+err);
+  });
+}
+function diyVisionModelsMsg(t){
+  var el=document.getElementById('vision-models-msg');
+  if(el)el.textContent=t;
+}
+function diyVisionModelsURL(cfg){
+  if(cfg.provider==='gemini')return String(cfg.baseUrl).replace(/\/+$/,'')+'/models?key='+encodeURIComponent(cfg.apiKey);
+  if(cfg.provider==='claude')return String(cfg.baseUrl).replace(/\/+$/,'')+'/v1/models';
+  return String(cfg.baseUrl).replace(/\/+$/,'')+'/models';
+}
+function diyVisionFetchModels(url,cfg,cb,errCb){
+  var headers={};
+  if(cfg.provider==='claude'){headers['x-api-key']=cfg.apiKey;headers['anthropic-version']='2023-06-01';}
+  else if(cfg.provider==='openai'){headers['Authorization']='Bearer '+cfg.apiKey;}
+  fetch(url,{method:'GET',headers:headers})
+    .then(function(r){if(!r.ok){return r.text().then(function(t){throw new Error('HTTP '+r.status+'：'+String(t).slice(0,180));});}return r.json();})
+    .then(function(j){cb&&cb(diyVisionParseModels(j));})
+    .catch(function(e){errCb&&errCb(e&&e.message?e.message:String(e));});
+}
+function diyVisionParseModels(j){
+  var out=[];
+  try{
+    if(j&&Array.isArray(j.data)){for(var i=0;i<j.data.length;i++){var id=j.data[i]&&j.data[i].id;if(id)out.push(String(id));}}
+    if(j&&Array.isArray(j.models)){for(var i=0;i<j.models.length;i++){var n=j.models[i]&&j.models[i].name;if(n)out.push(String(n).replace(/^models\//,''));}}
+  }catch(e){}
+  var seen={},res=[];
+  for(var k=0;k<out.length;k++){var s=String(out[k]).trim();if(s&&!seen[s]){seen[s]=1;res.push(s);}}
+  return res;
 }
 function diyEvoEnsureDescShown(p){
   if(!diyEvoDescShow[p]){
@@ -1307,7 +1396,7 @@ function diyHTML(){
   var tabs=['move','ability','item','pokemon'].map(function(t){
     return '<button class="bag-tab'+(diyType===t?' active':'')+'" data-diy-tab="'+t+'">'+diyLabel(t)+'</button>';
   }).join('');
-  return diyLorebookHTML()+diyVisionHTML()+frameP('DIY 自创','<div class="bag-tabs">'+tabs+'</div><div id="diy-form">'+diyFormHTML(diyType)+'</div><div id="diy-list">'+diyListHTML(diyType)+'</div>')+diyImportHTML();
+  return diyLorebookHTML()+diyVisionBtnHTML()+frameP('DIY 自创','<div class="bag-tabs">'+tabs+'</div><div id="diy-form">'+diyFormHTML(diyType)+'</div><div id="diy-list">'+diyListHTML(diyType)+'</div>')+diyImportHTML();
 }
 function diyAdd(type){
   var name=diyVal(type==='pokemon'?'evo-name-0':'diy-name');
@@ -4521,16 +4610,8 @@ var ls=pageOverlay.querySelector('#diy-lorebook');
 if(ls){ls.addEventListener('change',function(){diyLorebook=ls.value;try{localStorage.setItem('pk_diy_lorebook2',diyLorebook);}catch(e){}});}
 var lsc=pageOverlay.querySelector('#diy-lorebook-custom');
 if(lsc){lsc.addEventListener('input',function(){diyLorebook=lsc.value.trim();try{localStorage.setItem('pk_diy_lorebook2',diyLorebook);}catch(e){}});}
-var vpv=pageOverlay.querySelector('#vision-provider');
-if(vpv){vpv.addEventListener('change',function(){diyVisionProviderChange(vpv.value);});}
-var vpb=pageOverlay.querySelector('#vision-base');
-if(vpb){vpb.addEventListener('input',function(){diyVisionSet('baseUrl',vpb.value.trim());});}
-var vpk=pageOverlay.querySelector('#vision-key');
-if(vpk){vpk.addEventListener('input',function(){diyVisionSet('apiKey',vpk.value.trim());});}
-var vpm=pageOverlay.querySelector('#vision-model');
-if(vpm){vpm.addEventListener('input',function(){diyVisionSet('model',vpm.value.trim());});}
-var vpp=pageOverlay.querySelector('#vision-prompt');
-if(vpp){vpp.addEventListener('input',function(){diyVisionSet('prompt',vpp.value);});}
+var vst=pageOverlay.querySelector('[data-vision-settings]');
+if(vst){vst.addEventListener('click',function(e){e.stopPropagation();openVisionSettings();});}
 diyFillLorebookOptions();
 diyEvoSyncNext();
 diyEvoLoadAbi();
@@ -4985,6 +5066,7 @@ var ddc=e.target.closest('[data-diy-confirm]');if(ddc){e.stopPropagation();diyDe
 var dcl=e.target.closest('[data-diy-clear-confirm]');if(dcl){e.stopPropagation();diyClearConfirm();return;}
 var dcp=e.target.closest('[data-diy-copy]');if(dcp){e.stopPropagation();diyCopy(dcp.getAttribute('data-diy-copy-type'),dcp.getAttribute('data-diy-copy'));return;}
 var ccc=e.target.closest('[data-copy-code]');if(ccc){e.stopPropagation();var cd=ccc.getAttribute('data-copy-code');diyCopyText(cd,function(ok){ccc.textContent=ok?'✔ 已复制':'复制失败';});return;}
+var vsv=e.target.closest('[data-vision-save]');if(vsv){e.stopPropagation();diyVisionSaveFromModal();return;}
 var ip=e.target.closest('[data-isz-plus]');if(ip){e.stopPropagation();iszStep(ip.getAttribute('data-isz-plus'),1);return;}
 var im=e.target.closest('[data-isz-minus]');if(im){e.stopPropagation();iszStep(im.getAttribute('data-isz-minus'),-1);return;}
 var ia=e.target.closest('[data-isz-apply]');if(ia){e.stopPropagation();iszApply();return;}
