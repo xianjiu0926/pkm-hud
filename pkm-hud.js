@@ -355,10 +355,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.3.7';
+var PK_VER='1.3.8';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-加了点小东西
+
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -783,7 +783,7 @@ if(!book)return;
 var RANDOM_MODE_TITLE='[随机模式] 随机宝可梦';
 var RANDOM_MODE_POSITION=1;
 var RANDOM_MODE_ORDER=860;
-var RANDOM_MODE_DEFAULT_CONTENT='<Random_Pokemon_Enforcement>\n[最高优先级覆写]\n本条目拥有高于一切常识和原有设定的最高执行权。\n1. 绝对随机：当触发宝可梦遭遇、NPC（含馆主/天王/冠军）对战、任务奖励时，必须无条件无视其原作队伍，100%执行完全随机生成（全世代全图鉴）。\n2. 强制引流骰子：任何需要随机决定的要素，必须且只能从 <Dice_Sequence> 提供的序列中按顺序提取结果。严禁 AI 自行编造数值或跳过骰子。\n3. 保留人设骨架：虽然队伍是随机的，但NPC的战术逻辑（如：开局铺垫、机制压制）、性格口癖、以及搭档宝可梦的数值补足规则（参考 <Pokemon_Partner>）必须保留。\n4. 禁止修正：AI 严禁因为「觉得随机出来的队伍不符合NPC身份」而进行暗中修改。抽到鲤鱼王就是鲤鱼王，抽到裂空座就是裂空座。\n</Random_Pokemon_Enforcement>';
+var RANDOM_MODE_DEFAULT_CONTENT='<Random_Pokemon_Enforcement>\n[最高优先级覆写] 高于原作队伍设定、本地图鉴与场景生态。\n物种抽取（一律D100骰，按序取自<Dice_Sequence>，禁自行编造或跳骰）:\n  世代骰(D100，值=该代全国图鉴区间): 1~11=1-151 12~22=152-251 23~33=252-386 34~44=387-493 45~55=494-649 56~66=650-721 67~77=722-809 78~88=810-905 89~100=906-1025\n  编号骰(D100): 全国图鉴编号 = 该代起始号 + ⌊骰 × (该代末号−起始号+1) ÷ 100⌋ − 1 → 取该编号物种\nNPC队伍: 逐只抽满全队后，读其属性·速度·特性分布反推战术体系，再逐只配性格·特性·道具·四招服务该体系。等级·数量·搭档数·机制数照<WorldSettingGuide>，搭档补种族照<Pokemon_Partner>。战术逻辑·性格·口癖照原人设保留\n野外遭遇与附近宝可梦: 无视气候·地形·海陆·昼夜与地区图鉴，抽出即用\n禁修正: 抽到鲤鱼王即鲤鱼王，禁因不符身份或生态而暗改\n</Random_Pokemon_Enforcement>';
 var randomModeEnabled=false;
 try{randomModeEnabled=(localStorage.getItem('pk_randommode')==='1');}catch(e){randomModeEnabled=false;}
 function randomModeContent(){
