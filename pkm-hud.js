@@ -293,7 +293,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dt-lv{font-size:clamp(.95rem,3.2vw,1.15rem);color:var(--dim);margin-top:0;text-align:center}'+
 '.dt-big{width:96px;height:96px;background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated}'+
 '.dt-sprite{display:flex;justify-content:center;align-items:center;margin:8px 0}'+
-'.dt-hold{margin-top:0;font-size:.8rem;color:var(--text);text-align:center}'+'.trainer-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.28);overflow:hidden;filter:none}'+'.trainer-frame .info-inner{padding:8px 12px}'+'.trainer-frame .info-title{margin-left:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px}'+'.trainer-frame .info-row{padding-left:0}'+'.trainer-frame .info-row.cmd,.trainer-frame .info-row:last-child{padding-right:0}'+'.tr-env{font-size:.72rem;font-weight:400;letter-spacing:0;text-shadow:none;color:var(--dim);display:inline-flex;flex-wrap:wrap;gap:2px 8px}'+'.battle-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.battle-frame .info-inner{padding:8px 12px}'+'.battle-frame .info-title{margin-left:0}'+'.plain-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.plain-frame .info-inner{padding:8px 12px}'+'.plain-frame .info-title{margin-left:0}'+'.plain-frame .info-row{padding-left:0}'+'.plain-frame .info-row.cmd,.plain-frame .info-row:last-child,.plain-frame .task-item:last-child,.plain-frame .event-item:last-child{padding-right:0}'+
+'.dt-hold{margin-top:0;font-size:.8rem;color:var(--text);text-align:center}'+'.trainer-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.28);overflow:hidden;filter:none}'+'.trainer-frame .info-inner{padding:8px 12px}'+'.trainer-frame .info-title{margin-left:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 4px}'+'.trainer-frame .info-row{padding-left:0}'+'.trainer-frame .info-row.cmd,.trainer-frame .info-row:last-child{padding-right:0}'+'.tr-env{font-size:.72rem;font-weight:400;letter-spacing:0;text-shadow:none;color:var(--dim);display:inline-flex;flex-wrap:wrap;gap:2px 8px}'+'.battle-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.battle-frame .info-inner{padding:8px 12px}'+'.battle-frame .info-title{margin-left:0}'+'.plain-frame{border:1px solid var(--frame);border-radius:10px;background:rgba(43,74,111,.22);overflow:hidden;filter:none}'+'.plain-frame .info-inner{padding:8px 12px}'+'.plain-frame .info-title{margin-left:0}'+'.plain-frame .info-row{padding-left:0}'+'.plain-frame .info-row.cmd,.plain-frame .info-row:last-child,.plain-frame .task-item:last-child,.plain-frame .event-item:last-child{padding-right:0}'+
 '@media(orientation:landscape){.dt-top{justify-content:center}}'+'.nb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding-left:8%;padding-right:7%}'+'.nb-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border:1px solid rgba(125,149,181,.45);border-radius:6px;background:rgba(43,74,111,.28);cursor:pointer;min-width:0;transition:filter .12s,transform .1s}'+'.nb-cell:hover{filter:brightness(1.2);transform:translateY(-2px)}'+'.nb-icon{width:clamp(38px,11vw,52px);height:clamp(38px,11vw,52px)}'+'.nb-name{font-size:.7rem;font-weight:800;text-align:center;line-height:1.2;max-width:100%;word-break:break-all}'+'.nb-cnt{font-size:.66rem;color:var(--dim)}'+'.nb-toggle{float:right;font-size:.7rem;font-weight:400;color:var(--dim);cursor:pointer;margin-right:2%}'+'.nb-toggle:hover{color:#7cc4f8}'+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more-btn{display:block;width:100%;margin-top:6px;padding:5px 10px;font-family:inherit;font-size:.74rem;font-weight:800;color:#7cc4f8;background:rgba(43,74,111,.45);border:1px dashed rgba(124,196,248,.5);border-radius:4px;cursor:pointer}'+
 '.dt-more-btn:hover{background:rgba(124,196,248,.18)}'+
 '.dt-move-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}'+
@@ -352,14 +352,22 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.map-labels{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none}'+
 '@keyframes map-pin-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}'+
 '#pkm-hud-btn .fab-update-dot{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#e05050;border:2px solid #0f1626;box-shadow:0 0 8px rgba(224,80,80,.9);animation:pkm-fab-pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:2}'+
-'@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
+'@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}'+
+'.tr-right{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}'+
+'.hud-refresh-btn{display:inline-flex;align-items:center;justify-content:center;width:1.45em;height:1.45em;padding:0;border:none;background:transparent;cursor:pointer;flex-shrink:0;align-self:center;line-height:1}'+
+'.hud-refresh-btn img{width:1.5em;height:1.5em;object-fit:contain;display:block;pointer-events:none;margin-top:-0.39em}'+
+'.hud-refresh-btn:hover{filter:brightness(1.2)}'+
+'.hud-refresh-btn:disabled{opacity:.6;cursor:default}'+
+'.hud-refresh-btn.spin img{animation:pkm-refresh-spin .6s linear}'+
+'.hud-refresh-ok{color:#4ade80;font-size:.9em;line-height:1;font-weight:800}'+
+'@keyframes pkm-refresh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}'+
+'#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.4.3';
+var PK_VER='1.4.4';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-感谢@狮子酱
-diyai识图可以用了
+增加刷新的功能，现在出现不显示内容的时候点一下，应该有用QwQ
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -2114,7 +2122,7 @@ function frame(title,content){return '<div class="info-frame plain-frame"><div c
 function infoRow(k,v){return '<div class="info-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
 
 function teamHTML(){var cards=buildCards();var left=cards.slice(0,3).map(cardHTML).join('');var right=cards.slice(3,6).map(cardHTML).join('');return '<div class="grid"><div class="col col-left">'+left+'</div><div class="col col-right">'+right+'</div></div>';}
-function trainerHTML(){var tr=stat_data.训练家||{};var hearts='';for(var i=0;i<num(tr.活力上限,3);i++){hearts+='<span class="heart'+(i<num(tr.活力,3)?'':' empty')+'">♥</span>';}var content=infoRow('名字',esc(tr.名字||'???')+' '+hearts)+infoRow('金钱','¥'+num(tr.金钱,0).toLocaleString())+badgeRowHTML()+infoRow('身份',esc(tr.身份||'-'))+infoRow('声望',esc(tr.声望||'-'))+'<div class="info-row block"><span class="k">气场</span><span class="v">'+esc(tr.气场||'-')+'</span></div>'+'<div class="info-row cmd"><span class="k">可命令等级</span><span class="v">Lv.'+num(tr.可命令等级,0)+'</span></div>';var ev=stat_data.环境||{},en='';if(ev.当前地点)en+='<span>📍 '+esc(ev.当前地点)+'</span>';if(ev.日期||ev.时间)en+='<span>🕐 '+esc(ev.日期||'')+(ev.日期&&ev.时间?' ':'')+esc(ev.时间||'')+'</span>';return '<div class="info-frame trainer-frame"><div class="info-inner"><div class="info-title"><span>个人信息</span>'+(en?'<span class="tr-env">'+en+'</span>':'')+'</div>'+content+'</div></div>';}
+function trainerHTML(){var tr=stat_data.训练家||{};var hearts='';for(var i=0;i<num(tr.活力上限,3);i++){hearts+='<span class="heart'+(i<num(tr.活力,3)?'':' empty')+'">♥</span>';}var content=infoRow('名字',esc(tr.名字||'???')+' '+hearts)+infoRow('金钱','¥'+num(tr.金钱,0).toLocaleString())+badgeRowHTML()+infoRow('身份',esc(tr.身份||'-'))+infoRow('声望',esc(tr.声望||'-'))+'<div class="info-row block"><span class="k">气场</span><span class="v">'+esc(tr.气场||'-')+'</span></div>'+'<div class="info-row cmd"><span class="k">可命令等级</span><span class="v">Lv.'+num(tr.可命令等级,0)+'</span></div>';var ev=stat_data.环境||{},en='';if(ev.当前地点)en+='<span>📍 '+esc(ev.当前地点)+'</span>';if(ev.日期||ev.时间)en+='<span>🕐 '+esc(ev.日期||'')+(ev.日期&&ev.时间?' ':'')+esc(ev.时间||'')+'</span>';return '<div class="info-frame trainer-frame"><div class="info-inner"><div class="info-title"><span>个人信息</span>'+refreshBtnHTML()+'<span class="tr-right">'+(en?'<span class="tr-env">'+en+'</span>':'')+'</span></div>'+content+'</div></div>';}
 function envStripHTML(){var e=stat_data.环境||{};if(!e.赛程)return '';return '<div class="env-strip"><div class="env-line"><span class="env-item">🏁 '+esc(e.赛程)+'</span></div></div>';}
 function nearbyHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return frame('附近宝可梦','<div class="empty">暂无</div>');var show=nearbyOpen?keys:keys.slice(0,6);var cells=show.map(function(key){var p=obj[key];var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img nb-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img nb-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';var tags=(p.是否闪光?'<span class="tag shiny">闪</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'');return '<div class="nb-cell" data-nearby-open="'+esc(key)+'">'+img+'<div class="nb-name">'+esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+tags+'</div><div class="nb-cnt">×'+num(p.数量,1)+'</div></div>';}).join('');var more=keys.length>6?'<span class="nb-toggle" data-nearby-toggle>'+(nearbyOpen?'收起 ▲':'展开全部('+keys.length+') ▼')+'</span>':'';return '<div class="info-frame nearby-frame">'+svgFrame+'<div class="info-inner"><div class="info-title">附近宝可梦'+more+'</div><div class="nb-grid">'+cells+'</div></div></div>';}
 function nearbyPageHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="empty">暂无</div></div>';var cells=keys.map(function(key){var p=obj[key];var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img box-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img box-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';var nm=esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+(p.是否闪光?'<span class="tag shiny">闪光</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'')+' ×'+num(p.数量,1);return '<div class="box-cell nearby-cell" data-nearby="'+esc(key)+'">'+img+'<div class="box-name">'+nm+'</div></div>';}).join('');return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="nearby-grid">'+cells+'</div></div>';}
@@ -4794,7 +4802,7 @@ bindDevPanel();
 }
 
 function bindBadge(){var bc=document.getElementById('badge-cycle');if(bc){bc.addEventListener('click',badgeClick);}var bo=document.querySelector('[data-badge-open]');if(bo){bo.addEventListener('click',function(e){e.stopPropagation();openPage('badge');});}}
-function badgeClick(e){e.stopPropagation();var rs=parseBadges();if(rs.length>1){var cur=pickRegion(rs),i=0,k;for(k=0;k<rs.length;k++){if(rs[k].region===cur)i=k;}try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:rs[(i+1)%rs.length].region}));}catch(err){}var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();}return;}openPage('badge');}
+function badgeClick(e){e.stopPropagation();var rs=parseBadges();if(rs.length>1){var cur=pickRegion(rs),i=0,k;for(k=0;k<rs.length;k++){if(rs[k].region===cur)i=k;}try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:rs[(i+1)%rs.length].region}));}catch(err){}var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();bindHudRefresh();}return;}openPage('badge');}
 
 function openPage(key){
   var m=MENU.find(function(x){return x.key===key;})||(key==='typechart'?{label:'克制表'}:null);if(!m)return;
@@ -5072,6 +5080,41 @@ function openItemPicker(c){
   overlay.innerHTML=html;
   overlay.classList.add('open');
 }
+function refreshIconHTML(){
+  return '<img src="https://img.baibai.cv/f/WEvnT4/1789326633150.png" alt="刷新">';
+}
+function refreshBtnHTML(){
+  return '<button type="button" class="hud-refresh-btn" data-hud-refresh title="刷新变量">'+refreshIconHTML()+'</button>';
+}
+function hudRefresh(){
+  var activeTab='1';
+  try{var at=document.querySelector('.tab-btn.active');if(at)activeTab=at.getAttribute('data-tab')||'1';}catch(e){}
+  var btn=document.querySelector('[data-hud-refresh]');
+  if(btn){btn.classList.add('spin');btn.disabled=true;}
+  try{stat_data=loadStatData();}catch(e){}
+  try{recordSeen();}catch(e){}
+  try{updateDexContext();}catch(e){}
+  try{
+    render();
+    var tabs=document.querySelectorAll('.tab-btn');
+    for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-tab')===activeTab);}
+    var panels=document.querySelectorAll('.tab-panel');
+    for(var j=0;j<panels.length;j++){panels[j].classList.toggle('active',panels[j].id==='tab-'+activeTab);}
+    resizeFrame();
+  }catch(e){try{fail('HUD 刷新失败：'+e.message);}catch(e2){}}
+  setTimeout(function(){
+    var b=document.querySelector('[data-hud-refresh]');
+    if(b){b.classList.remove('spin');b.disabled=false;b.innerHTML='<span class="hud-refresh-ok">✔</span>';}
+    setTimeout(function(){
+      var b2=document.querySelector('[data-hud-refresh]');
+      if(b2){b2.innerHTML=refreshIconHTML();}
+    },900);
+  },80);
+}
+function bindHudRefresh(){
+  var b=document.querySelector('[data-hud-refresh]');
+  if(b){b.addEventListener('click',function(e){e.stopPropagation();hudRefresh();});}
+}
 function render(){
   var inline=(winMode==='0');
   var app=inline?document.getElementById('pkm-hud-inline'):document.getElementById('pkm-hud-slot');
@@ -5090,7 +5133,7 @@ resolveItemImgs(app);
 overlay=document.createElement('div');overlay.className='overlay';hudEl.appendChild(overlay);
 pageOverlay=document.createElement('div');pageOverlay.className='page-overlay';hudEl.appendChild(pageOverlay);
   cards=buildCards();
-bindHudCmdBar();bindCmdPanel();
+bindHudCmdBar();bindCmdPanel();bindHudRefresh();
 for(var i=0;i<cards.length;i++){preloadMoves(cards[i].skills);}
 
   document.querySelectorAll('.tab-btn').forEach(function(btn){btn.addEventListener('click',function(){
@@ -5128,7 +5171,7 @@ if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-widt
   try{document.body.style.overflow='';}catch(e2){}
 }
   var tf=document.querySelector('.trainer-frame');
-  if(tf){tf.outerHTML=trainerHTML();bindBadge();}
+  if(tf){tf.outerHTML=trainerHTML();bindBadge();bindHudRefresh();}
 }
 });
   overlay.addEventListener('click',function(e){
