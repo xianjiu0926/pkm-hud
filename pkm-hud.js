@@ -355,10 +355,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.4.1';
+var PK_VER='1.4.3';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.优化diy精灵
+感谢@狮子酱
+diyai识图可以用了
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -512,19 +513,14 @@ function diyStatsText(st){
   return 'HP '+(st.hp||'-')+' · 攻击 '+(st.atk||'-')+' · 防御 '+(st.def||'-')+' · 特攻 '+(st.spa||'-')+' · 特防 '+(st.spd||'-')+' · 速度 '+(st.spe||'-');
 }
 /* ===== DIY 精灵：本地图片/GIF 上传 + AI 识图（外观描述） ===== */
-function diyVisionDefaults(){return {provider:'openai',baseUrl:'',apiKey:'',model:'',prompt:''};}
+function diyVisionDefaults(){return {provider:'openai',baseUrl:'',apiKey:'',model:'',proxyBase:'',proxyToken:'',maxTokens:'2048'};}
 function diyVisionDefaultBase(provider){
   if(provider==='gemini')return 'https://generativelanguage.googleapis.com/v1beta';
   if(provider==='claude')return 'https://api.anthropic.com';
   return 'https://api.openai.com/v1';
 }
-function diyVisionDefaultModel(provider){
-  if(provider==='gemini')return 'gemini-2.0-flash';
-  if(provider==='claude')return 'claude-3-5-sonnet-latest';
-  return 'gpt-4o-mini';
-}
 function diyVisionDefaultPrompt(){
-  return '请描述这张图片中宝可梦（精灵）的外观：包括体型、主要配色、花纹/斑纹、头部特征、眼睛、四肢、尾巴、翅膀、装饰物等。用简洁的中文写一段外观描述，150字以内，直接输出描述，不要多余说明。';
+  return '请描述这张图片中宝可梦（精灵）的外观：包括体型、主要配色、花纹/斑纹、头部特征、眼睛、四肢、尾巴、翅膀、装饰物等。用简洁的中文写一段详细的外观描述，直接输出描述，不要多余说明。';
 }
 function diyVisionCfg(){
   var d=diyVisionDefaults();
@@ -533,27 +529,27 @@ function diyVisionCfg(){
     if(c&&typeof c==='object'){for(var k in d){if(c[k]!=null)d[k]=c[k];}}
   }catch(e){}
   if(!d.baseUrl)d.baseUrl=diyVisionDefaultBase(d.provider);
-  if(!d.model)d.model=diyVisionDefaultModel(d.provider);
-  if(!d.prompt)d.prompt=diyVisionDefaultPrompt();
   return d;
 }
 function diyVisionSave(cfg){try{localStorage.setItem('pk_vision_cfg',JSON.stringify(cfg));}catch(e){}}
 function diyVisionSet(key,val){
   var c=diyVisionCfg();
   c[key]=val;
-  diyVisionSave({provider:c.provider,baseUrl:c.baseUrl,apiKey:c.apiKey,model:c.model,prompt:c.prompt});
+  diyVisionSave({provider:c.provider,baseUrl:c.baseUrl,apiKey:c.apiKey,model:c.model,proxyBase:c.proxyBase,proxyToken:c.proxyToken,maxTokens:c.maxTokens});
 }
+var diyVisionModelsCache=[];
 function diyVisionProviderChange(v){
   var c=diyVisionCfg();
   c.provider=v;c.baseUrl='';c.model='';
-  diyVisionSave({provider:c.provider,baseUrl:'',apiKey:c.apiKey,model:'',prompt:c.prompt});
+  diyVisionSave({provider:c.provider,baseUrl:'',apiKey:c.apiKey,model:'',proxyBase:c.proxyBase,proxyToken:c.proxyToken,maxTokens:c.maxTokens});
+  diyVisionModelsCache=[];
   var b=document.getElementById('vision-base');
   if(b){b.value='';b.placeholder='API 地址，如 '+diyVisionDefaultBase(v);}
   var m=document.getElementById('vision-model');
-  if(m){m.value='';m.placeholder='模型名，如 '+diyVisionDefaultModel(v);}
-  var dl=document.getElementById('vision-model-list');
-  if(dl)dl.innerHTML='';
-  diyVisionModelsMsg('已切换服务商，可重新点「读取模型」获取列表');
+  if(m){m.value='';m.placeholder='点击右侧选择模型';}
+  var pnl=document.getElementById('vision-model-panel');
+  if(pnl){pnl.style.display='none';pnl.innerHTML='';}
+  diyVisionModelsMsg('已切换服务商，可重新点「选择模型」获取列表');
 }
 function diyVisionBtnHTML(){
   return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">AI 识图</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" class="btn-small" data-vision-settings style="background:rgba(43,74,111,.7)">🤖 AI 识图设置</button><span class="dim" style="font-size:.72rem">配置 API 后，可在精灵表单里点「AI识图」自动生成外观描述</span></div></div></div>';
@@ -566,18 +562,23 @@ function openVisionSettings(){
     '<option value="gemini"'+(c.provider==='gemini'?' selected':'')+'>Google Gemini</option>'+
     '<option value="claude"'+(c.provider==='claude'?' selected':'')+'>Anthropic Claude</option>'+
     '</select>';
-  var modelRow='<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">'+
-    '<input type="text" id="vision-model" list="vision-model-list" placeholder="模型名，如 '+esc(diyVisionDefaultModel(c.provider))+'" value="'+esc(c.model)+'" style="flex:1;min-width:0;box-sizing:border-box;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none">'+
-    '<datalist id="vision-model-list"></datalist>'+
-    '<button type="button" class="btn-small" data-vision-loadmodels style="flex-shrink:0;background:rgba(43,74,111,.7)">📡 读取模型</button>'+
-    '</div><div id="vision-models-msg" class="dim" style="font-size:.72rem;margin-bottom:6px">配置好 API 地址和 Key 后点「读取模型」，在模型输入框里选择；也可直接手填。</div>';
+  var modelRow='<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px">'+
+    '<input type="text" id="vision-model" placeholder="点击右侧选择模型" value="'+esc(c.model)+'" style="flex:1;min-width:0;box-sizing:border-box;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;margin-bottom:0">'+
+    '<button type="button" class="btn-small" data-vision-pick style="flex-shrink:0;background:rgba(43,74,111,.7)">🎯 选择模型</button>'+
+    '</div>'+
+    '<div id="vision-model-panel" style="display:none;max-height:200px;overflow-y:auto;border:1px solid var(--frame);border-radius:4px;background:rgba(25,40,65,.55);margin-bottom:6px"></div>'+
+    '<div id="vision-models-msg" class="dim" style="font-size:.72rem;margin-bottom:6px">点「选择模型」拉取可用模型，选择后自动填入左侧输入框；也可直接手填。</div>';
   overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">AI 识图设置</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
     '<div class="set-title" style="margin-left:0">服务商</div>'+provSel+
     '<div class="set-title" style="margin-left:0">API 地址</div><input type="text" id="vision-base" placeholder="API 地址，如 '+esc(diyVisionDefaultBase(c.provider))+'" value="'+esc(c.baseUrl)+'" style="'+DIY_INPUT_STYLE+'">'+
     '<div class="set-title" style="margin-left:0">API Key</div><input type="password" id="vision-key" placeholder="API Key（必填）" value="'+esc(c.apiKey)+'" style="'+DIY_INPUT_STYLE+'">'+
     '<div class="set-title" style="margin-left:0">模型</div>'+modelRow+
-    '<div class="set-title" style="margin-left:0">识别提示词（可留空用默认）</div><textarea id="vision-prompt" placeholder="识别提示词" style="'+DIY_INPUT_STYLE+'min-height:56px;resize:vertical">'+esc(c.prompt)+'</textarea>'+
+    '<div class="set-title" style="margin-left:0">最大回复长度（tokens，默认 2048，被截断就调大）</div><input type="text" id="vision-max-tokens" placeholder="2048" value="'+esc(c.maxTokens)+'" style="'+DIY_INPUT_STYLE+'">'+
     '<div class="dim" style="font-size:.72rem;margin-top:2px">设置会自动保存在本地浏览器；只有点「AI识图」时才会把图片发给所填 API。</div>'+
+    '<details style="margin:8px 0"><summary class="dim" style="cursor:pointer;font-size:.78rem">🛡 跨域代理（可选：直连被 CORS 拦截时使用本机 proxy.py）</summary>'+
+    '<div class="set-title" style="margin-left:0;margin-top:8px">代理地址</div><input type="text" id="vision-proxy-base" placeholder="http://127.0.0.1:8765" value="'+esc(c.proxyBase)+'" style="'+DIY_INPUT_STYLE+'">'+
+    '<div class="set-title" style="margin-left:0">代理令牌（proxy.py 启动后打印，可留空）</div><input type="password" id="vision-proxy-token" placeholder="留空" value="'+esc(c.proxyToken)+'" style="'+DIY_INPUT_STYLE+'">'+
+    '</details>'+
     '<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-vision-save>✔ 完成</button><button class="act-btn" data-close>返回</button></div>'+
     '</div></div>';
   overlay.classList.add('open');
@@ -589,10 +590,16 @@ function openVisionSettings(){
   if(vk)vk.addEventListener('input',function(){diyVisionSet('apiKey',vk.value.trim());});
   var vm=document.getElementById('vision-model');
   if(vm)vm.addEventListener('input',function(){diyVisionSet('model',vm.value.trim());});
-  var vp2=document.getElementById('vision-prompt');
-  if(vp2)vp2.addEventListener('input',function(){diyVisionSet('prompt',vp2.value);});
-  var lm=document.querySelector('[data-vision-loadmodels]');
-  if(lm)lm.addEventListener('click',function(e){e.stopPropagation();diyVisionLoadModels();});
+  var pb=document.getElementById('vision-proxy-base');
+  if(pb)pb.addEventListener('input',function(){diyVisionSet('proxyBase',pb.value.trim());});
+  var pt=document.getElementById('vision-proxy-token');
+  if(pt)pt.addEventListener('input',function(){diyVisionSet('proxyToken',pt.value.trim());});
+  var mt=document.getElementById('vision-max-tokens');
+  if(mt)mt.addEventListener('input',function(){diyVisionSet('maxTokens',mt.value.trim());});
+  var pk=document.querySelector('[data-vision-pick]');
+  if(pk)pk.addEventListener('click',function(e){e.stopPropagation();diyVisionPickModels();});
+  var pnl=document.getElementById('vision-model-panel');
+  if(pnl)pnl.addEventListener('click',function(e){var it=e.target.closest('[data-model]');if(it){diyVisionPickSelect(it.getAttribute('data-model'));}});
 }
 function diyVisionSaveFromModal(){
   var cfg=diyVisionCfg();
@@ -600,17 +607,21 @@ function diyVisionSaveFromModal(){
   var base=document.getElementById('vision-base');
   var key=document.getElementById('vision-key');
   var model=document.getElementById('vision-model');
-  var prompt=document.getElementById('vision-prompt');
+  var pb=document.getElementById('vision-proxy-base');
+  var pt=document.getElementById('vision-proxy-token');
+  var mt=document.getElementById('vision-max-tokens');
   if(prov)cfg.provider=prov.value;
   if(base)cfg.baseUrl=base.value.trim();
   if(key)cfg.apiKey=key.value.trim();
   if(model)cfg.model=model.value.trim();
-  if(prompt)cfg.prompt=prompt.value;
-  diyVisionSave({provider:cfg.provider,baseUrl:cfg.baseUrl,apiKey:cfg.apiKey,model:cfg.model,prompt:cfg.prompt});
+  if(pb)cfg.proxyBase=pb.value.trim();
+  if(pt)cfg.proxyToken=pt.value.trim();
+  if(mt)cfg.maxTokens=mt.value.trim();
+  diyVisionSave({provider:cfg.provider,baseUrl:cfg.baseUrl,apiKey:cfg.apiKey,model:cfg.model,proxyBase:cfg.proxyBase,proxyToken:cfg.proxyToken,maxTokens:cfg.maxTokens});
   overlay.classList.remove('open');
   clearBack();
 }
-function diyVisionLoadModels(){
+function diyVisionPickModels(){
   var cfg=diyVisionCfg();
   var prov=document.getElementById('vision-provider');
   var base=document.getElementById('vision-base');
@@ -619,19 +630,41 @@ function diyVisionLoadModels(){
   if(base)cfg.baseUrl=base.value.trim();
   if(key)cfg.apiKey=key.value.trim();
   if(!cfg.apiKey){diyVisionModelsMsg('请先填写 API Key');return;}
-  var url=diyVisionModelsURL(cfg);
-  var btn=document.querySelector('[data-vision-loadmodels]');
+  if(diyVisionModelsCache.length){
+    diyVisionRenderModelsPanel(diyVisionModelsCache);
+    diyVisionModelsMsg('已缓存 '+diyVisionModelsCache.length+' 个模型，点击即可选择');
+    return;
+  }
+  var btn=document.querySelector('[data-vision-pick]');
   if(btn){btn.textContent='⏳ 读取中…';btn.disabled=true;}
-  diyVisionModelsMsg('正在读取可用模型…');
-  diyVisionFetchModels(url,cfg,function(list){
-    var dl=document.getElementById('vision-model-list');
-    if(dl)dl.innerHTML=(list&&list.length?list.map(function(m){return '<option value="'+esc(m)+'">';}).join(''):'');
-    if(btn){btn.textContent='📡 读取模型';btn.disabled=false;}
-    diyVisionModelsMsg(list&&list.length?('已读取 '+list.length+' 个模型，点击模型输入框即可选择'):'未读取到模型，可手动填写');
+  var pnl=document.getElementById('vision-model-panel');
+  if(pnl){pnl.innerHTML='<div class="dim" style="padding:8px 10px;font-size:.78rem">正在读取可用模型…</div>';pnl.style.display='';}
+  diyVisionFetchModels(diyVisionModelsURL(cfg),cfg,function(list){
+    diyVisionModelsCache=list||[];
+    if(btn){btn.textContent='🎯 选择模型';btn.disabled=false;}
+    diyVisionRenderModelsPanel(diyVisionModelsCache);
+    diyVisionModelsMsg(diyVisionModelsCache.length?('已读取 '+diyVisionModelsCache.length+' 个模型，点击即可选择'):'未读取到模型，可手动填写');
   },function(err){
-    if(btn){btn.textContent='📡 读取模型';btn.disabled=false;}
+    if(btn){btn.textContent='🎯 选择模型';btn.disabled=false;}
+    if(pnl){pnl.style.display='none';pnl.innerHTML='';}
     diyVisionModelsMsg('读取失败：'+err);
   });
+}
+function diyVisionRenderModelsPanel(list){
+  var pnl=document.getElementById('vision-model-panel');
+  if(!pnl)return;
+  if(!list||!list.length){pnl.style.display='none';pnl.innerHTML='';return;}
+  pnl.innerHTML=list.map(function(m){
+    return '<div data-model="'+esc(m)+'" style="padding:6px 10px;font-size:.82rem;cursor:pointer;border-bottom:1px dashed rgba(170,204,255,.2);word-break:break-all">'+esc(m)+'</div>';
+  }).join('');
+  pnl.style.display='';
+}
+function diyVisionPickSelect(m){
+  var inp=document.getElementById('vision-model');
+  if(inp){inp.value=m;diyVisionSet('model',m);}
+  var pnl=document.getElementById('vision-model-panel');
+  if(pnl){pnl.style.display='none';}
+  diyVisionModelsMsg('已选择模型：'+m);
 }
 function diyVisionModelsMsg(t){
   var el=document.getElementById('vision-models-msg');
@@ -643,13 +676,7 @@ function diyVisionModelsURL(cfg){
   return String(cfg.baseUrl).replace(/\/+$/,'')+'/models';
 }
 function diyVisionFetchModels(url,cfg,cb,errCb){
-  var headers={};
-  if(cfg.provider==='claude'){headers['x-api-key']=cfg.apiKey;headers['anthropic-version']='2023-06-01';}
-  else if(cfg.provider==='openai'){headers['Authorization']='Bearer '+cfg.apiKey;}
-  fetch(url,{method:'GET',headers:headers})
-    .then(function(r){if(!r.ok){return r.text().then(function(t){throw new Error('HTTP '+r.status+'：'+String(t).slice(0,180));});}return r.json();})
-    .then(function(j){cb&&cb(diyVisionParseModels(j));})
-    .catch(function(e){errCb&&errCb(e&&e.message?e.message:String(e));});
+  diyVisionDoFetch(cfg,url,'GET',null,function(j){cb&&cb(diyVisionParseModels(j));},errCb);
 }
 function diyVisionParseModels(j){
   var out=[];
@@ -665,7 +692,7 @@ function diyEvoEnsureDescShown(p){
   if(!diyEvoDescShow[p]){
     diyEvoDescShow[p]=true;
     var w=document.getElementById('evo-desc-wrap-'+p);
-    if(w)w.innerHTML=diyEvoDescHTML(p);
+    if(w){w.innerHTML=diyEvoDescHTML(p);diyEvoDescAutosize(p);}
     var b=document.getElementById('evo-desc-btn-'+p);
     if(b)b.textContent='✕ 收起外观描述';
   }
@@ -696,39 +723,64 @@ function diyEvoVision(p){
   p=parseInt(p,10);
   var src=diyVal('evo-img-'+p);
   if(!src){diyMsg('请先上传图片或填写图片链接，再点「AI识图」');return;}
-  var btn=document.querySelector('[data-diy-evo-vision="'+p+'"]');
+  openVisionPrompt(p,src);
+}
+function openVisionPrompt(p,src){
+  clearBack();
+  var imgHtml=(/^data:image\//i.test(String(src))||/^https?:\/\//i.test(String(src)))?'<div style="text-align:center;margin-bottom:8px"><img src="'+esc(src)+'" style="max-width:120px;max-height:120px;object-fit:contain;image-rendering:pixelated;border:1px solid var(--frame);border-radius:4px;background:rgba(43,74,111,.3)" onerror="this.remove()"></div>':'';
+  overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">AI 识图 · 生成外观描述</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    imgHtml+
+    '<div class="set-title" style="margin-left:0">识别提示词（可留空，留空用默认）</div>'+
+    '<textarea id="vision-run-prompt" placeholder="'+esc(diyVisionDefaultPrompt())+'" style="'+DIY_INPUT_STYLE+'min-height:72px;resize:vertical"></textarea>'+
+    '<div id="vision-run-msg" class="dim" style="font-size:.75rem;margin-bottom:6px">点击「开始识图」后会把图片和提示词发给已配置的 API。</div>'+
+    '<div class="action-btns" style="margin-top:8px"><button class="act-btn" data-vision-run>▶ 开始识图</button><button class="act-btn" data-close>返回</button></div>'+
+    '</div></div>';
+  overlay.classList.add('open');
+  var run=document.querySelector('[data-vision-run]');
+  if(run)run.addEventListener('click',function(e){e.stopPropagation();diyVisionRunFromPrompt(p);});
+}
+function diyVisionRunFromPrompt(p){
+  var src=diyVal('evo-img-'+p);
+  var promptEl=document.getElementById('vision-run-prompt');
+  var prompt=promptEl?promptEl.value:'';
+  var btn=document.querySelector('[data-vision-run]');
+  var msg=document.getElementById('vision-run-msg');
   if(btn){btn.textContent='⏳ 识图中…';btn.disabled=true;}
-  diyVisionRecognize(src,function(text){
-    if(!text){if(btn){btn.textContent='🤖 AI识图填入外观';btn.disabled=false;}diyMsg('识图返回为空');return;}
+  if(msg){msg.textContent='正在调用 API 识图…';msg.style.color='';}
+  diyVisionRecognize(src,prompt,function(text){
+    if(btn){btn.textContent='▶ 开始识图';btn.disabled=false;}
     diyEvoEnsureDescShown(p);
     var ta=document.getElementById('evo-desc-'+p);
     if(ta){ta.value=text;diyEvoDescCache[p]=text;}
-    if(btn){btn.textContent='🤖 AI识图填入外观';btn.disabled=false;}
-    hudMsg('已识别外观并填入「外观描述」');
+    if(msg){msg.textContent='✔ 识别成功，已填入「外观描述」：'+text;msg.style.color='#4ade80';}
   },function(err){
-    if(btn){btn.textContent='🤖 AI识图填入外观';btn.disabled=false;}
-    diyMsg('AI 识图失败：'+err);
+    if(btn){btn.textContent='▶ 开始识图';btn.disabled=false;}
+    if(msg){msg.textContent='✘ 识图失败：'+err;msg.style.color='#f87171';}
   });
 }
-function diyVisionRecognize(src,cb,errCb){
+function diyVisionRecognize(src,prompt,cb,errCb){
   var cfg=diyVisionCfg();
   if(!cfg.apiKey){errCb&&errCb('未填写 API Key（在 DIY 页面「AI 识图设置」里填写）');return;}
+  if(!cfg.model){errCb&&errCb('未选择模型（在 AI 识图设置里点「选择模型」）');return;}
   var s=String(src),isData=/^data:image\//i.test(s);
-  if(cfg.provider==='gemini')diyVisionGemini(cfg,s,isData,cb,errCb);
-  else if(cfg.provider==='claude')diyVisionClaude(cfg,s,isData,cb,errCb);
-  else diyVisionOpenAI(cfg,s,isData,cb,errCb);
+  var pr=String(prompt||'').trim()||diyVisionDefaultPrompt();
+  try{
+    if(cfg.provider==='gemini')diyVisionGemini(cfg,s,isData,pr,cb,errCb);
+    else if(cfg.provider==='claude')diyVisionClaude(cfg,s,isData,pr,cb,errCb);
+    else diyVisionOpenAI(cfg,s,isData,pr,cb,errCb);
+  }catch(e){errCb&&errCb(e&&e.message?e.message:String(e));}
 }
-function diyVisionOpenAI(cfg,src,isData,cb,errCb){
+function diyVisionOpenAI(cfg,src,isData,prompt,cb,errCb){
   var url=String(cfg.baseUrl).replace(/\/+$/,'')+'/chat/completions';
-  var content=[{type:'text',text:cfg.prompt},{type:'image_url',image_url:{url:src}}];
-  diyVisionFetch(url,{model:cfg.model,messages:[{role:'user',content:content}],max_tokens:500},{'Authorization':'Bearer '+cfg.apiKey},cb,errCb);
+  var content=[{type:'text',text:prompt},{type:'image_url',image_url:{url:src}}];
+  diyVisionFetch(url,{model:cfg.model,messages:[{role:'user',content:content}],max_tokens:(parseInt(cfg.maxTokens,10)||2048)},cfg,cb,errCb);
 }
-function diyVisionGemini(cfg,src,isData,cb,errCb){
+function diyVisionGemini(cfg,src,isData,prompt,cb,errCb){
   var base=String(cfg.baseUrl).replace(/\/+$/,'');
   var url=base+'/models/'+encodeURIComponent(cfg.model)+':generateContent?key='+encodeURIComponent(cfg.apiKey);
   function go(dataUrl,mime){
-    var parts=[{text:cfg.prompt},{inline_data:{mime_type:mime||'image/png',data:String(dataUrl).replace(/^data:image\/[^;]+;base64,/,'')}}];
-    diyVisionFetch(url,{contents:[{parts:parts}]},null,cb,errCb);
+    var parts=[{text:prompt},{inline_data:{mime_type:mime||'image/png',data:String(dataUrl).replace(/^data:image\/[^;]+;base64,/,'')}}];
+    diyVisionFetch(url,{contents:[{parts:parts}],generationConfig:{maxOutputTokens:(parseInt(cfg.maxTokens,10)||2048)}},cfg,cb,errCb);
   }
   if(isData){
     var m=(src.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/)||[])[1]||'image/png';
@@ -742,7 +794,7 @@ function diyVisionGemini(cfg,src,isData,cb,errCb){
     }).catch(function(e){errCb&&errCb('Gemini 需要 base64：链接图片抓取失败（可能跨域），请改用上传本地图片。'+(e&&e.message?(' '+e.message):''));});
   }
 }
-function diyVisionClaude(cfg,src,isData,cb,errCb){
+function diyVisionClaude(cfg,src,isData,prompt,cb,errCb){
   var url=String(cfg.baseUrl).replace(/\/+$/,'')+'/v1/messages';
   var content=[];
   if(isData){
@@ -751,23 +803,49 @@ function diyVisionClaude(cfg,src,isData,cb,errCb){
   }else{
     content.push({type:'image',source:{type:'url',url:src}});
   }
-  content.push({type:'text',text:cfg.prompt});
-  diyVisionFetch(url,{model:cfg.model,max_tokens:500,messages:[{role:'user',content:content}]},{'x-api-key':cfg.apiKey,'anthropic-version':'2023-06-01'},cb,errCb);
+  content.push({type:'text',text:prompt});
+  diyVisionFetch(url,{model:cfg.model,max_tokens:(parseInt(cfg.maxTokens,10)||2048),messages:[{role:'user',content:content}]},cfg,cb,errCb);
 }
-function diyVisionFetch(url,body,extraHeaders,cb,errCb){
-  var headers={'Content-Type':'application/json'};
-  if(extraHeaders){for(var k in extraHeaders){headers[k]=extraHeaders[k];}}
-  fetch(url,{method:'POST',headers:headers,body:JSON.stringify(body)})
-    .then(function(r){
-      if(!r.ok){return r.text().then(function(t){throw new Error('HTTP '+r.status+'：'+String(t).slice(0,180));});}
-      return r.json();
-    })
-    .then(function(j){
-      var t=diyVisionExtract(j);
-      if(!t)throw new Error('返回内容为空（请检查模型名/API 地址）');
-      cb&&cb(t);
-    })
-    .catch(function(e){errCb&&errCb(e&&e.message?e.message:String(e));});
+function diyVisionProxyBase(cfg){
+  var b=String(cfg.proxyBase||'').trim();
+  if(!b)return '';
+  return b.replace(/\/+$/,'');
+}
+function diyVisionDoFetch(cfg,url,method,body,onJson,onErr){
+  var proxy=diyVisionProxyBase(cfg);
+  var done=false;
+  var timer=setTimeout(function(){if(done)return;done=true;onErr&&onErr('请求超时（90 秒无响应），请检查 API 地址 / 网络 / Key，或改用跨域代理');},90000);
+  function finish(fn,arg){if(done)return;clearTimeout(timer);done=true;fn&&fn(arg);}
+  var req;
+  if(proxy){
+    var ph={'Content-Type':'application/json'};
+    if(cfg.proxyToken)ph['X-Fusion-Token']=cfg.proxyToken;
+    var proxyKey=(cfg.provider==='gemini')?'':cfg.apiKey;
+    req=fetch(proxy+'/request',{method:'POST',headers:ph,credentials:'omit',referrerPolicy:'no-referrer',body:JSON.stringify({url:url,method:method,key:proxyKey,body:body})});
+  }else{
+    var h={'Content-Type':'application/json'};
+    if(cfg.provider==='claude'){h['x-api-key']=cfg.apiKey;h['anthropic-version']='2023-06-01';}
+    else if(cfg.provider==='openai'){h['Authorization']='Bearer '+cfg.apiKey;}
+    req=fetch(url,{method:method,headers:h,credentials:'omit',referrerPolicy:'no-referrer',body:(method==='POST'?JSON.stringify(body):undefined)});
+  }
+  req.then(function(r){
+    return r.text().then(function(t){
+      var j=null;try{j=JSON.parse(t);}catch(e){}
+      if(!r.ok)throw new Error('HTTP '+r.status+'：'+String(t).slice(0,300));
+      return j;
+    });
+  }).then(function(j){finish(onJson,j);}).catch(function(e){
+    var msg=e&&e.message?e.message:String(e);
+    if(/Failed to fetch|NetworkError|Network request failed|Load failed|TypeError/i.test(msg))msg='网络请求失败：多半是 CORS/跨域被拦截、网络不可达或混合内容。可改用「AI 识图设置」里的跨域代理（本机 proxy.py），或换支持浏览器直连的 API 地址。';
+    finish(onErr,msg);
+  });
+}
+function diyVisionFetch(url,body,cfg,cb,errCb){
+  diyVisionDoFetch(cfg,url,'POST',body,function(j){
+    var t=diyVisionExtract(j);
+    if(!t){errCb&&errCb('返回内容为空（请检查模型名/API 地址）');return;}
+    cb&&cb(t);
+  },errCb);
 }
 function diyVisionExtract(j){
   try{
@@ -1313,8 +1391,15 @@ function diyEvoDelBranch(p,b){
 function diyEvoDescHTML(p){
   if(!diyEvoDescShow[p])return '';
   var v=diyEvoDescCache[p]||'';
-  var st='width:100%;box-sizing:border-box;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;min-height:48px;resize:vertical';
+  var st='width:100%;box-sizing:border-box;padding:8px 10px;font-family:inherit;font-size:.85rem;line-height:1.6;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;min-height:140px;resize:vertical';
   return '<textarea id="evo-desc-'+p+'" placeholder="外观描述，如 全身覆盖蓝色鳞片…" style="'+st+'">'+esc(v)+'</textarea>';
+}
+function diyEvoDescAutosize(p){
+  var ta=document.getElementById('evo-desc-'+p);
+  if(!ta)return;
+  ta.style.height='auto';
+  var h=Math.max(140,Math.min(ta.scrollHeight+2,420));
+  ta.style.height=h+'px';
 }
 function diyEvoToggleDesc(p){
   p=parseInt(p,10);
@@ -1324,7 +1409,7 @@ function diyEvoToggleDesc(p){
   }
   diyEvoDescShow[p]=!diyEvoDescShow[p];
   var c=document.getElementById('evo-desc-wrap-'+p);
-  if(c){c.innerHTML=diyEvoDescHTML(p);}
+  if(c){c.innerHTML=diyEvoDescHTML(p);if(diyEvoDescShow[p])diyEvoDescAutosize(p);}
   var btn=document.getElementById('evo-desc-btn-'+p);
   if(btn){btn.textContent=diyEvoDescShow[p]?'✕ 收起外观描述':'＋ 外观描述';}
 }
@@ -1356,6 +1441,7 @@ function diyEvoAddPage(){
   var f=document.getElementById('diy-form');
   if(f){f.innerHTML=diyPkmFormHTML()+diyBtnsHTML();}
   for(var id in vals){var el=document.getElementById(id);if(el)el.value=vals[id];}
+  for(var q=0;q<diyEvoCount;q++){if(diyEvoDescShow[q])diyEvoDescAutosize(q);}
   diyEvoSyncNext();
   diyEvoLoadAbi();
 }
@@ -4598,7 +4684,7 @@ if(wm){wm.addEventListener('change',function(){winMode=wm.checked?'1':'0';try{lo
   var cs=pageOverlay.querySelector('[data-clear-start]');
 if(cs){cs.addEventListener('click',function(e){e.stopPropagation();clearStep=0;confirmClearModal();});}
 pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(b){b.addEventListener('click',function(){diyType=b.getAttribute('data-diy-tab');pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(x){x.classList.toggle('active',x===b);});var f=pageOverlay.querySelector('#diy-form');if(f)f.innerHTML=diyFormHTML(diyType);var l=pageOverlay.querySelector('#diy-list');if(l)l.innerHTML=diyListHTML(diyType);});});
-var df=pageOverlay.querySelector('#diy-form');if(df){df.addEventListener('click',function(e){if(e.target.closest('[data-diy-add]')){diyAdd(diyType);}else if(e.target.closest('[data-diy-clear]')){diyClearStart();}else if(e.target.closest('[data-diy-add-type]')){diyAddType();}else if(e.target.closest('[data-diy-evo-add]')){diyEvoAddPage();}else if(e.target.closest('[data-diy-evo-add-type]')){diyEvoAddType(e.target.closest('[data-diy-evo-add-type]').getAttribute('data-diy-evo-add-type'));}else if(e.target.closest('[data-diy-evo-addbranch]')){diyEvoAddBranch(e.target.closest('[data-diy-evo-addbranch]').getAttribute('data-diy-evo-addbranch'));}else if(e.target.closest('[data-diy-evo-delbranch]')){var db=e.target.closest('[data-diy-evo-delbranch]').getAttribute('data-diy-evo-delbranch').split('|');diyEvoDelBranch(db[0],db[1]);}else if(e.target.closest('[data-diy-evo-adddesc]')){diyEvoToggleDesc(e.target.closest('[data-diy-evo-adddesc]').getAttribute('data-diy-evo-adddesc'));}else if(e.target.closest('[data-diy-evo-upload]')){diyEvoUpload(e.target.closest('[data-diy-evo-upload]').getAttribute('data-diy-evo-upload'));}else if(e.target.closest('[data-diy-evo-vision]')){diyEvoVision(e.target.closest('[data-diy-evo-vision]').getAttribute('data-diy-evo-vision'));}});df.addEventListener('input',function(e){if(e.target&&e.target.id==='diy-ability-search'){diyFilterAbility();}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-search-')===0){diyEvoFilterAbility(parseInt(e.target.id.replace('evo-abi-search-',''),10));}if(e.target&&e.target.id&&e.target.id.indexOf('evo-name-')===0){diyEvoSyncNext();}});df.addEventListener('change',function(e){if(e.target&&e.target.id&&e.target.id.indexOf('evo-img-file-')===0){diyEvoFileChange(e.target);}if(e.target&&e.target.id==='diy-ability-cat'){diyAbilityCat=e.target.value;var w=document.getElementById('diy-ability-wrap');if(w)w.innerHTML=diyAbilityWrapHTML();if(diyAbilityCat==='orig'){diyLoadAbiOptions();}}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-cat-')===0){var p=parseInt(e.target.id.replace('evo-abi-cat-',''),10);diyEvoAbiCats[p]=e.target.value;var w2=document.getElementById('evo-abi-wrap-'+p);if(w2)w2.innerHTML=diyEvoAbiWrapHTML(p);if(diyEvoAbiCats[p]==='orig'){diyEvoLoadAbiOptions(p);}}});diyLoadAbiOptions();}
+var df=pageOverlay.querySelector('#diy-form');if(df){df.addEventListener('click',function(e){if(e.target.closest('[data-diy-add]')){diyAdd(diyType);}else if(e.target.closest('[data-diy-clear]')){diyClearStart();}else if(e.target.closest('[data-diy-add-type]')){diyAddType();}else if(e.target.closest('[data-diy-evo-add]')){diyEvoAddPage();}else if(e.target.closest('[data-diy-evo-add-type]')){diyEvoAddType(e.target.closest('[data-diy-evo-add-type]').getAttribute('data-diy-evo-add-type'));}else if(e.target.closest('[data-diy-evo-addbranch]')){diyEvoAddBranch(e.target.closest('[data-diy-evo-addbranch]').getAttribute('data-diy-evo-addbranch'));}else if(e.target.closest('[data-diy-evo-delbranch]')){var db=e.target.closest('[data-diy-evo-delbranch]').getAttribute('data-diy-evo-delbranch').split('|');diyEvoDelBranch(db[0],db[1]);}else if(e.target.closest('[data-diy-evo-adddesc]')){diyEvoToggleDesc(e.target.closest('[data-diy-evo-adddesc]').getAttribute('data-diy-evo-adddesc'));}else if(e.target.closest('[data-diy-evo-upload]')){diyEvoUpload(e.target.closest('[data-diy-evo-upload]').getAttribute('data-diy-evo-upload'));}else if(e.target.closest('[data-diy-evo-vision]')){diyEvoVision(e.target.closest('[data-diy-evo-vision]').getAttribute('data-diy-evo-vision'));}});df.addEventListener('input',function(e){if(e.target&&e.target.id==='diy-ability-search'){diyFilterAbility();}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-search-')===0){diyEvoFilterAbility(parseInt(e.target.id.replace('evo-abi-search-',''),10));}if(e.target&&e.target.id&&e.target.id.indexOf('evo-name-')===0){diyEvoSyncNext();}if(e.target&&e.target.id&&e.target.id.indexOf('evo-desc-')===0){diyEvoDescAutosize(parseInt(e.target.id.replace('evo-desc-',''),10));}});df.addEventListener('change',function(e){if(e.target&&e.target.id&&e.target.id.indexOf('evo-img-file-')===0){diyEvoFileChange(e.target);}if(e.target&&e.target.id==='diy-ability-cat'){diyAbilityCat=e.target.value;var w=document.getElementById('diy-ability-wrap');if(w)w.innerHTML=diyAbilityWrapHTML();if(diyAbilityCat==='orig'){diyLoadAbiOptions();}}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-cat-')===0){var p=parseInt(e.target.id.replace('evo-abi-cat-',''),10);diyEvoAbiCats[p]=e.target.value;var w2=document.getElementById('evo-abi-wrap-'+p);if(w2)w2.innerHTML=diyEvoAbiWrapHTML(p);if(diyEvoAbiCats[p]==='orig'){diyEvoLoadAbiOptions(p);}}});diyLoadAbiOptions();}
 var dl=pageOverlay.querySelector('#diy-list');if(dl){dl.addEventListener('click',function(e){var del=e.target.closest('[data-diy-del]');if(del){diyDelStart(diyType,del.getAttribute('data-diy-del'));return;}var sh=e.target.closest('[data-diy-share]');if(sh){diyShare(diyType,sh.getAttribute('data-diy-share'));return;}var vw=e.target.closest('[data-diy-view]');if(vw){diyView(diyType,vw.getAttribute('data-diy-view'));}});}
 var dib=pageOverlay.querySelector('[data-diy-import]');if(dib){dib.addEventListener('click',function(e){e.stopPropagation();diyImport();});}
 var dii=pageOverlay.querySelector('#diy-import-code');if(dii){dii.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();diyImport();}});}
