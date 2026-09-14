@@ -364,11 +364,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.2';
+var PK_VER='1.5.3';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-@狮子酱
-｜Workshop实时同步修复：队伍/盒子操作立即写回MVU并公开实时队伍接口；增强DIY/直接图片显示兼容。｜v1.5.2：HUD刷新同时重载DIY缓存；外部Workshop可直接安装DIY bundle到HUD内存；修复通讯接收后DIY精灵队伍卡片/详情页问号。
+修bug
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -560,6 +559,7 @@ var DIY_INPUT_STYLE='width:100%;box-sizing:border-box;padding:6px 10px;margin-bo
 var diyType='move';
 var diyStorageRawSeen='';
 var diyData=diyLoad();
+diyPreloadImages();
 /* 供外部脚本（如创意工坊）直接抓取当前内存 DIY 数据，无需分享码 */
 try{WIN.__pkmDiyData=function(){return diyData;};}catch(e){}
 try{if(window!==WIN)window.__pkmDiyData=function(){return diyData;};}catch(e){}
@@ -601,6 +601,47 @@ function diySave(){
     var raw=JSON.stringify(diyNormalizeData(diyData));
     localStorage.setItem('pk_diy',raw);
     diyStorageRawSeen=raw;
+  }catch(e){}
+  diyPreloadImages();
+}
+/* 每次自创/编辑保存后：把 DIY 精灵/道具图片预加载进浏览器缓存，
+ * 并原地刷新主页队伍卡片，让队伍界面马上显示自创精灵图片。 */
+function diyPreloadImages(){
+  try{
+    var seen={};
+    function add(u){
+      u=String(u==null?'':u).trim();
+      if(!u||seen[u])return;
+      if(!/^(?:https?:\/\/|data:image\/)/i.test(u))return;
+      seen[u]=1;
+      try{
+        var im=new Image();
+        try{im.referrerPolicy='no-referrer';}catch(e2){}
+        im.onerror=function(){try{im.onerror=null;}catch(e3){}};
+        im.src=u;
+      }catch(e4){}
+    }
+    var p=diyData.pokemon||{};
+    for(var k in p){
+      var o=p[k];
+      if(!o)continue;
+      add(o.img);
+      if(o.chain){for(var i=0;i<o.chain.length;i++){var st=o.chain[i];if(st)add(st.img);}}
+    }
+    var it=diyData.item||{};
+    for(var k2 in it){var io=it[k2];if(io)add(io.img);}
+  }catch(e){}
+}
+function diyRefreshTeam(){
+  try{
+    cards=buildCards();
+    var grid=document.querySelector('#tab-1 .grid');
+    if(grid){grid.outerHTML=teamHTML();}
+    pkImgFix(document);
+    resolvePkmImgs(document);
+    resolveItemImgs(document);
+    document.querySelectorAll('.card-frame[data-slot]').forEach(function(el){el.addEventListener('click',function(){var s=parseInt(el.getAttribute('data-slot'),10);for(var i=0;i<cards.length;i++){if(cards[i].slot===s){currentDetailCard=cards[i];clearBack();overlay.innerHTML=detailHTML(cards[i]);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);break;}}});});
+    resizeFrame();
   }catch(e){}
 }
 /* 创意工坊优先使用这个 API 获取“HUD 此刻真正显示的队伍/盒子”，
@@ -1468,6 +1509,7 @@ var raw=diyDecode(c);
   for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-diy-tab')===t);}
   var inp=document.getElementById('diy-import-code');if(inp)inp.value='';
   diyWriteLorebook(t,n);
+  diyRefreshTeam();
 }
 function diyChainText(obj){
   var c=obj.chain;
@@ -1721,6 +1763,7 @@ function diyAdd(type){
     var f=document.getElementById('diy-form');if(f)f.innerHTML=diyFormHTML(type);
     var l=document.getElementById('diy-list');if(l)l.innerHTML=diyListHTML(type);
     diyWriteLorebook(type,name,editing);
+    diyRefreshTeam();
     return;
   }
   diyData[type][name]=obj;
@@ -1728,6 +1771,7 @@ function diyAdd(type){
   var f2=document.getElementById('diy-form');if(f2)f2.innerHTML=diyFormHTML(type);
   var l2=document.getElementById('diy-list');if(l2)l2.innerHTML=diyListHTML(type);
   diyWriteLorebook(type,name);
+  diyRefreshTeam();
 }
 function diyMsg(t){
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">DIY</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row"><span class="v">'+esc(t)+'</span></div></div></div>';
@@ -1874,6 +1918,7 @@ function diyDelConfirm(){
     diyDisableLorebook(type,name);
     overlay.classList.remove('open');
     var l=document.getElementById('diy-list');if(l)l.innerHTML=diyListHTML(diyType);
+    diyRefreshTeam();
   }else{
     diyConfirmModal();
   }
