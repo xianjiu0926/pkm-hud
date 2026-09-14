@@ -364,11 +364,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.6';
+var PK_VER='1.5.7';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-@飞仙儿
-修复进旧档不读变量的问题
+修复行动弹窗显示自创精灵图
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -4377,7 +4376,7 @@ hudActions+='<button class="act-btn" data-pkm-equip>携带道具</button>';
 if(hudActions) hudActions='<div class="action-btns" style="margin-top:10px">'+hudActions+'</div>';
 return '<div class="modal detail-modal one"><div class="modal-head"><div class="modal-name">宝可梦详情</div><button class="close" data-close>✕</button></div><div class="modal-body">'+p1+'<div class="dt-sep"></div>'+p2+hudActions+'</div></div>';}
 
-function actionHTML(p,key){var bg=p.图标?pkImg(p.图标,p.是否闪光):'';var tags='';if(p.是否闪光)tags+='<span class="tag shiny">闪光</span>';if(p.状态&&p.状态!=='普通')tags+='<span class="tag boss">'+esc(p.状态)+'</span>';return '<div class="modal"><div class="modal-head"><div class="modal-name">选择行动</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="action-pkm"><div class="pk-img action-img" style="background-image:'+bg+'"></div><div class="action-info"><div class="nearby-name">'+esc(p.名字)+' '+tags+'</div><div class="nearby-sub">数量 ×'+num(p.数量,1)+'</div></div></div><div class="action-btns"><button class="act-btn" data-action="对战" data-key="'+esc(key)+'">⚔️ 对战</button><button class="act-btn" data-action="捕捉" data-key="'+esc(key)+'">🔴 捕捉</button><button class="act-btn" data-action="观察" data-key="'+esc(key)+'">👀 观察</button></div></div></div>';}
+function actionHTML(p,key){var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'action-img');var tags='';if(p.是否闪光)tags+='<span class="tag shiny">闪光</span>';if(p.状态&&p.状态!=='普通')tags+='<span class="tag boss">'+esc(p.状态)+'</span>';return '<div class="modal"><div class="modal-head"><div class="modal-name">选择行动</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="action-pkm">'+img+'<div class="action-info"><div class="nearby-name">'+esc(p.名字)+' '+tags+'</div><div class="nearby-sub">数量 ×'+num(p.数量,1)+'</div></div></div><div class="action-btns"><button class="act-btn" data-action="对战" data-key="'+esc(key)+'">⚔️ 对战</button><button class="act-btn" data-action="捕捉" data-key="'+esc(key)+'">🔴 捕捉</button><button class="act-btn" data-action="观察" data-key="'+esc(key)+'">👀 观察</button></div></div></div>';}
 
 function sendMessage(text){
   try{
@@ -5056,7 +5055,7 @@ function bindHudCmdBar(){
 
 function bindPageInteractions(){
   pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);clearBack();overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);}});});
-pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){el.addEventListener('click',function(){var key=el.getAttribute('data-nearby');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);}});});
+pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){el.addEventListener('click',function(){var key=el.getAttribute('data-nearby');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);}});});
   pageOverlay.querySelectorAll('.bag-tab[data-bag]').forEach(function(btn){btn.addEventListener('click',function(){activeBag=btn.getAttribute('data-bag');pageOverlay.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===btn);});var list=pageOverlay.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}});});
   pageOverlay.querySelectorAll('.badge-tab[data-bregion]').forEach(function(b){b.addEventListener('click',function(){badgeSel=b.getAttribute('data-bregion');try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:badgeSel}));}catch(e){}var pg=pageOverlay.querySelector('.page');var oldTabs=pageOverlay.querySelector('.badge-tabs');var pageTop=pg?pg.scrollTop:0;var tabsLeft=oldTabs?oldTabs.scrollLeft:0;pageOverlay.querySelector('.page-body').innerHTML=badgePageHTML();bindPageInteractions();if(pg){pg.scrollTop=pageTop;}var newTabs=pageOverlay.querySelector('.badge-tabs');if(newTabs){newTabs.scrollLeft=tabsLeft;}});});
   pageOverlay.querySelectorAll('[data-bag-discard]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();discardBagItemAsk(btn.getAttribute('data-bag-discard'));});});
@@ -5533,7 +5532,7 @@ for(var i=0;i<cards.length;i++){preloadMoves(cards[i].skills);}
 if(!t._itemBound){t._itemBound=true;t.addEventListener('click',function(e){var bagDiscard=e.target.closest('[data-bag-discard]');if(bagDiscard){e.stopPropagation();discardBagItemAsk(bagDiscard.getAttribute('data-bag-discard'));return;}var it=e.target.closest('.item-entry[data-item]');if(it){e.stopPropagation();if(itemClickEnabled)showItemInfo(it.getAttribute('data-item'));}});}}bindHomeFold();
   bindBadge();
   document.querySelectorAll('.card-frame[data-slot]').forEach(function(el){el.addEventListener('click',function(){var s=parseInt(el.getAttribute('data-slot'),10);for(var i=0;i<cards.length;i++){if(cards[i].slot===s){currentDetailCard=cards[i];clearBack();overlay.innerHTML=detailHTML(cards[i]);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);break;}}});});
-  function bindNearby(){document.querySelectorAll('[data-nearby-open]').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();var key=el.getAttribute('data-nearby-open');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);}});});var nbt=document.querySelector('[data-nearby-toggle]');if(nbt){nbt.addEventListener('click',function(e){e.stopPropagation();nearbyOpen=!nearbyOpen;var nf=document.querySelector('.nearby-frame');if(nf){nf.outerHTML=nearbyHTML();pkImgFix(document);resolvePkmImgs(document);bindNearby();}resizeFrame();});}}bindNearby();
+  function bindNearby(){document.querySelectorAll('[data-nearby-open]').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();var key=el.getAttribute('data-nearby-open');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);}});});var nbt=document.querySelector('[data-nearby-toggle]');if(nbt){nbt.addEventListener('click',function(e){e.stopPropagation();nearbyOpen=!nearbyOpen;var nf=document.querySelector('.nearby-frame');if(nf){nf.outerHTML=nearbyHTML();pkImgFix(document);resolvePkmImgs(document);bindNearby();}resizeFrame();});}}bindNearby();
 
   pageOverlay.addEventListener('click',function(e){
   var bagDiscard=e.target.closest('[data-bag-discard]');
