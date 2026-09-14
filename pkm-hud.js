@@ -364,10 +364,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.5';
+var PK_VER='1.5.6';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-修bug
+@飞仙儿
+修复进旧档不读变量的问题
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -5953,8 +5954,8 @@ function safeRender(){
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
   try{renderStatusBar();}catch(e){}
-  try{setTimeout(renderStatusBar,1200);}catch(e){}
-  try{setTimeout(renderStatusBar,3000);}catch(e){}
+  try{setTimeout(pkRefreshData,1200);}catch(e){}
+  try{setTimeout(pkRefreshData,3000);}catch(e){}
   try{preloadBadges();}catch(e){}
   if(winMode==='1'){try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}try{resizeFrame();}catch(e){}}
   try{
