@@ -364,11 +364,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.1';
+var PK_VER='1.5.2';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-1.改刷新键，现在如果有未执行指令，就只重绘，不重新读取变量
-2.适配TT鸿蒙版
+@狮子酱
+｜Workshop实时同步修复：队伍/盒子操作立即写回MVU并公开实时队伍接口；增强DIY/直接图片显示兼容。｜v1.5.2：HUD刷新同时重载DIY缓存；外部Workshop可直接安装DIY bundle到HUD内存；修复通讯接收后DIY精灵队伍卡片/详情页问号。
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -500,12 +500,65 @@ function loadStatData(){
 }
 
 var stat_data=loadStatData();
+
+/* ===== Workshop / 外部工具实时状态桥 =====
+ * HUD 的盒子/队伍操作先修改内存 stat_data，再写回同一条 MVU 数据，
+ * 让外部 Workshop 在 AI 回复前就能读到最新队伍；同时公开只读实时接口。
+ */
+var __pkmHudPersistQueue=Promise.resolve();
+function pkmHudClone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
+function pkmHudMvuTarget(){
+  try{
+    var mv=WIN.Mvu||window.Mvu;
+    if(!mv||typeof mv.getMvuData!=='function')return null;
+    try{
+      var latest=mv.getMvuData({type:'message',message_id:'latest'});
+      if(latest&&latest.stat_data&&latest.stat_data.队伍){
+        return {mv:mv,data:latest,opt:{type:'message',message_id:'latest'}};
+      }
+    }catch(e){}
+    var mes=[];
+    try{mes=WIN.document.querySelectorAll('.mes');}catch(e){}
+    for(var i=mes.length-1;i>=0;i--){
+      var id=parseInt(mes[i].getAttribute('mesid')||'',10);
+      if(isNaN(id))continue;
+      try{
+        var d=mv.getMvuData({type:'message',message_id:id});
+        if(d&&d.stat_data&&d.stat_data.队伍){
+          return {mv:mv,data:d,opt:{type:'message',message_id:id}};
+        }
+      }catch(e){}
+    }
+  }catch(e){}
+  return null;
+}
+function pkmHudPersistStatData(){
+  var snap=pkmHudClone(stat_data);
+  __pkmHudPersistQueue=__pkmHudPersistQueue.catch(function(){return false;}).then(function(){
+    var t=pkmHudMvuTarget();
+    if(!t||!t.mv||typeof t.mv.replaceMvuData!=='function')return false;
+    var n=pkmHudClone(t.data)||{};
+    n.stat_data=snap;
+    var p;
+    try{p=t.mv.replaceMvuData(n,t.opt);}catch(e){return false;}
+    return Promise.resolve(p).then(function(){
+      try{localStorage.setItem('pk_mvu_backup_'+chatKey(),JSON.stringify(snap));}catch(e){}
+      return true;
+    }).catch(function(){return false;});
+  });
+  return __pkmHudPersistQueue;
+}
+function pkmHudRenderCurrent(){
+  try{render();resizeFrame();return true;}catch(e){return false;}
+}
+
 var winMode='0';
 try{winMode=localStorage.getItem('pk_winmode')||'0';}catch(e){winMode='0';}
 function lsGet(key,fb){try{var v=JSON.parse(localStorage.getItem(key));return (v==null)?fb:v;}catch(e){return fb;}}
 function lsSet(key,v){try{localStorage.setItem(key,JSON.stringify(v));}catch(e){}}
 var DIY_INPUT_STYLE='width:100%;box-sizing:border-box;padding:6px 10px;margin-bottom:6px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;display:block';
 var diyType='move';
+var diyStorageRawSeen='';
 var diyData=diyLoad();
 /* 供外部脚本（如创意工坊）直接抓取当前内存 DIY 数据，无需分享码 */
 try{WIN.__pkmDiyData=function(){return diyData;};}catch(e){}
@@ -513,8 +566,86 @@ try{if(window!==WIN)window.__pkmDiyData=function(){return diyData;};}catch(e){}
 var diyDelStep=0,diyDelType='move',diyDelName='';
 var diyEditingName='';
 var diyClearStep=0;
-function diyLoad(){try{var d=JSON.parse(localStorage.getItem('pk_diy')||'null');if(d&&typeof d==='object')return d;}catch(e){}return {move:{},ability:{},item:{},pokemon:{}};}
-function diySave(){try{localStorage.setItem('pk_diy',JSON.stringify(diyData));}catch(e){}}
+function diyNormalizeData(d){
+  d=(d&&typeof d==='object')?d:{};
+  d.move=(d.move&&typeof d.move==='object')?d.move:{};
+  d.ability=(d.ability&&typeof d.ability==='object')?d.ability:{};
+  d.item=(d.item&&typeof d.item==='object')?d.item:{};
+  d.pokemon=(d.pokemon&&typeof d.pokemon==='object')?d.pokemon:{};
+  return d;
+}
+function diyLoad(){
+  try{
+    var raw=localStorage.getItem('pk_diy')||'';
+    diyStorageRawSeen=raw;
+    var d=raw?JSON.parse(raw):null;
+    if(d&&typeof d==='object')return diyNormalizeData(d);
+  }catch(e){}
+  return {move:{},ability:{},item:{},pokemon:{}};
+}
+function diySyncFromStorage(force){
+  try{
+    var raw=localStorage.getItem('pk_diy')||'';
+    if(!force&&raw===diyStorageRawSeen)return false;
+    diyStorageRawSeen=raw;
+    var d=raw?JSON.parse(raw):null;
+    if(d&&typeof d==='object'){
+      diyData=diyNormalizeData(d);
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function diySave(){
+  try{
+    var raw=JSON.stringify(diyNormalizeData(diyData));
+    localStorage.setItem('pk_diy',raw);
+    diyStorageRawSeen=raw;
+  }catch(e){}
+}
+/* 创意工坊优先使用这个 API 获取“HUD 此刻真正显示的队伍/盒子”，
+ * 而不是等待下一次 AI 回复后才更新的旧 MVU 快照。
+ */
+(function(){
+  var api={
+    version:'1.1.0',
+    getStatData:function(){return pkmHudClone(stat_data);},
+    getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
+    getBoxes:function(){return pkmHudClone((stat_data&&stat_data.盒子)||{});},
+    getDiyData:function(){try{diySyncFromStorage(false);}catch(e){}return pkmHudClone(diyData||{});},
+    reloadDiy:function(){try{diySyncFromStorage(true);pkmHudRenderCurrent();return true;}catch(e){return false;}},
+    installDiyBundle:function(bundle){
+      bundle=bundle&&typeof bundle==='object'?bundle:{};
+      try{diySyncFromStorage(false);}catch(e){}
+      diyData=diyNormalizeData(diyData);
+      var count=0,pokemon=0;
+      ['move','ability','item','pokemon'].forEach(function(t){
+        var src=bundle[t]&&typeof bundle[t]==='object'?bundle[t]:{};
+        diyData[t]=diyData[t]||{};
+        Object.keys(src).forEach(function(k){
+          diyData[t][k]=pkmHudClone(src[k]);
+          count++;
+          if(t==='pokemon')pokemon++;
+        });
+      });
+      diySave();
+      try{pkmHudRenderCurrent();}catch(e){}
+      return {count:count,pokemon:pokemon};
+    },
+    persist:function(){return pkmHudPersistStatData();},
+    refreshView:function(){return pkmHudRenderCurrent();},
+    refreshFromMvu:function(){try{hudRefresh();return true;}catch(e){return false;}},
+    setTeamSlot:function(slot,pokemon){
+      slot=String(parseInt(slot,10)||'');
+      if(!slot||Number(slot)<1||Number(slot)>6)return Promise.reject(new Error('无效队伍位置'));
+      stat_data.队伍=stat_data.队伍||{};
+      stat_data.队伍[slot]=pkmHudClone(pokemon||{名字:'空'});
+      return pkmHudPersistStatData().then(function(){pkmHudRenderCurrent();return true;});
+    }
+  };
+  try{WIN.__pkmHudApi=api;}catch(e){}
+  try{if(window!==WIN)window.__pkmHudApi=api;}catch(e){}
+})();
 function diyGet(type,name){if(!name)return null;var t=diyData[type]||{};return t[name]||null;}
 function diyHas(type,name){
   if(!name)return false;
@@ -1944,12 +2075,19 @@ function setCachedSprite(name,shiny,url){
 function pkImgSmart(species,icon,shiny){
   var d=diyPokemonSprite(species);if(d)return d;
   if(diyHas('pokemon',species))return '';
+  /* 通讯交换/外部导入的精灵可能直接携带 http/data 图片。 */
+  var rawIcon=String(icon||'').trim();
+  if(/^(?:https?:\/\/|data:image\/)/i.test(rawIcon)){
+    return 'url("'+rawIcon.replace(/"/g,'%22')+'")';
+  }
   if(icon){var u=pkImg(icon,shiny);if(u)return u;}
   var c=cachedSpriteCss(species,shiny);if(c)return c;
   return pkImg(species,shiny);
 }
 function diyPokemonSprite(name){
   if(!name)return '';
+  /* Workshop 可能从另一个 iframe/脚本直接更新 pk_diy；显示图片前先同步一次。 */
+  try{diySyncFromStorage(false);}catch(e){}
   var p=diyData.pokemon||{};
   var bn=baseName(name);
   var obj=p[name]||p[bn];
@@ -4795,6 +4933,9 @@ function hudRefreshInjection(){
 
 function hudSend(text, undo, display){
   hudPendingActions.push({id:'hudc'+(++hudCmdSeq)+'_'+Date.now(), text:text, display:display||text, undo:undo||function(){}});
+  /* 本地 HUD 操作发生后立即把当前 stat_data 写回 MVU。
+     setExtensionPrompt 仍保留，用于让后续 AI 剧情继续遵守这些变化。 */
+  try{pkmHudPersistStatData();}catch(e){}
   if(!hudRefreshInjection()){
     hudMsg('当前环境无法静默注入，操作仅更新本地显示');
   }
@@ -4808,6 +4949,7 @@ function hudRemoveAction(id){
       break;
     }
   }
+  try{pkmHudPersistStatData();}catch(e){}
   hudRefreshInjection();
   render(); resizeFrame();
 }
@@ -5252,6 +5394,7 @@ function hudRefresh(){
   if(btn){btn.classList.add('spin');btn.disabled=true;}
   // 有未完成的“下回合指令”（卸道具/移精灵等）时，保留本地乐观修改，只重绘，不重新读变量覆盖
   try{if(!hudPendingActions.length){stat_data=loadStatData();}}catch(e){}
+  try{diySyncFromStorage(true);}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
   try{
