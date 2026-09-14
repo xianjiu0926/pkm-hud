@@ -364,7 +364,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.4';
+var PK_VER='1.5.5';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
 修bug
@@ -594,11 +594,7 @@ function diyLoad(){
     var raw=localStorage.getItem('pk_diy')||'';
     diyStorageRawSeen=raw;
     var d=raw?JSON.parse(raw):null;
-    if(d&&typeof d==='object'){
-      d=diyNormalizeData(d);
-      diyRestoreFromDb(d);
-      return d;
-    }
+    if(d&&typeof d==='object')return diyNormalizeData(d);
   }catch(e){}
   return {move:{},ability:{},item:{},pokemon:{}};
 }
@@ -610,91 +606,14 @@ function diySyncFromStorage(force){
     var d=raw?JSON.parse(raw):null;
     if(d&&typeof d==='object'){
       diyData=diyNormalizeData(d);
-      diyRestoreFromDb(diyData);
       return true;
     }
   }catch(e){}
   return false;
 }
-/* 本地上传的 base64 大图存 IndexedDB（配额大，不撑爆 localStorage），
- * pk_diy 里只放文字信息和 PKIDB: 标记；读取时再从 IndexedDB 拼回内存。 */
-var _diyImgDbP=null;
-function diyImgDb(){
-  if(_diyImgDbP)return _diyImgDbP;
-  _diyImgDbP=new Promise(function(res,rej){
-    try{
-      var idb=(WIN&&WIN.indexedDB)||window.indexedDB;
-      if(!idb){rej(new Error('no-idb'));return;}
-      var rq=idb.open('pkm_hud_diyimg',1);
-      rq.onupgradeneeded=function(){var db=rq.result;if(!db.objectStoreNames.contains('img'))db.createObjectStore('img');};
-      rq.onsuccess=function(){res(rq.result);};
-      rq.onerror=function(){rej(rq.error||new Error('idb-open'));};
-    }catch(e){rej(e);}
-  });
-  return _diyImgDbP;
-}
-function diyImgDbPut(key,val){
-  return diyImgDb().then(function(db){
-    return new Promise(function(res,rej){
-      try{
-        var tx=db.transaction('img','readwrite');
-        tx.objectStore('img').put(val,key);
-        tx.oncomplete=function(){res(true);};
-        tx.onerror=function(){rej(tx.error||new Error('put'));};
-      }catch(e){rej(e);}
-    });
-  }).catch(function(){return false;});
-}
-function diyImgDbGet(key){
-  return diyImgDb().then(function(db){
-    return new Promise(function(res,rej){
-      try{
-        var tx=db.transaction('img','readonly');
-        var rq=tx.objectStore('img').get(key);
-        rq.onsuccess=function(){res(rq.result||null);};
-        rq.onerror=function(){rej(rq.error||new Error('get'));};
-      }catch(e){rej(e);}
-    });
-  }).catch(function(){return null;});
-}
-function diyRestoreFromDb(d){
-  try{
-    var jobs=[];
-    var p=d.pokemon||{};
-    for(var k in p){
-      (function(o){
-        if(!o)return;
-        if(typeof o.img==='string'&&o.img.indexOf('PKIDB:')===0)jobs.push({key:o.img.slice(6),set:function(v){o.img=v;}});
-        if(o.chain){for(var i=0;i<o.chain.length;i++){(function(st){if(st&&typeof st.img==='string'&&st.img.indexOf('PKIDB:')===0)jobs.push({key:st.img.slice(6),set:function(v){st.img=v;}});})(o.chain[i]);}}
-      })(p[k]);
-    }
-    var it=d.item||{};
-    for(var k2 in it){(function(io){if(io&&typeof io.img==='string'&&io.img.indexOf('PKIDB:')===0)jobs.push({key:io.img.slice(6),set:function(v){io.img=v;}});})(it[k2]);}
-    if(!jobs.length)return;
-    var remain=jobs.length;
-    jobs.forEach(function(j){
-      diyImgDbGet(j.key).then(function(data){
-        if(data){j.set(data);}
-        remain--;
-        if(remain<=0){try{diyRefreshTeam();}catch(e){}}
-      });
-    });
-  }catch(e){}
-}
 function diySave(){
   try{
-    var slim=JSON.parse(JSON.stringify(diyData));
-    var p=slim.pokemon||{};
-    for(var k in p){
-      (function(o){
-        if(!o)return;
-        if(o.img&&/^data:image\//i.test(o.img)){diyImgDbPut('diyimg_'+k,o.img);o.img='PKIDB:'+k;}
-        if(o.chain){for(var i=0;i<o.chain.length;i++){(function(st){if(st&&st.img&&/^data:image\//i.test(st.img)){diyImgDbPut('diyimg_'+k+'_'+i,st.img);st.img='PKIDB:'+k+'_'+i;}})(o.chain[i]);}}
-      })(p[k]);
-    }
-    var it=slim.item||{};
-    for(var k2 in it){(function(io){if(io&&io.img&&/^data:image\//i.test(io.img)){diyImgDbPut('diyimg_item_'+k2,io.img);io.img='PKIDB:item_'+k2;}})(it[k2]);}
-    var raw=JSON.stringify(slim);
+    var raw=JSON.stringify(diyNormalizeData(diyData));
     localStorage.setItem('pk_diy',raw);
     diyStorageRawSeen=raw;
   }catch(e){}
@@ -2234,11 +2153,6 @@ function pkImgHTML(species,icon,shiny,cls){
     return '<div class="pk-img '+cls+'" style="background-image:'+r.bg+'"></div>';
   }
   return '<div class="pk-img '+cls+' no-img" data-pkm="'+esc(species)+'" data-shiny="'+(shiny?'1':'0')+'">?</div>';
-}
-function cssUrl(u){
-  u=String(u==null?'':u);
-  u=u.replace(/\\/g,'%5C').replace(/'/g,'%27').replace(/"/g,'%22');
-  return "url('"+u+"')";
 }
 function diyPokemonSprite(name){
   if(!name)return '';
