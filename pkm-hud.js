@@ -354,20 +354,20 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-btn .fab-update-dot{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#e05050;border:2px solid #0f1626;box-shadow:0 0 8px rgba(224,80,80,.9);animation:pkm-fab-pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:2}'+
 '@keyframes pkm-fab-pulse{0%,100%{transform:scale(1);box-shadow:0 0 8px rgba(224,80,80,.9)}50%{transform:scale(1.3);box-shadow:0 0 16px rgba(224,80,80,1)}}'+
 '.tr-right{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}'+
-'.hud-refresh-btn{display:inline-flex;align-items:center;justify-content:center;width:1.45em;height:1.45em;padding:0;border:none;background:transparent;cursor:pointer;flex-shrink:0;align-self:center;line-height:1}'+
-'.hud-refresh-btn img{width:1.5em;height:1.5em;object-fit:contain;display:block;pointer-events:none;margin-top:-0.39em}'+
+'.hud-refresh-btn{display:inline-flex;align-items:center;justify-content:center;width:1.45em;height:1.45em;padding:0;border:none;background:transparent;cursor:pointer;flex-shrink:0;align-self:center;line-height:1;font-family:inherit;font-size:inherit;color:inherit}'+
+'.hud-refresh-btn img{width:2em;height:2em;object-fit:contain;display:block;pointer-events:none;margin-top:-0.23em}'+
 '.hud-refresh-btn:hover{filter:brightness(1.2)}'+
 '.hud-refresh-btn:disabled{opacity:.6;cursor:default}'+
 '.hud-refresh-btn.spin img{animation:pkm-refresh-spin .6s linear}'+
-'.hud-refresh-ok{color:#4ade80;font-size:.9em;line-height:1;font-weight:800}'+
+'.hud-refresh-ok{color:#4ade80;font-size:1.25em;line-height:1;font-weight:800;margin-top:-0.24em}'+
 '@keyframes pkm-refresh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}'+
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.7';
+var PK_VER='1.5.8';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-修复行动弹窗显示自创精灵图
+刷新键调整
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -1342,11 +1342,11 @@ function diyLorebookHTML(){
   var inputHtml='<div id="diy-lore-input-wrap"'+(selActive?' style="display:none"':'')+'><input type="text" id="diy-lorebook-custom" placeholder="世界书文件名，如 宝可梦DIY" value="'+esc(diyLorebook)+'" style="'+DIY_INPUT_STYLE+'"></div>';
   return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">写入世界书(推荐自建外挂世界书，方便删除，删除缓存不会删除世界书条目，只会关闭)</div>'+modeBtn+selectHtml+inputHtml+'</div></div>';
 }
-function diyWriteLorebook(type,name,oldName){
+function diyWriteLorebook(type,name,oldName,silent){
   var obj=diyGet(type,name);
-  if(!obj){diyDoneMsg();return;}
+  if(!obj){if(!silent)diyDoneMsg();return;}
   var book=diyLorebookValue();
-if(!book){diyMsg('已保存 DIY（未填写世界书文件名，未写入）');return;}
+if(!book){if(!silent)diyMsg('已保存 DIY（未填写世界书文件名，未写入）');return;}
   var text=diyLoreText(type,obj);
   var one=text.replace(/\"/g,'＂').replace(/\|/g,'｜');
   var title=('自创'+diyLabel(type)+'：'+name).replace(/\"/g,'＂').replace(/\|/g,'｜');
@@ -1354,7 +1354,7 @@ if(!book){diyMsg('已保存 DIY（未填写世界书文件名，未写入）');r
   if(oldName && oldName===name){
     var cmdUpd='/findentry file="'+book2+'" field=comment "'+title+'" | /setentryfield file="'+book2+'" uid={{pipe}} field=content '+one;
     sendMessage(cmdUpd);
-    diyMsg('已保存编辑，并已更新世界书「'+book+'」中对应条目内容');
+    if(!silent)diyMsg('已保存编辑，并已更新世界书「'+book+'」中对应条目内容');
     return;
   }
   var dis='';
@@ -1364,7 +1364,7 @@ if(!book){diyMsg('已保存 DIY（未填写世界书文件名，未写入）');r
   }
   var cmd=dis+'/createentry file="'+book2+'" '+one+' | /setvar key=uid {{pipe}} | /setentryfield file="'+book2+'" uid={{pipe}} field=comment '+title+' | /getvar uid | /setentryfield file="'+book2+'" uid={{pipe}} field=constant true';
   sendMessage(cmd);
-  diyMsg('已保存 DIY，并已写入世界书「'+book+'」（蓝灯常驻）');
+  if(!silent)diyMsg('已保存 DIY，并已写入世界书「'+book+'」（蓝灯常驻）');
 }
 function diyDisableLorebook(type,name){
   try{
@@ -1494,7 +1494,16 @@ function diyCopyText(txt,done){
 function diyShare(type,name){
   var obj=diyGet(type,name);
   if(!obj){diyMsg('未找到该自创内容');return;}
-  var code=diyLabel(type)+':'+name+'|'+diyEncode(JSON.stringify({v:1,t:type,n:name,d:obj}));
+  var payload={v:2,t:type,n:name,d:obj};
+  if(type==='pokemon'){
+    var extras={};
+    function pick(a){if(a&&!extras[a]){var ab=diyGet('ability',a);if(ab)extras[a]=ab;}}
+    pick(obj.ability);
+    if(obj.chain&&obj.chain.length){for(var i=0;i<obj.chain.length;i++){pick(obj.chain[i]&&obj.chain[i].ability);}}
+    var eks=Object.keys(extras);
+    if(eks.length){payload.x={ability:extras};}
+  }
+  var code=diyLabel(type)+':'+name+'|'+diyEncode(JSON.stringify(payload));
   if(!code){diyMsg('生成分享码失败');return;}
   clearBack();
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">分享'+esc(diyLabel(type))+'：'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row block"><span class="k">分享码（对方粘贴导入即可）</span><span class="v" style="word-break:break-all;user-select:all">'+esc(code)+'</span></div><div class="action-btns" style="margin-top:10px"><button class="act-btn" data-copy-code="'+esc(code)+'">📋 复制分享码</button></div></div></div>';
@@ -1516,6 +1525,15 @@ var raw=diyDecode(c);
   var t=o.t,n=String(o.n);
   diyData[t]=diyData[t]||{};
   diyData[t][n]=o.d;
+  var extraAbi=[];
+  if(o.x&&o.x.ability&&typeof o.x.ability==='object'){
+    diyData.ability=diyData.ability||{};
+    var aks=Object.keys(o.x.ability);
+    for(var ai=0;ai<aks.length;ai++){
+      var an=aks[ai],av=o.x.ability[an];
+      if(av&&typeof av==='object'&&!diyData.ability[an]){diyData.ability[an]=av;extraAbi.push(an);}
+    }
+  }
   diySave();
   diyType=t;
   var f=document.getElementById('diy-form');if(f)f.innerHTML=diyFormHTML(diyType);
@@ -1523,6 +1541,7 @@ var raw=diyDecode(c);
   var tabs=document.querySelectorAll('[data-diy-tab]');
   for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-diy-tab')===t);}
   var inp=document.getElementById('diy-import-code');if(inp)inp.value='';
+  for(var k=0;k<extraAbi.length;k++){diyWriteLorebook('ability',extraAbi[k],'',true);}
   diyWriteLorebook(t,n);
   diyRefreshTeam();
 }
