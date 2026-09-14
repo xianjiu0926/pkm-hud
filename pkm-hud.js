@@ -364,7 +364,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.3';
+var PK_VER='1.5.4';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
 修bug
@@ -373,7 +373,22 @@ PK_NOTICE_END*/
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
-if(WIN.__pkmHudLoaded){return;}
+/* 每次进聊天（脚本重新执行）都像第一次一样完整重建 HUD：
+ * 先清掉上一轮留下的悬浮球/遮罩/窗口/样式，再从头加载缓存数据重新渲染。 */
+try{
+  var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
+  for(var _di=0;_di<_deadIds.length;_di++){
+    var _de=document.getElementById(_deadIds[_di]);
+    if(_de&&_de.parentNode){_de.parentNode.removeChild(_de);}
+  }
+}catch(e){}
+try{
+  var _ss=document.querySelectorAll('style');
+  for(var _si=0;_si<_ss.length;_si++){
+    var _st=_ss[_si];
+    if(_st.textContent&&_st.textContent.indexOf('pkm-hud-btn')>=0&&_st.parentNode){_st.parentNode.removeChild(_st);}
+  }
+}catch(e){}
 try{WIN.__pkmHudLoaded=true;}catch(e){}
 
 var st=document.createElement('style');
@@ -579,7 +594,11 @@ function diyLoad(){
     var raw=localStorage.getItem('pk_diy')||'';
     diyStorageRawSeen=raw;
     var d=raw?JSON.parse(raw):null;
-    if(d&&typeof d==='object')return diyNormalizeData(d);
+    if(d&&typeof d==='object'){
+      d=diyNormalizeData(d);
+      diyRestoreFromDb(d);
+      return d;
+    }
   }catch(e){}
   return {move:{},ability:{},item:{},pokemon:{}};
 }
@@ -591,14 +610,91 @@ function diySyncFromStorage(force){
     var d=raw?JSON.parse(raw):null;
     if(d&&typeof d==='object'){
       diyData=diyNormalizeData(d);
+      diyRestoreFromDb(diyData);
       return true;
     }
   }catch(e){}
   return false;
 }
+/* 本地上传的 base64 大图存 IndexedDB（配额大，不撑爆 localStorage），
+ * pk_diy 里只放文字信息和 PKIDB: 标记；读取时再从 IndexedDB 拼回内存。 */
+var _diyImgDbP=null;
+function diyImgDb(){
+  if(_diyImgDbP)return _diyImgDbP;
+  _diyImgDbP=new Promise(function(res,rej){
+    try{
+      var idb=(WIN&&WIN.indexedDB)||window.indexedDB;
+      if(!idb){rej(new Error('no-idb'));return;}
+      var rq=idb.open('pkm_hud_diyimg',1);
+      rq.onupgradeneeded=function(){var db=rq.result;if(!db.objectStoreNames.contains('img'))db.createObjectStore('img');};
+      rq.onsuccess=function(){res(rq.result);};
+      rq.onerror=function(){rej(rq.error||new Error('idb-open'));};
+    }catch(e){rej(e);}
+  });
+  return _diyImgDbP;
+}
+function diyImgDbPut(key,val){
+  return diyImgDb().then(function(db){
+    return new Promise(function(res,rej){
+      try{
+        var tx=db.transaction('img','readwrite');
+        tx.objectStore('img').put(val,key);
+        tx.oncomplete=function(){res(true);};
+        tx.onerror=function(){rej(tx.error||new Error('put'));};
+      }catch(e){rej(e);}
+    });
+  }).catch(function(){return false;});
+}
+function diyImgDbGet(key){
+  return diyImgDb().then(function(db){
+    return new Promise(function(res,rej){
+      try{
+        var tx=db.transaction('img','readonly');
+        var rq=tx.objectStore('img').get(key);
+        rq.onsuccess=function(){res(rq.result||null);};
+        rq.onerror=function(){rej(rq.error||new Error('get'));};
+      }catch(e){rej(e);}
+    });
+  }).catch(function(){return null;});
+}
+function diyRestoreFromDb(d){
+  try{
+    var jobs=[];
+    var p=d.pokemon||{};
+    for(var k in p){
+      (function(o){
+        if(!o)return;
+        if(typeof o.img==='string'&&o.img.indexOf('PKIDB:')===0)jobs.push({key:o.img.slice(6),set:function(v){o.img=v;}});
+        if(o.chain){for(var i=0;i<o.chain.length;i++){(function(st){if(st&&typeof st.img==='string'&&st.img.indexOf('PKIDB:')===0)jobs.push({key:st.img.slice(6),set:function(v){st.img=v;}});})(o.chain[i]);}}
+      })(p[k]);
+    }
+    var it=d.item||{};
+    for(var k2 in it){(function(io){if(io&&typeof io.img==='string'&&io.img.indexOf('PKIDB:')===0)jobs.push({key:io.img.slice(6),set:function(v){io.img=v;}});})(it[k2]);}
+    if(!jobs.length)return;
+    var remain=jobs.length;
+    jobs.forEach(function(j){
+      diyImgDbGet(j.key).then(function(data){
+        if(data){j.set(data);}
+        remain--;
+        if(remain<=0){try{diyRefreshTeam();}catch(e){}}
+      });
+    });
+  }catch(e){}
+}
 function diySave(){
   try{
-    var raw=JSON.stringify(diyNormalizeData(diyData));
+    var slim=JSON.parse(JSON.stringify(diyData));
+    var p=slim.pokemon||{};
+    for(var k in p){
+      (function(o){
+        if(!o)return;
+        if(o.img&&/^data:image\//i.test(o.img)){diyImgDbPut('diyimg_'+k,o.img);o.img='PKIDB:'+k;}
+        if(o.chain){for(var i=0;i<o.chain.length;i++){(function(st){if(st&&st.img&&/^data:image\//i.test(st.img)){diyImgDbPut('diyimg_'+k+'_'+i,st.img);st.img='PKIDB:'+k+'_'+i;}})(o.chain[i]);}}
+      })(p[k]);
+    }
+    var it=slim.item||{};
+    for(var k2 in it){(function(io){if(io&&io.img&&/^data:image\//i.test(io.img)){diyImgDbPut('diyimg_item_'+k2,io.img);io.img='PKIDB:item_'+k2;}})(it[k2]);}
+    var raw=JSON.stringify(slim);
     localStorage.setItem('pk_diy',raw);
     diyStorageRawSeen=raw;
   }catch(e){}
@@ -2118,26 +2214,41 @@ function setCachedSprite(name,shiny,url){
   try{localStorage.setItem('pk_sprite_'+k,css);}catch(e){}
 }
 function pkImgSmart(species,icon,shiny){
-  var d=diyPokemonSprite(species);if(d)return d;
-  if(diyHas('pokemon',species))return '';
+  var d=diyPokemonSprite(species);if(d)return {img:d};
+  if(diyHas('pokemon',species))return null;
   /* 通讯交换/外部导入的精灵可能直接携带 http/data 图片。 */
   var rawIcon=String(icon||'').trim();
-  if(/^(?:https?:\/\/|data:image\/)/i.test(rawIcon)){
-    return 'url("'+rawIcon.replace(/"/g,'%22')+'")';
+  if(/^(?:https?:\/\/|data:image\/)/i.test(rawIcon)){return {img:rawIcon};}
+  if(icon){var u=pkImg(icon,shiny);if(u)return {bg:u};}
+  var c=cachedSpriteCss(species,shiny);if(c)return {bg:c};
+  return {bg:pkImg(species,shiny)};
+}
+/* 统一生成精灵图片元素：DIY/直链图用 <img>（确定能显示），百科图用背景图。 */
+function pkImgHTML(species,icon,shiny,cls){
+  cls=cls||'';
+  var r=pkImgSmart(species,icon,shiny);
+  if(r&&r.img){
+    return '<div class="pk-img '+cls+'"><img src="'+esc(r.img)+'" alt="" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated" onerror="this.remove();this.parentNode.classList.add(\'no-img\');this.parentNode.textContent=\'?\'"></div>';
   }
-  if(icon){var u=pkImg(icon,shiny);if(u)return u;}
-  var c=cachedSpriteCss(species,shiny);if(c)return c;
-  return pkImg(species,shiny);
+  if(r&&r.bg){
+    return '<div class="pk-img '+cls+'" style="background-image:'+r.bg+'"></div>';
+  }
+  return '<div class="pk-img '+cls+' no-img" data-pkm="'+esc(species)+'" data-shiny="'+(shiny?'1':'0')+'">?</div>';
+}
+function cssUrl(u){
+  u=String(u==null?'':u);
+  u=u.replace(/\\/g,'%5C').replace(/'/g,'%27').replace(/"/g,'%22');
+  return "url('"+u+"')";
 }
 function diyPokemonSprite(name){
   if(!name)return '';
   /* Workshop 可能从另一个 iframe/脚本直接更新 pk_diy；显示图片前先同步一次。 */
   try{diySyncFromStorage(false);}catch(e){}
   var p=diyData.pokemon||{};
-  var bn=baseName(name);
+  var bn=baseName(String(name).trim());
   var obj=p[name]||p[bn];
   if(obj){
-    if(obj.img)return "url('"+obj.img+"')";
+    if(obj.img)return obj.img;
     if(obj.chain){
       var firstImg='';
       for(var i=0;i<obj.chain.length;i++){
@@ -2145,9 +2256,9 @@ function diyPokemonSprite(name){
         if(!st.img)continue;
         if(!firstImg)firstImg=st.img;
         var sn=baseName(st.name||'');
-        if(sn&&(sn===bn||st.name===name))return "url('"+st.img+"')";
+        if(sn&&(sn===bn||st.name===name))return st.img;
       }
-      if(firstImg)return "url('"+firstImg+"')";
+      if(firstImg)return firstImg;
     }
     return '';
   }
@@ -2158,7 +2269,20 @@ function diyPokemonSprite(name){
     for(var j=0;j<o.chain.length;j++){
       var st2=o.chain[j];
       if(st2&&st2.img&&st2.name&&(st2.name===name||baseName(st2.name)===bn)){
-        return "url('"+st2.img+"')";
+        return st2.img;
+      }
+    }
+  }
+  // 模糊匹配：队伍/详情里的名字与DIY名稍有出入时也能命中
+  for(var k2 in p){
+    var o2=p[k2];
+    if(!o2)continue;
+    var img2=o2.img||'';
+    if(!img2&&o2.chain&&o2.chain.length){img2=o2.chain[0].img||'';}
+    if(img2){
+      var bk=baseName(String(k2));
+      if(bk&&bn&&bk.length>=2&&bn.length>=2&&(bn.indexOf(bk)>=0||bk.indexOf(bn)>=0)){
+        return img2;
       }
     }
   }
@@ -2446,8 +2570,7 @@ function cardHTML(c){
   var dead=c.hpMax>0&&c.hpCur<=0;
   var fnt=dead?'<span class="ailment fnt">圈圈眼</span>':'';
   var ex=parseHP(c.exp);var expPct=ex.max>0?Math.max(0,Math.min(100,ex.cur/ex.max*100)):0;
-  var bg=pkImgSmart(c.species,c.icon,c.shiny);
-  var img=bg?'<div class="pk-img'+(dead?' fainted':'')+'" style="background-image:'+bg+'"></div>':'<div class="pk-img no-img" data-pkm="'+esc(c.species)+'" data-shiny="'+(c.shiny?'1':'0')+'">?</div>';
+  var img=pkImgHTML(c.species,c.icon,c.shiny,(dead?'fainted':''));
   var itName=(c.item&&c.item!=='无')?c.item:'';
   var isMega=/mega|超级|超进化|超級|超進化/i.test(c.name+' '+c.species);
   var isGmax=/极巨|極巨|gmax|dynamax/i.test(c.name+' '+c.species);
@@ -2466,8 +2589,8 @@ function infoRow(k,v){return '<div class="info-row"><span class="k">'+k+'</span>
 function teamHTML(){var cards=buildCards();var left=cards.slice(0,3).map(cardHTML).join('');var right=cards.slice(3,6).map(cardHTML).join('');return '<div class="grid"><div class="col col-left">'+left+'</div><div class="col col-right">'+right+'</div></div>';}
 function trainerHTML(){var tr=stat_data.训练家||{};var hearts='';for(var i=0;i<num(tr.活力上限,3);i++){hearts+='<span class="heart'+(i<num(tr.活力,3)?'':' empty')+'">♥</span>';}var content=infoRow('名字',esc(tr.名字||'???')+' '+hearts)+infoRow('金钱','¥'+num(tr.金钱,0).toLocaleString())+badgeRowHTML()+infoRow('身份',esc(tr.身份||'-'))+infoRow('声望',esc(tr.声望||'-'))+'<div class="info-row block"><span class="k">气场</span><span class="v">'+esc(tr.气场||'-')+'</span></div>'+'<div class="info-row cmd"><span class="k">可命令等级</span><span class="v">Lv.'+num(tr.可命令等级,0)+'</span></div>';var ev=stat_data.环境||{},en='';if(ev.当前地点)en+='<span>📍 '+esc(ev.当前地点)+'</span>';if(ev.日期||ev.时间)en+='<span>🕐 '+esc(ev.日期||'')+(ev.日期&&ev.时间?' ':'')+esc(ev.时间||'')+'</span>';return '<div class="info-frame trainer-frame"><div class="info-inner"><div class="info-title"><span>个人信息</span>'+refreshBtnHTML()+'<span class="tr-right">'+(en?'<span class="tr-env">'+en+'</span>':'')+'</span></div>'+content+'</div></div>';}
 function envStripHTML(){var e=stat_data.环境||{};if(!e.赛程)return '';return '<div class="env-strip"><div class="env-line"><span class="env-item">🏁 '+esc(e.赛程)+'</span></div></div>';}
-function nearbyHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return frame('附近宝可梦','<div class="empty">暂无</div>');var show=nearbyOpen?keys:keys.slice(0,6);var cells=show.map(function(key){var p=obj[key];var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img nb-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img nb-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';var tags=(p.是否闪光?'<span class="tag shiny">闪</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'');return '<div class="nb-cell" data-nearby-open="'+esc(key)+'">'+img+'<div class="nb-name">'+esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+tags+'</div><div class="nb-cnt">×'+num(p.数量,1)+'</div></div>';}).join('');var more=keys.length>6?'<span class="nb-toggle" data-nearby-toggle>'+(nearbyOpen?'收起 ▲':'展开全部('+keys.length+') ▼')+'</span>':'';return '<div class="info-frame nearby-frame">'+svgFrame+'<div class="info-inner"><div class="info-title">附近宝可梦'+more+'</div><div class="nb-grid">'+cells+'</div></div></div>';}
-function nearbyPageHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="empty">暂无</div></div>';var cells=keys.map(function(key){var p=obj[key];var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img box-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img box-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';var nm=esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+(p.是否闪光?'<span class="tag shiny">闪光</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'')+' ×'+num(p.数量,1);return '<div class="box-cell nearby-cell" data-nearby="'+esc(key)+'">'+img+'<div class="box-name">'+nm+'</div></div>';}).join('');return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="nearby-grid">'+cells+'</div></div>';}
+function nearbyHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return frame('附近宝可梦','<div class="empty">暂无</div>');var show=nearbyOpen?keys:keys.slice(0,6);var cells=show.map(function(key){var p=obj[key];var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'nb-icon');var tags=(p.是否闪光?'<span class="tag shiny">闪</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'');return '<div class="nb-cell" data-nearby-open="'+esc(key)+'">'+img+'<div class="nb-name">'+esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+tags+'</div><div class="nb-cnt">×'+num(p.数量,1)+'</div></div>';}).join('');var more=keys.length>6?'<span class="nb-toggle" data-nearby-toggle>'+(nearbyOpen?'收起 ▲':'展开全部('+keys.length+') ▼')+'</span>':'';return '<div class="info-frame nearby-frame">'+svgFrame+'<div class="info-inner"><div class="info-title">附近宝可梦'+more+'</div><div class="nb-grid">'+cells+'</div></div></div>';}
+function nearbyPageHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="empty">暂无</div></div>';var cells=keys.map(function(key){var p=obj[key];var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'box-icon');var nm=esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+(p.是否闪光?'<span class="tag shiny">闪光</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'')+' ×'+num(p.数量,1);return '<div class="box-cell nearby-cell" data-nearby="'+esc(key)+'">'+img+'<div class="box-name">'+nm+'</div></div>';}).join('');return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="nearby-grid">'+cells+'</div></div>';}
 function openNearbyPage(){pageOverlay.innerHTML='<div class="page nearby-page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body nearby-body">'+nearbyPageHTML()+'</div></div>';pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);}
 
 function bagCategories(){var cats=[{key:'道具',label:'道具',items:[]},{key:'精灵球',label:'精灵球',items:[]},{key:'重要物品',label:'重要物品',items:[]}];var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var c=cats.find(function(x){return x.key===it.类型;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
@@ -2991,7 +3114,7 @@ function bindMapViewer(wrap){
 }
 
 var activeBox='1';var nearbyOpen=false;var foldState={};function foldHTML(key,label,fn){var open=!!foldState[key];return '<div class="fold-box"><div class="fold-head" data-fold="'+key+'"><span>'+label+'</span><span class="fold-arrow">'+(open?'▾':'▸')+'</span></div>'+(open?'<div class="fold-body">'+fn()+'</div>':'')+'</div>';}function bagPlainHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return '<div class="fold-inner"><div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div></div>';}function relPlainHTML(){var rel=stat_data.人际关系||{};var ks=Object.keys(rel);if(!ks.length)return '<div class="fold-inner"><div class="empty">暂无</div></div>';return '<div class="fold-inner">'+ks.map(function(k){var val=rel[k];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(k)+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('')+'</div>';}
-function quickHTML(){var Q=[['box','q-box','https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png','盒子'],['pokedex','q-pokedex','https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png','图鉴'],['breeding','q-breeding','https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png','繁育'],['typechart','q-typechart','⚡','克制表'],['map','q-map','🗺️','地图']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="https://img.baibai.cv/f/3o2qte/1788188339193.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var bg=pkImgSmart(p.名字,p.图标,p.是否闪光);var img=bg?'<div class="pk-img box-icon" style="background-image:'+bg+'"></div>':'<div class="pk-img box-icon no-img" data-pkm="'+esc(p.名字)+'" data-shiny="'+(p.是否闪光?'1':'0')+'">?</div>';return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
+function quickHTML(){var Q=[['box','q-box','https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png','盒子'],['pokedex','q-pokedex','https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png','图鉴'],['breeding','q-breeding','https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png','繁育'],['typechart','q-typechart','⚡','克制表'],['map','q-map','🗺️','地图']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="https://img.baibai.cv/f/3o2qte/1788188339193.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'box-icon');return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
 
 function tasksHTML(){var t=stat_data.任务||{},html='';if(t.主线)html+='<div class="task-item"><span class="task-tag main">主线</span><div class="task-text">'+esc(t.主线)+'</div></div>';if(t.传说)html+='<div class="task-item"><span class="task-tag legend">传说</span><div class="task-text">'+esc(t.传说)+'</div></div>';if(t.支线)html+='<div class="task-item"><span class="task-tag random">支线</span><div class="task-text">'+esc(t.支线).split(/[；;\n]/).join('<br>')+'</br></div></div>';if(!html)html='<div class="empty">暂无任务</div>';return frameP('任务',html);}
 function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){return esc(String(v||'')).split(/[；;]/).join('<br>');}if(w.附近遭遇)html+='<div class="event-item"><span class="event-type">📍 附近遭遇</span><p>'+ln(w.附近遭遇)+'</p></div>';if(w.地区新闻)html+='<div class="event-item"><span class="event-type">📰 地区新闻</span><p>'+ln(w.地区新闻)+'</p></div>';if(w.区域动态)html+='<div class="event-item"><span class="event-type">🌍 区域动态</span><p>'+ln(w.区域动态)+'</p></div>';if(!html)html='<div class="empty">暂无世界事件</div>';return '<div class="info-frame world-frame plain-frame"><div class="info-inner"><div class="info-title">世界动态</div>'+html+'</div></div>';}
@@ -4329,7 +4452,7 @@ function showNatureInfo(name){
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body"><div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div></div></div>';
   overlay.classList.add('open');
 }
-function detailHTML(c){var gi=genderOf(c.gender);var bg=pkImgSmart(c.species,c.icon,c.shiny);var sprite=bg?'<div class="pk-img dt-big" style="background-image:'+bg+'"></div>':'<div class="pk-img dt-big no-img" data-pkm="'+esc(c.species)+'" data-shiny="'+(c.shiny?'1':'0')+'">?</div>';var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
+function detailHTML(c){var gi=genderOf(c.gender);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
 var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
 if(c.where==='team') hudActions+='<button class="act-btn" data-pkm-store>存入盒子</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-withdraw>取出到队伍</button>';
@@ -5439,7 +5562,7 @@ function hudRefresh(){
   if(btn){btn.classList.add('spin');btn.disabled=true;}
   // 有未完成的“下回合指令”（卸道具/移精灵等）时，保留本地乐观修改，只重绘，不重新读变量覆盖
   try{if(!hudPendingActions.length){stat_data=loadStatData();}}catch(e){}
-  try{diySyncFromStorage(true);}catch(e){}
+  try{diySyncFromStorage(false);}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
   try{
@@ -5741,6 +5864,7 @@ function closeHud(){
   /* 拖动：手机触摸 + 桌面鼠标（长按弹地图按钮） */
 var drag=null;
 var longPressTimer=null,longPressFired=false;
+var fabSkipClick=false;
 var mapFab=document.createElement('button');
 mapFab.id='pkm-hud-mapfab';
 mapFab.type='button';
@@ -5800,6 +5924,7 @@ function endDrag(e){
   var fired=longPressFired;
   drag=null;
   clearTimeout(longPressTimer);longPressTimer=null;
+  fabSkipClick=true;
   if(wasMove){
     try{ localStorage.setItem('pkm_fab_pos', JSON.stringify({l:parseFloat(btn.style.left), t:parseFloat(btn.style.top)})); }catch(err){}
     if(e && e.cancelable){ e.preventDefault(); }
@@ -5821,6 +5946,12 @@ function endDrag(e){
   btn.addEventListener('mousedown', function(e){ startDrag(e.clientX,e.clientY); e.preventDefault(); });
   document.addEventListener('mousemove', function(e){ if(drag) moveDrag(e.clientX,e.clientY); });
   document.addEventListener('mouseup', function(e){ endDrag(e); });
+  /* 兜底：万一 mouseup/endDrag 没触发（如切换聊天后），普通 click 也能开关 HUD */
+  btn.addEventListener('click', function(e){
+    if(fabSkipClick){fabSkipClick=false;return;}
+    hideMapFab();
+    toggleHud();
+  });
 
   mask.addEventListener('click', closeHud);
   close.addEventListener('click', function(e){ e.stopPropagation(); closeHud(); });
@@ -5863,6 +5994,7 @@ function renderStatusBar(){
 var pkmAutoRefreshBound=false;
 function pkRefreshData(){
   try{stat_data=loadStatData();}catch(e){}
+  try{if(winMode==='1')ensureHud();}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
   try{renderStatusBar();}catch(e){}
