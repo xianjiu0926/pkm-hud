@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.7.3';
+var PK_VER='1.7.4';
 /*PK_NOTICE_BEGIN
-1. 移除静默向 AI 发送图鉴收集进度的逻辑
+阿罗拉地图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -476,7 +476,14 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.hud-refresh-btn.spin img{animation:pkm-refresh-spin .6s linear}'+
 '.hud-refresh-ok{color:#4ade80;font-size:1.25em;line-height:1;font-weight:800;margin-top:-0.24em}'+
 '@keyframes pkm-refresh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}'+
-'#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
+'#pkm-hud-win .trainer-frame .info-title{padding-right:28px}'+
+'.map-island-label{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;padding:2px 8px;border-radius:6px;background:rgba(15,22,38,.9);border:1px solid #4ade80;color:#fff;font-size:.68rem;font-weight:800;pointer-events:auto;cursor:pointer;z-index:3;box-shadow:0 0 6px rgba(74,222,128,.45)}'+
+'.map-island-label .il-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:4px;vertical-align:0}'+
+'.map-island-label.hl{border-color:#fff;background:rgba(255,255,255,.16);box-shadow:0 0 10px 3px rgba(255,255,255,.7);animation:island-hl-pulse 1.1s ease-in-out infinite}'+
+'@keyframes island-hl-pulse{0%,100%{box-shadow:0 0 4px 1px rgba(255,255,255,.6)}50%{box-shadow:0 0 14px 6px rgba(255,255,255,.95)}}'+
+'.map-island-label.no-sub{cursor:default;opacity:.72;border-style:dashed}'+
+'.map-back-btn{flex:0 0 auto;padding:4px 12px;font-family:inherit;font-size:.75rem;font-weight:800;border:1px solid var(--frame);background:rgba(43,74,111,.85);color:#fff;border-radius:4px;cursor:pointer;white-space:nowrap}'+
+'.map-back-btn:hover{background:rgba(124,196,248,.28)}';
 
 /* 每次进聊天（脚本重新执行）都像第一次一样完整重建 HUD：
  * 先清掉上一轮留下的悬浮球/遮罩/窗口/样式，再从头加载缓存数据重新渲染。 */
@@ -2945,7 +2952,128 @@ var MAPS_DATA=[
       {name:'铠之孤岛',x:97,y:35.9},
       {name:'王冠雪原',x:50.6,y:98.2}
     ]
+  },
+  {
+    name:'阿罗拉',
+    img:'https://img.baibai.cv/f/pNj7uE/%E9%98%BF%E7%BD%97%E6%8B%89.png',
+    islands:[
+      {name:'美乐美乐岛',x:32.8,y:26.2,img:'https://img.baibai.cv/f/jmjdcX/%E7%BE%8E%E4%B9%90%E7%BE%8E%E4%B9%90%E5%B2%9B.png',
+        towns:[
+          {name:'利利小镇',x:32.9,y:27.8},
+          {name:'好奥乐市',x:27.9,y:71}
+        ],
+        roads:[
+          {name:'2号道路',x:10.2,y:46.8},
+          {name:'1号道路',x:48.3,y:31.9},
+          {name:'3号道路',x:41.1,y:12.9}
+        ],
+        specials:[
+          {name:'大浪海滩',x:5,y:32.5},
+          {name:'卡拉蔚湾',x:54.4,y:17.6},
+          {name:'美乐美乐海',x:83.9,y:45.5},
+          {name:'好奥乐墓园',x:21.2,y:51.7},
+          {name:'马哈罗山路',x:29.6,y:8.6},
+          {name:'十克拉山丘',x:64.1,y:46.5},
+          {name:'美乐美乐花园',x:35.5,y:9.1},
+          {name:'通海洞穴',x:32.4,y:14.5},
+          {name:'树果园',x:5.9,y:48.1},
+          {name:'葱郁洞窟',x:21.6,y:15.7},
+          {name:'战争遗迹',x:30.6,y:20.9},
+          {name:'海滩洞穴',x:1.6,y:48.9}
+        ]
+      },
+      {name:'乌拉乌拉岛',x:80.6,y:68.6,img:'https://img.baibai.cv/f/3r1zhe/%E4%B9%8C%E6%8B%89%E4%B9%8C%E6%8B%89%E5%B2%9B.png',
+        towns:[
+          {name:'马利埃静市',x:69.6,y:25.5},
+          {name:'卡璞村',x:58,y:39.4},
+          {name:'魄镇',x:31.6,y:9.5}
+        ],
+        roads:[
+          {name:'10号道路',x:52,y:17.7},
+          {name:'17号道路',x:35.7,y:18.1},
+          {name:'16号道路',x:28.8,y:30.4},
+          {name:'15号水路',x:21.8,y:70.3},
+          {name:'14号道路',x:48.2,y:81},
+          {name:'13号道路',x:71.3,y:52.6},
+          {name:'11号道路',x:73.9,y:33.4},
+          {name:'12号道路',x:83,y:45.3}
+        ],
+        specials:[
+          {name:'乌拉乌拉海滩',x:94.2,y:57.9},
+          {name:'辉克拉尼山',x:47.7,y:18},
+          {name:'拉纳基拉山',x:53,y:31.8},
+          {name:'哈伊纳沙漠',x:70.4,y:46.5},
+          {name:'乌拉乌拉花园',x:23.5,y:33.1},
+          {name:'以太之家',x:46.1,y:68},
+          {name:'辉克拉尼天文台',x:51.1,y:13.2},
+          {name:'超值超市旧址',x:62.6,y:81.6},
+          {name:'宝可梦联盟',x:52.6,y:26.6},
+          {name:'丰收遗迹',x:68.6,y:41.3}
+        ]
+      },
+      {name:'阿卡拉岛',x:61.5,y:30,img:'https://img.baibai.cv/f/Xm1yUd/%E9%98%BF%E5%8D%A1%E6%8B%89%E5%B2%9B.png',
+        towns:[
+          {name:'可霓可市',x:17,y:81},
+          {name:'欧哈纳镇',x:33.7,y:32.6},
+          {name:'慷待市',x:22.7,y:59.2},
+          {name:'豪诺豪诺度假地',x:64,y:56.1},
+          {name:'皇家大道',x:55.5,y:28.8}
+        ],
+        roads:[
+          {name:'8号道路',x:24.2,y:3.9},
+          {name:'5号道路',x:26.5,y:14.3},
+          {name:'7号道路',x:59.7,y:12.5},
+          {name:'4号道路',x:29.3,y:45.2},
+          {name:'6号道路',x:41.9,y:35.3},
+          {name:'9号道路',x:32.1,y:89.8}
+        ],
+        specials:[
+          {name:'慷待海滩',x:16.1,y:47.8},
+          {name:'豪诺豪诺海滩',x:76.1,y:59.8},
+          {name:'潺潺之丘',x:14.8,y:15.8},
+          {name:'维拉火山公园',x:64.2,y:18.2},
+          {name:'树荫丛林',x:32.1,y:10.7},
+          {name:'地鼠隧道',x:33.1,y:70.4},
+          {name:'回忆之丘',x:35.9,y:88.6},
+          {name:'生命遗迹',x:43.7,y:84.6},
+          {name:'皮卡丘山谷',x:26.9,y:43.9},
+          {name:'分隔岭隧道',x:55.1,y:7.3},
+          {name:'欧哈纳牧场',x:32,y:25.3}
+        ]
+      },
+      {name:'波尼岛',x:17.2,y:50.2,img:'https://img.baibai.cv/f/B6RYfX/%E6%B3%A2%E5%B0%BC%E5%B2%9B.png',
+        towns:[
+          {name:'海洋居民之村',x:39.9,y:83.8}
+        ],
+        roads:[],
+        specials:[
+          {name:'波尼险路',x:39.4,y:20.5},
+          {name:'波尼海岸',x:80.9,y:30.6},
+          {name:'波尼旷野',x:57.4,y:33.6},
+          {name:'波尼树林',x:61.7,y:42},
+          {name:'波尼鼓浪岩岸',x:77.9,y:51.3},
+          {name:'波尼古道',x:54,y:52.5},
+          {name:'波尼原野',x:27.6,y:63.2},
+          {name:'波尼海滩',x:15.2,y:76.1},
+          {name:'椰蛋树岛',x:7.1,y:93.8},
+          {name:'波尼大峡谷',x:44,y:43.8},
+          {name:'日轮祭坛',x:21,y:30.1},
+          {name:'月轮祭坛',x:23.2,y:31.7},
+          {name:'彼岸遗迹',x:79.8,y:42.6},
+          {name:'波尼花园',x:74.5,y:30.8},
+          {name:'旷野洞窟',x:53.3,y:26.7},
+          {name:'终结洞窟',x:49.3,y:22.2},
+          {name:'对战树',x:26.1,y:16.8}
+        ]
+      },
+      {name:'以太乐园',x:44,y:45.1,img:'',
+        towns:[],
+        roads:[],
+        specials:[]
+      }
+    ]
   }
+
 ];
 var MAPS=JSON.parse(JSON.stringify(MAPS_DATA));
 /* ===== 地图底图缓存（IndexedDB 持久化，避免每次打开地图都重新下载） ===== */
@@ -3028,8 +3156,9 @@ function _mapImgPreload(url){
     else{_mapImgFetch(url);}
   }).catch(function(){_mapImgFetch(url);});
 }
-MAPS.forEach(function(m){if(m.img)_mapImgPreload(m.img);});
+MAPS.forEach(function(m){if(m.img)_mapImgPreload(m.img);if(m.islands){m.islands.forEach(function(is){if(is.img)_mapImgPreload(is.img);});}});
 var activeMap='';
+var alolaIsland=-1;
 var mapSpotOn=false;
 var mapFilter={town:false,road:false,special:false};
 var mapLabelSize=10;
@@ -3056,12 +3185,26 @@ for(var j=0;j<lbls.length;j++){lbls[j].style.fontSize=mapLabelSize+'px';}
 function mapAllSpots(map){
   var out=[];
   var cats=[['towns','town'],['roads','road'],['specials','special']];
-  for(var i=0;i<cats.length;i++){
-    var list=map[cats[i][0]]||[];
+  function pushList(list,cat,island){
+    if(!list)return;
     for(var j=0;j<list.length;j++){
       var s=list[j];
-      out.push({name:s.name,x:s.x,y:s.y,cat:cats[i][1]});
+      var o={name:s.name,x:s.x,y:s.y,cat:cat};
+      if(island){o.island=island.idx;o.islandName=island.name;}
+      out.push(o);
     }
+  }
+  if(map.islands){
+    for(var i=0;i<map.islands.length;i++){
+      var is=map.islands[i];
+      for(var ci=0;ci<cats.length;ci++){
+        pushList(is[cats[ci][0]],cats[ci][1],{idx:i,name:is.name});
+      }
+    }
+    return out;
+  }
+  for(var ci2=0;ci2<cats.length;ci2++){
+    pushList(map[cats[ci2][0]],cats[ci2][1],null);
   }
   return out;
 }
@@ -3105,51 +3248,98 @@ function regionOfLocation(loc){
   }
   return '';
 }
-function mapHTML(){
-  if(!MAPS.length)return '<div class="map-page"><div class="empty">暂未配置地图</div></div>';
-  if(!MAPS.some(function(x){return x.name===activeMap;}))activeMap=MAPS[0].name;
-  var m=MAPS.filter(function(x){return x.name===activeMap;})[0]||MAPS[0];
-  var loc=(stat_data.环境&&stat_data.环境.当前地点)||'';
-var locRegion=regionOfLocation(loc);
-var spot=null,pinNote='';
-if(locRegion){
-  if(m.name===locRegion){spot=findSpot(m,loc);}
-  else{pinNote='（当前位置在'+esc(locRegion)+'，不在此图）';}
-}else{
-  spot=findSpot(m,loc);
+function mapSpotLabelsHTML(all,curName){
+  return all.map(function(sp){
+    if(curName&&normLoc(sp.name)===curName)return '';
+    return '<div class="map-spot-label" data-cat="'+esc(sp.cat)+'" data-x="'+sp.x+'" data-y="'+sp.y+'">'+esc(sp.name)+'</div>';
+  }).join('');
 }
-  var tabs=MAPS.map(function(x){return '<button class="map-tab'+(x.name===m.name?' active':'')+'" data-map="'+esc(x.name)+'">'+esc(x.name)+'</button>';}).join('');
-  var curName=spot?normLoc(spot.name):'';
-  var all=mapAllSpots(m);
-  var spotLabels=all.map(function(sp){
-  if(curName&&normLoc(sp.name)===curName)return '';
-  return '<div class="map-spot-label" data-cat="'+esc(sp.cat)+'" data-x="'+sp.x+'" data-y="'+sp.y+'">'+esc(sp.name)+'</div>';
-}).join('');
-  var wrapCls='map-wrap';
-  if(mapSpotOn){
-    wrapCls+=' show-all';
-    for(var k in mapFilter){if(mapFilter[k])wrapCls+=' show-'+k;}
-  }
-  var inner='';
-  if(m.img){
-    var pin='';
-    if(spot){
-  pin='<div class="map-pin-label" data-x="'+spot.x+'" data-y="'+spot.y+'">'+esc(spot.name)+'</div><div class="map-pin" data-x="'+spot.x+'" data-y="'+spot.y+'"></div>';
-}
-    inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(m.img)+'" src="'+esc(mapImgSrc(m.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
-    if(!spot)inner+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+(pinNote||'（本图未匹配到坐标）')+'</div>';
-  }else{
-    inner='<div class="empty">该地图没配图片链接</div>';
-  }
+function mapControlsHTML(){
   var filterBar='<div class="map-filter'+(mapSpotOn?' show':'')+'" data-map-filter>'+
   '<button class="map-tab'+(mapFilter.town?' active':'')+'" data-mcat="town">🏙 城镇</button>'+
   '<button class="map-tab'+(mapFilter.road?' active':'')+'" data-mcat="road">🛣 道路</button>'+
   '<button class="map-tab'+(mapFilter.special?' active':'')+'" data-mcat="special">✨ 特殊地点</button>'+
   '</div>';
-var sizeBtn='<button class="map-size-btn" data-map-size-btn>🔤 字号 '+mapLabelSize+'</button>';
-var sizePop='<div class="map-size-pop" data-map-size-pop><span class="dim">名称字号</span><input type="range" min="6" max="24" step="1" value="'+mapLabelSize+'" data-map-size><span class="dim" data-map-size-val>'+mapLabelSize+'px</span><button class="map-size-done" data-map-size-done>✓</button></div>';
-var controls='<div class="map-controls">'+sizeBtn+filterBar+sizePop+'</div>';
-return '<div class="map-page"><div class="map-toolbar"><div class="map-tabs">'+tabs+'</div><button class="map-eye'+(mapSpotOn?' on':'')+'" data-map-eye title="点击显示/隐藏地点">👁</button></div>'+controls+inner+'<div class="map-zoom-hint">👁 开启地点显示 · 城镇/道路/特殊地点可组合点选 · 点击「字号」弹出滑条 · 双指/滚轮缩放 · 拖动平移 · 双击复位</div></div>';
+  var sizeBtn='<button class="map-size-btn" data-map-size-btn>🔤 字号 '+mapLabelSize+'</button>';
+  var sizePop='<div class="map-size-pop" data-map-size-pop><span class="dim">名称字号</span><input type="range" min="6" max="24" step="1" value="'+mapLabelSize+'" data-map-size><span class="dim" data-map-size-val>'+mapLabelSize+'px</span><button class="map-size-done" data-map-size-done>✓</button></div>';
+  return '<div class="map-controls">'+sizeBtn+filterBar+sizePop+'</div>';
+}
+function mapToolbarHTML(tabs,extraRight){
+  return '<div class="map-toolbar"><div class="map-tabs">'+tabs+'</div>'+(extraRight||'')+'</div>';
+}
+function mapWrapHTML(v,spot,loc,pinNote){
+  var all=mapAllSpots(v);
+  var curName=spot?normLoc(spot.name):'';
+  var spotLabels=mapSpotLabelsHTML(all,curName);
+  var wrapCls='map-wrap';
+  if(mapSpotOn){
+    wrapCls+=' show-all';
+    for(var k in mapFilter){if(mapFilter[k])wrapCls+=' show-'+k;}
+  }
+  if(v.img){
+    var pin='';
+    if(spot){
+      pin='<div class="map-pin-label" data-x="'+spot.x+'" data-y="'+spot.y+'">'+esc(spot.name)+'</div><div class="map-pin" data-x="'+spot.x+'" data-y="'+spot.y+'"></div>';
+    }
+    var inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(v.img)+'" src="'+esc(mapImgSrc(v.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
+    if(!spot)inner+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+(pinNote||'（本图未匹配到坐标）')+'</div>';
+    return inner;
+  }
+  return '<div class="empty">该地图没配图片链接</div>';
+}
+function mapHTML(){
+  if(!MAPS.length)return '<div class="map-page"><div class="empty">暂未配置地图</div></div>';
+  if(!MAPS.some(function(x){return x.name===activeMap;}))activeMap=MAPS[0].name;
+  var m=MAPS.filter(function(x){return x.name===activeMap;})[0]||MAPS[0];
+  var loc=(stat_data.环境&&stat_data.环境.当前地点)||'';
+  var locRegion=regionOfLocation(loc);
+  var tabs=MAPS.map(function(x){return '<button class="map-tab'+(x.name===m.name?' active':'')+'" data-map="'+esc(x.name)+'">'+esc(x.name)+'</button>';}).join('');
+  var hint='<div class="map-zoom-hint">👁 开启地点显示 · 城镇/道路/特殊地点可组合点选 · 点击「字号」弹出滑条 · 双指/滚轮缩放 · 拖动平移 · 双击复位</div>';
+  var eye='<button class="map-eye'+(mapSpotOn?' on':'')+'" data-map-eye title="点击显示/隐藏地点">👁</button>';
+
+  if(m.islands){
+    if(alolaIsland<0||!m.islands[alolaIsland]||!m.islands[alolaIsland].img){
+      if(alolaIsland>=0)alolaIsland=-1;
+      var spot=null,pinNote='';
+      if(locRegion){
+        if(m.name===locRegion)spot=findSpot(m,loc);
+        else pinNote='（当前位置在'+esc(locRegion)+'，不在此图）';
+      }else{spot=findSpot(m,loc);}
+      var labels=m.islands.map(function(is,i){
+        var hl=(spot&&spot.island===i);
+        var cls='map-island-label'+(hl?' hl':'')+(is.img?'':' no-sub');
+        var inner='<span class="il-dot"></span>'+esc(is.name)+(hl?' 📍':'');
+        return '<div class="'+cls+'" data-island="'+i+'" data-x="'+is.x+'" data-y="'+is.y+'">'+inner+'</div>';
+      }).join('');
+      var inner2='';
+      if(m.img){
+        inner2='<div class="map-wrap" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(m.img)+'" src="'+esc(mapImgSrc(m.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+labels+'</div></div>';
+      }else{
+        inner2='<div class="empty">该地图没配图片链接</div>';
+      }
+      var status='';
+      if(spot&&m.islands[spot.island])status='<div class="map-no-loc">📍 当前位置：'+esc(spot.name)+'（'+esc(m.islands[spot.island].name)+'）</div>';
+      else if(pinNote)status='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+pinNote+'</div>';
+      else status='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+'（大图未匹配到坐标）</div>';
+      return '<div class="map-page">'+mapToolbarHTML(tabs,'')+inner2+status+'<div class="map-zoom-hint">👆 点击岛屿进入该岛地图 · 发光的岛屿是当前所在 · 双指/滚轮缩放 · 拖动平移 · 双击复位</div></div>';
+    }
+    var is=m.islands[alolaIsland];
+    var v={name:is.name,img:is.img,towns:is.towns||[],roads:is.roads||[],specials:is.specials||[]};
+    var spot2=null,pinNote2='';
+    if(locRegion){
+      if(m.name===locRegion)spot2=findSpot(v,loc);
+      else pinNote2='（当前位置在'+esc(locRegion)+'，不在此图）';
+    }else{spot2=findSpot(v,loc);}
+    var backBtn='<button class="map-back-btn" data-map-back>← 返回阿罗拉大图</button>';
+    return '<div class="map-page">'+mapToolbarHTML(tabs,backBtn+eye)+mapControlsHTML()+mapWrapHTML(v,spot2,loc,pinNote2)+hint+'</div>';
+  }
+
+  var spot3=null,pinNote3='';
+  if(locRegion){
+    if(m.name===locRegion)spot3=findSpot(m,loc);
+    else pinNote3='（当前位置在'+esc(locRegion)+'，不在此图）';
+  }else{spot3=findSpot(m,loc);}
+  return '<div class="map-page">'+mapToolbarHTML(tabs,eye)+mapControlsHTML()+mapWrapHTML(m,spot3,loc,pinNote3)+hint+'</div>';
 }
 function bindMapViewer(wrap){
   if(!wrap)return;
@@ -5382,7 +5572,7 @@ if(vst){vst.addEventListener('click',function(e){e.stopPropagation();openVisionS
 diyFillLorebookOptions();
 diyEvoSyncNext();
 diyEvoLoadAbi();
-pageOverlay.querySelectorAll('[data-map]').forEach(function(b){b.addEventListener('click',function(){activeMap=b.getAttribute('data-map');pageOverlay.querySelector('.page-body').innerHTML=mapHTML();bindPageInteractions();});});
+pageOverlay.querySelectorAll('[data-map]').forEach(function(b){b.addEventListener('click',function(){activeMap=b.getAttribute('data-map');alolaIsland=-1;pageOverlay.querySelector('.page-body').innerHTML=mapHTML();bindPageInteractions();});});
 var dr=pageOverlay.querySelector('[data-diag-refresh]');
 if(dr){dr.addEventListener('click',function(e){e.stopPropagation();openPage('settings');});}
 var mvw=pageOverlay.querySelector('[data-mapwrap]');
@@ -5439,6 +5629,21 @@ pageOverlay.querySelectorAll('.map-spot-label').forEach(function(lb){
     lb.classList.add('top');
   });
 });
+pageOverlay.querySelectorAll('.map-island-label').forEach(function(lb){
+  lb.addEventListener('pointerdown',function(e){e.stopPropagation();});
+  lb.addEventListener('click',function(e){
+    e.stopPropagation();
+    var i=parseInt(lb.getAttribute('data-island'),10);
+    var m=MAPS.filter(function(x){return x.name===activeMap;})[0];
+    if(m&&m.islands&&m.islands[i]&&m.islands[i].img){
+      alolaIsland=i;
+      var pb=pageOverlay.querySelector('.page-body');
+      if(pb){pb.innerHTML=mapHTML();bindPageInteractions();}
+    }
+  });
+});
+var backMap=pageOverlay.querySelector('[data-map-back]');
+if(backMap){backMap.addEventListener('click',function(e){e.stopPropagation();alolaIsland=-1;var pb=pageOverlay.querySelector('.page-body');if(pb){pb.innerHTML=mapHTML();bindPageInteractions();}});}
 var tc1=pageOverlay.querySelector('#tc-def-1');
 if(tc1){tc1.addEventListener('change',typeChartCalc);}
 var tc2=pageOverlay.querySelector('#tc-def-2');
@@ -5495,6 +5700,7 @@ function openPage(key){
     if(_reg&&MAPS.some(function(x){return x.name===_reg;}))activeMap=_reg;
     mapSpotOn=true;
     mapFilter={town:true,road:false,special:false};
+    alolaIsland=-1;
   }
   currentPageKey=key;
   pageOverlayPopout(key==='map');
