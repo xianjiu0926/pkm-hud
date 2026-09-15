@@ -364,10 +364,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.6.0';
+var PK_VER='1.6.1';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-抄一下小手机的更新方式
+修一下
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -423,12 +423,12 @@ if(pkDelegatedFlag){
   try{
     var pkStagedObj=pkStageRead();
     if(pkStagedObj&&pkStagedObj.v&&pkVerCompare(pkStagedObj.v,PK_VER)>0){
-      var pkBootState={v:pkStagedObj.v,ack:false};
-      WIN.__PK_HUD_DELEGATED__=pkBootState;
+      var pkAcked=false;
+      WIN.__PK_HUD_DELEGATED__={ack:function(){pkAcked=true;}};
       var pkRanNew=false;
       try{new Function(pkStagedObj.c).call(window);pkRanNew=true;}catch(e){pkRanNew=false;}
       try{delete WIN.__PK_HUD_DELEGATED__;}catch(e){}
-      if(pkRanNew&&pkBootState.ack){
+      if(pkRanNew&&pkAcked){
         return;
       }
       pkStageClear();
