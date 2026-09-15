@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.7.2';
+var PK_VER='1.7.3';
 /*PK_NOTICE_BEGIN
-改点东西
+1. 移除静默向 AI 发送图鉴收集进度的逻辑
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3726,30 +3726,6 @@ function renderDexRegion(){
     if(c2)c2.innerHTML=dexCountHTML(list,owned,sSet);
   });
 }
-var pkmDexContextLast='';
-function updateDexContext(){
-  try{
-    var region=regionFromLocation((stat_data.环境&&stat_data.环境.当前地点)||'');
-    if(!region)return;
-    loadDexList(region,function(list){
-      try{
-        var owned=ownedSpecies(),sSet=loadSeen();
-        var caught=0,seenC=0;
-        if(list){list.forEach(function(p){var bn=p.name.split('（')[0].split('(')[0].trim();if(hitSpecies(owned,bn))caught++;else if(hitSpecies(sSet,bn))seenC++;});}
-        var txt='[图鉴进度] 当前地区：'+region+'。'+region+'图鉴 捕捉'+caught+'/'+list.length+(seenC?'·见过'+seenC:'')+'。';
-        if(dexCache){
-          var nc=0,ns=0;
-          dexCache.forEach(function(p){var bn=p.name.split('（')[0].split('(')[0].trim();if(hitSpecies(owned,bn))nc++;else if(hitSpecies(sSet,bn))ns++;});
-          txt+='全国 捕捉'+nc+'/'+dexCache.length+'。';
-        }
-        if(txt===pkmDexContextLast)return;
-        pkmDexContextLast=txt;
-        var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;
-        if(ctx&&typeof ctx.setExtensionPrompt==='function'){ctx.setExtensionPrompt('pkmn_dex_context',txt,0,0,0);}
-      }catch(e2){}
-    });
-  }catch(e){}
-}
 function pokedexHTML(){
   var html=frame('图鉴',dexRegionTabsHTML()+'<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号" autocomplete="off"></div><div id="dex-count"><div class="dex-count">加载中…</div></div><div class="pokedex" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
   setTimeout(function(){renderDexRegion();},0);
@@ -5812,7 +5788,6 @@ function hudRefresh(){
   try{if(!hudPendingActions.length){stat_data=loadStatData();}}catch(e){}
   try{diySyncFromStorage(false);}catch(e){}
   try{recordSeen();}catch(e){}
-  try{updateDexContext();}catch(e){}
   try{
     render();
     var tabs=document.querySelectorAll('.tab-btn');
@@ -6078,7 +6053,6 @@ win.addEventListener('touchmove', function(e){
 function open(){
   try{stat_data=loadStatData();nearbyOpen=false;foldState={};activeBag='道具';}catch(e){}
 try{recordSeen();}catch(e){}
-try{updateDexContext();}catch(e){}
 try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
   btn.style.display='none';
   hideMapFab();
@@ -6257,7 +6231,6 @@ function pkRefreshData(){
   try{stat_data=loadStatData();}catch(e){}
   try{if(winMode==='1')ensureHud();}catch(e){}
   try{recordSeen();}catch(e){}
-  try{updateDexContext();}catch(e){}
   try{renderStatusBar();}catch(e){}
   try{
     var win=document.getElementById('pkm-hud-win');
@@ -6291,8 +6264,6 @@ function pkBindAutoRefresh(){
       ctx.eventSource.on(ev3,handler);ctx.eventSource.on(ev4,handler);
     }
   }catch(e){}
-  try{setTimeout(updateDexContext,300);}catch(e){}
-  try{setTimeout(updateDexContext,2500);}catch(e){}
 }
 var pkmAutoSnap='';
 var pkmAutoTimer=null;
@@ -6358,7 +6329,6 @@ function safeRender(){
   try{pkBindAutoRefresh();}catch(e){}
   try{pkmStartAutoUpdate();}catch(e){}
   try{recordSeen();}catch(e){}
-  try{updateDexContext();}catch(e){}
   try{renderStatusBar();}catch(e){}
   try{setTimeout(pkRefreshData,1200);}catch(e){}
   try{setTimeout(pkRefreshData,3000);}catch(e){}
