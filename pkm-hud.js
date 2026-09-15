@@ -2,7 +2,7 @@
 /* ===== 分阶段更新核心（IndexedDB，参照小手机脚本）===== */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
-var PK_VER='1.6.4';
+var PK_VER='1.6.5';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
   function p(v){var m=String(v==null?'':v).match(/^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?$/);return m?[Number(m[1]),Number(m[2]),Number(m[3]),m[4]||'']:null;}
@@ -430,7 +430,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.map-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}'+
 '.map-tab{flex:0 0 auto;padding:2px 12px;font-family:inherit;font-size:.72rem;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer}'+
 '.map-tab.active{background:rgba(43,74,111,.8);color:#fff}'+
-'.map-wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--frame);border-radius:8px;background:#0a1020;touch-action:none;cursor:grab}'+
+'.map-wrap{position:relative;width:100%;height:min(340px,60vh);overflow:hidden;border:1px solid var(--frame);border-radius:8px;background:#0a1020;touch-action:none;cursor:grab}'+
 '.map-wrap.dragging{cursor:grabbing}'+
 '.map-stage{position:relative;width:100%;transform-origin:0 0}'+
 '.map-img{display:block;width:100%;height:auto;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}'+
@@ -472,7 +472,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /*PK_NOTICE_BEGIN
-更新伽勒尔地图
+修bug
 PK_NOTICE_END*/
 /* 每次进聊天（脚本重新执行）都像第一次一样完整重建 HUD：
  * 先清掉上一轮留下的悬浮球/遮罩/窗口/样式，再从头加载缓存数据重新渲染。 */
@@ -3153,12 +3153,18 @@ function bindMapViewer(wrap){
   if(!wrap)return;
   var stage=wrap.querySelector('.map-stage');
   if(!stage)return;
-  var scale=1,tx=0,ty=0,MIN=1,MAX=8;
+  var scale=1,tx=0,ty=0,MIN=0.12,MAX=8;
+  function fitScale(){
+    var rw=wrap.clientWidth||1, rh=wrap.clientHeight||1;
+    var sw=stage.offsetWidth||1, sh=stage.offsetHeight||1;
+    if(sw<=1||sh<=1)return 1;
+    return Math.max(MIN, Math.min(1, rw/sw, rh/sh));
+  }
   function apply(){
   var rw=wrap.clientWidth||1, rh=wrap.clientHeight||1;
   var sw=stage.offsetWidth*scale, sh=stage.offsetHeight*scale;
-  if(sw<=rw){tx=0;}else{tx=Math.min(0,Math.max(tx,rw-sw));}
-  if(sh<=rh){ty=0;}else{ty=Math.min(0,Math.max(ty,rh-sh));}
+  if(sw<=rw){tx=(rw-sw)/2;}else{tx=Math.min(0,Math.max(tx,rw-sw));}
+  if(sh<=rh){ty=(rh-sh)/2;}else{ty=Math.min(0,Math.max(ty,rh-sh));}
   stage.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
   wrap._mapScale=scale;
   wrap._mapTx=tx;
@@ -3230,10 +3236,11 @@ function bindMapViewer(wrap){
     apply();
   },{passive:false});
   wrap.addEventListener('dblclick',function(){
-    scale=1;tx=0;ty=0;apply();
+    scale=fitScale();tx=0;ty=0;apply();
   });
   var mapImgEl=wrap.querySelector('.map-img');
-  if(mapImgEl){mapImgEl.addEventListener('load',function(){apply();});}
+  if(mapImgEl){mapImgEl.addEventListener('load',function(){scale=fitScale();tx=0;ty=0;apply();});}
+  scale=fitScale();
   apply();
 }
 
@@ -5076,12 +5083,27 @@ function pkDoUpdate(){
   if(!pkLatestContent){ pkSetUpdateMsg('请先检查更新'); return; }
   if(!pkLatestVer){ pkSetUpdateMsg('❌ 新版版本号缺失，无法安装'); return; }
   if(pkVerCompare(pkLatestVer,PK_VER)<=0){ pkSetUpdateMsg('✅ 已是 v'+PK_VER+' 或更高版本'); return; }
-  pkSetUpdateMsg('正在保存新版到本地...');
+  pkSetUpdateMsg('正在更新...');
   pkInstallRecord(pkLatestVer,pkLatestContent).then(function(){
     pkClearHasUpdate();
     var updBtn=document.querySelector('[data-pk-do-update]');
     if(updBtn)updBtn.style.display='none';
-    pkSetUpdateMsg('✅ 新版 v'+pkLatestVer+' 已保存到本地，下次进入聊天/刷新页面会自动切换；若新版启动失败会自动回退当前版。');
+    /* 同时把角色卡里的脚本内容更新成最新版（重新导入/分享时就是新版） */
+    try{
+      pkUpdateScript(pkLatestContent).then(function(res){
+        if(res&&res.ok){
+          pkSetUpdateMsg('✅ 已更新到 v'+pkLatestVer+'，角色卡脚本内容也已更新，刷新页面生效。');
+        }else{
+          pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
+          var sc=document.querySelector('[data-pk-show-content]');
+          if(sc)sc.style.display='block';
+        }
+      });
+    }catch(e){
+      pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败。可点「复制新版内容」手动粘贴。');
+      var sc=document.querySelector('[data-pk-show-content]');
+      if(sc)sc.style.display='block';
+    }
   }).catch(function(err){
     pkSetUpdateMsg('❌ 保存失败：'+(err&&err.message?err.message:err)+'。请点「复制新版内容」手动更新。');
     var sc=document.querySelector('[data-pk-show-content]');
