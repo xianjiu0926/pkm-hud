@@ -2,7 +2,7 @@
 /* ===== 分阶段更新核心（IndexedDB，参照小手机脚本）===== */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
-var PK_VER='1.6.3';
+var PK_VER='1.6.4';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
   function p(v){var m=String(v==null?'':v).match(/^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?$/);return m?[Number(m[1]),Number(m[2]),Number(m[3]),m[4]||'']:null;}
@@ -472,8 +472,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /*PK_NOTICE_BEGIN
-更新：
-测试一下
+更新伽勒尔地图
 PK_NOTICE_END*/
 /* 每次进聊天（脚本重新执行）都像第一次一样完整重建 HUD：
  * 先清掉上一轮留下的悬浮球/遮罩/窗口/样式，再从头加载缓存数据重新渲染。 */
@@ -492,6 +491,14 @@ try{
   }
 }catch(e){}
 try{WIN.__pkmHudLoaded=true;}catch(e){}
+try{
+  if(WIN.__pkmHudAssetLocksHandler){WIN.removeEventListener('pkworkshop:asset-locks-changed',WIN.__pkmHudAssetLocksHandler);}
+  if(WIN.__pkmHudAssetStorageHandler){WIN.removeEventListener('storage',WIN.__pkmHudAssetStorageHandler);}
+  WIN.__pkmHudAssetLocksHandler=function(){try{pkmHudRenderCurrent();}catch(e){}};
+  WIN.__pkmHudAssetStorageHandler=function(e){try{if(e&&e.key==='pk_pokemon_asset_locks_v1')pkmHudRenderCurrent();}catch(_){}};
+  WIN.addEventListener('pkworkshop:asset-locks-changed',WIN.__pkmHudAssetLocksHandler);
+  WIN.addEventListener('storage',WIN.__pkmHudAssetStorageHandler);
+}catch(e){}
 
 var st=document.createElement('style');
 st.type='text/css';
@@ -767,15 +774,33 @@ function diyRefreshTeam(){
     resizeFrame();
   }catch(e){}
 }
+/* v1.6.3 / Bridge API v2：精灵资产锁与云仓引用识别 */
+var PKM_ASSET_LOCKS_KEY='pk_pokemon_asset_locks_v1';
+function hudPokemonId(p){p=p&&typeof p==='object'?p:{};return String(p.精灵ID||p.pokemonId||p.培育实例ID||p.nurseryInstanceId||'').trim();}
+function hudIsCloudStub(p){return !!(p&&typeof p==='object'&&(p.云端引用===true||p.云端引用===1||String(p.云端状态||'').toLowerCase()==='cold'||String(p.云端状态||'').toLowerCase()==='cloud'));}
+function hudAssetChatKey(){try{var ST=WIN&&WIN.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null,id=ctx&&((typeof ctx.getCurrentChatId==='function'&&ctx.getCurrentChatId())||ctx.chatId);if(id!==undefined&&id!==null&&String(id)!=='')return 'chat:'+String(id);}catch(e){}return '';}
+function hudAssetLocks(){try{var x=JSON.parse(WIN.localStorage.getItem(PKM_ASSET_LOCKS_KEY)||'null'),ck=hudAssetChatKey();if(!x||!Array.isArray(x.locks))return [];if(ck&&x.chatKey&&String(ck)!==String(x.chatKey))return [];return x.locks;}catch(e){return [];}}
+function hudPokemonLockById(id){id=String(id||'');if(!id)return null;var a=hudAssetLocks();for(var i=0;i<a.length;i++)if(String(a[i]&&a[i].pokemonId||'')===id)return a[i];return null;}
+function hudPokemonLock(p){return hudPokemonLockById(hudPokemonId(p));}
+function hudAssertPokemonMutable(p,action){if(!p||!p.名字||p.名字==='空')return true;if(hudIsCloudStub(p)){hudMsg('这是得文云仓的冷存引用，不能在 HUD 中直接'+String(action||'修改')+'。请到小手机 → 培育中心 → 得文云仓正式取回。');return false;}var l=hudPokemonLock(p);if(l){var label=String(l.type||'资产事务');hudMsg('这只精灵正在执行「'+label+'」，HUD 已暂时锁定'+String(action||'修改')+'操作。请先在小手机完成/恢复该事务。');return false;}return true;}
+function hudFindPokemonLocations(id){id=String(id||'');var out=[];if(!id)return out;var t=(stat_data&&stat_data.队伍)||{};for(var i=1;i<=6;i++){var p=t[String(i)];if(p&&hudPokemonId(p)===id)out.push({type:'team',slot:String(i),pokemon:pkmHudClone(p)});}var bs=(stat_data&&stat_data.盒子)||{};Object.keys(bs).forEach(function(b){var box=bs[b]||{};Object.keys(box).forEach(function(sl){var p=box[sl];if(p&&hudPokemonId(p)===id)out.push({type:'box',box:String(b),slot:String(sl),pokemon:pkmHudClone(p)});});});return out;}
+function hudStateRevision(){try{var raw=JSON.stringify({队伍:(stat_data&&stat_data.队伍)||{},盒子:(stat_data&&stat_data.盒子)||{}}),h=2166136261;for(var i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}catch(e){return '';}}
+
 /* 创意工坊优先使用这个 API 获取“HUD 此刻真正显示的队伍/盒子”，
  * 而不是等待下一次 AI 回复后才更新的旧 MVU 快照。
  */
 (function(){
   var api={
-    version:'1.1.0',
+    version:'2.0.0',
+    capabilities:{pokemonIdentity:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true},
     getStatData:function(){return pkmHudClone(stat_data);},
     getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
     getBoxes:function(){return pkmHudClone((stat_data&&stat_data.盒子)||{});},
+    getPokemon:function(id){var a=hudFindPokemonLocations(id);return a.length?pkmHudClone(a[0]):null;},
+    findPokemonLocations:function(id){return hudFindPokemonLocations(id);},
+    getPokemonLock:function(id){var x=hudPokemonLockById(id);return x?pkmHudClone(x):null;},
+    isCloudStub:function(p){return hudIsCloudStub(p);},
+    getStateRevision:function(){return hudStateRevision();},
     getDiyData:function(){try{diySyncFromStorage(false);}catch(e){}return pkmHudClone(diyData||{});},
     reloadDiy:function(){try{diySyncFromStorage(true);pkmHudRenderCurrent();return true;}catch(e){return false;}},
     installDiyBundle:function(bundle){
@@ -783,33 +808,24 @@ function diyRefreshTeam(){
       try{diySyncFromStorage(false);}catch(e){}
       diyData=diyNormalizeData(diyData);
       var count=0,pokemon=0;
-      ['move','ability','item','pokemon'].forEach(function(t){
-        var src=bundle[t]&&typeof bundle[t]==='object'?bundle[t]:{};
-        diyData[t]=diyData[t]||{};
-        Object.keys(src).forEach(function(k){
-          diyData[t][k]=pkmHudClone(src[k]);
-          count++;
-          if(t==='pokemon')pokemon++;
-        });
-      });
-      diySave();
-      try{pkmHudRenderCurrent();}catch(e){}
-      return {count:count,pokemon:pokemon};
+      ['move','ability','item','pokemon'].forEach(function(t){var src=bundle[t]&&typeof bundle[t]==='object'?bundle[t]:{};diyData[t]=diyData[t]||{};Object.keys(src).forEach(function(k){diyData[t][k]=pkmHudClone(src[k]);count++;if(t==='pokemon')pokemon++;});});
+      diySave();try{pkmHudRenderCurrent();}catch(e){}return {count:count,pokemon:pokemon};
     },
     persist:function(){return pkmHudPersistStatData();},
     refreshView:function(){return pkmHudRenderCurrent();},
     refreshFromMvu:function(){try{hudRefresh();return true;}catch(e){return false;}},
     setTeamSlot:function(slot,pokemon){
-      slot=String(parseInt(slot,10)||'');
-      if(!slot||Number(slot)<1||Number(slot)>6)return Promise.reject(new Error('无效队伍位置'));
-      stat_data.队伍=stat_data.队伍||{};
-      stat_data.队伍[slot]=pkmHudClone(pokemon||{名字:'空'});
-      return pkmHudPersistStatData().then(function(){pkmHudRenderCurrent();return true;});
+      slot=String(parseInt(slot,10)||'');if(!slot||Number(slot)<1||Number(slot)>6)return Promise.reject(new Error('无效队伍位置'));
+      stat_data.队伍=stat_data.队伍||{};var cur=stat_data.队伍[slot],incoming=pokemon||{名字:'空'};
+      if(cur&&cur.名字&&cur.名字!=='空'&&(hudPokemonLock(cur)||hudIsCloudStub(cur)))return Promise.reject(new Error('当前队伍位置的精灵正在资产事务中或是云仓引用，拒绝外部覆盖'));
+      if(incoming&&incoming.名字&&incoming.名字!=='空'&&(hudPokemonLock(incoming)||hudIsCloudStub(incoming)))return Promise.reject(new Error('目标精灵正在资产事务中或是云仓引用，拒绝通过通用 HUD API 移动'));
+      stat_data.队伍[slot]=pkmHudClone(incoming);return pkmHudPersistStatData().then(function(){pkmHudRenderCurrent();return true;});
     }
   };
   try{WIN.__pkmHudApi=api;}catch(e){}
   try{if(window!==WIN)window.__pkmHudApi=api;}catch(e){}
 })();
+
 function diyGet(type,name){if(!name)return null;var t=diyData[type]||{};return t[name]||null;}
 function diyHas(type,name){
   if(!name)return false;
@@ -2868,6 +2884,62 @@ var MAPS_DATA=[
       {name:'严酷山',x:70,y:7.4},
       {name:'花之乐园',x:75.6,y:14.3},
       {name:'冠军之路',x:87.4,y:46.9}
+    ]
+  },
+  {
+    name:'伽勒尔',
+    img:'https://img.baibai.cv/f/GkBXIo/%E4%BC%BD%E5%8B%92%E5%B0%94.png',
+    towns:[
+      {name:'宫门市',x:51.8,y:17},
+      {name:'舞姿镇',x:35.7,y:29},
+      {name:'溯传镇',x:33.9,y:36.5},
+      {name:'拳关市',x:51.9,y:36.4},
+      {name:'战竞镇',x:69.1,y:30.6},
+      {name:'尖钉镇',x:75.8,y:37.3},
+      {name:'水舟镇',x:60,y:45.4},
+      {name:'草路镇',x:37.5,y:45.4},
+      {name:'机擎市',x:43.9,y:53.2},
+      {name:'木杆镇',x:49.8,y:84.8},
+      {name:'化朗镇',x:48.6,y:91.6}
+    ],
+    roads:[
+      {name:'10号道路',x:52.9,y:23.8},
+      {name:'6号道路',x:38.8,y:37.2},
+      {name:'7号道路',x:62.7,y:37},
+      {name:'8号道路',x:66.5,y:34},
+      {name:'9号道路',x:72.8,y:34},
+      {name:'5号道路',x:48.7,y:46},
+      {name:'4号道路',x:37.2,y:47.8},
+      {name:'3号道路',x:31.7,y:52.2},
+      {name:'2号道路',x:58.5,y:81.5},
+      {name:'1号道路',x:49.1,y:88.4}
+    ],
+    specials:[
+      {name:'对战塔',x:51.8,y:12.7},
+      {name:'迷光森林',x:38.6,y:31.3},
+      {name:'九路隧道',x:69.2,y:37.1},
+      {name:'拳关丘陵',x:53.8,y:40.4},
+      {name:'宝可梦寄放屋',x:46.8,y:45.4},
+      {name:'伽勒尔矿山',x:28,y:48.6},
+      {name:'逆鳞湖',x:43.5,y:40.1},
+      {name:'沙尖洼地',x:52.1,y:43.7},
+      {name:'巨人帽岩',x:47.6,y:41.3},
+      {name:'巨人镜池',x:59.3,y:41.6},
+      {name:'巨石原野',x:53.8,y:45.2},
+      {name:'桥间空地',x:51.8,y:49.7},
+      {name:'第二矿山',x:66.8,y:50.3},
+      {name:'机擎市郊外',x:54.3,y:52.7},
+      {name:'机擎河岸',x:52.3,y:56.7},
+      {name:'瞭望塔旧址',x:34.9,y:60.5},
+      {name:'牙牙湖',x:40.9,y:63.1},
+      {name:'美纳斯湖',x:51.2,y:64.3},
+      {name:'沐光森林',x:37.2,y:69.9},
+      {name:'照丽草原',x:42.2,y:67.8},
+      {name:'巨人凳岩',x:60.7,y:66.6},
+      {name:'集汇空地',x:45.4,y:73.1},
+      {name:'微寐森林',x:38.5,y:91.5},
+      {name:'铠之孤岛',x:97,y:35.9},
+      {name:'王冠雪原',x:50.6,y:98.2}
     ]
   }
 ];
@@ -5411,6 +5483,7 @@ function storePkm(c,boxName){
   var p=getCardPkm(c);
   if(!p || !p.名字 || p.名字==='空'){ hudMsg('没有可存入的精灵'); return; }
   if(c.where!=='team'){ hudMsg('只能从队伍存入盒子'); return; }
+  if(!hudAssertPokemonMutable(p,'移动'))return;
   var slot=findBoxSlot(boxName);
   var fromSlot=String(c.slot);
   stat_data.盒子[boxName][slot]=p;
@@ -5426,6 +5499,7 @@ function withdrawPkm(c,teamSlot){
   var p=getCardPkm(c);
   if(!p || !p.名字 || p.名字==='空'){ hudMsg('没有可取出的精灵'); return; }
   if(c.where!=='box' || !c.boxName){ hudMsg('只能从盒子取出到队伍'); return; }
+  if(!hudAssertPokemonMutable(p,'取出'))return;
   if(teamSlot<1 || teamSlot>6){ hudMsg('无效的队伍位置'); return; }
   var dst=stat_data.队伍[String(teamSlot)];
   if(dst && dst.名字 && dst.名字!=='空'){ hudMsg('该队伍位置已有精灵'); return; }
@@ -5442,6 +5516,7 @@ function withdrawPkm(c,teamSlot){
 function equipPkm(c,itemName){
   var p=getCardPkm(c);
   if(!p || !p.名字 || p.名字==='空'){ hudMsg('没有目标精灵'); return; }
+  if(!hudAssertPokemonMutable(p,'更换携带道具'))return;
   if(getBagCount(itemName)<=0){ hudMsg('背包里没有该道具'); return; }
 
   var beforeBag=JSON.parse(JSON.stringify(stat_data.背包||{}));
@@ -5467,6 +5542,7 @@ function equipPkm(c,itemName){
 function unequipPkmByCard(c){
   var p=getCardPkm(c);
   if(!p || !p.名字 || p.名字==='空'){ hudMsg('没有目标精灵'); return; }
+  if(!hudAssertPokemonMutable(p,'卸下携带道具'))return;
   var old=p.携带道具;
   if(!old || old==='无'){ hudMsg('该精灵没有携带道具'); return; }
 
@@ -5566,6 +5642,7 @@ function moveBoxPkm(c,targetBox){
   var p=getCardPkm(c);
   if(!p || !p.名字 || p.名字==='空'){ hudMsg('没有可移动的宝可梦'); return; }
   if(c.where!=='box' || !c.boxName){ hudMsg('只能移动盒子里的宝可梦'); return; }
+  if(!hudAssertPokemonMutable(p,'移动'))return;
   if(targetBox===c.boxName){ hudMsg('目标盒子不能是当前盒子'); return; }
 
   var srcBox=c.boxName, srcSlot=c.slot;
