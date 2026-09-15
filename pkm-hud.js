@@ -3,9 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.7.4';
+var PK_VER='1.7.5';
 /*PK_NOTICE_BEGIN
-阿罗拉地图
+@狮子酱
+v1.7.5：增加 Phone Suite 权威资产变动桥。云仓“完成存入”等外部资产事务可以直接修改 HUD 当前内存并串行写回 MVU，旧的排队写入会失效，避免已移出精灵被旧 HUD 快照重新写回盒子。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -477,11 +478,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.hud-refresh-ok{color:#4ade80;font-size:1.25em;line-height:1;font-weight:800;margin-top:-0.24em}'+
 '@keyframes pkm-refresh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}'+
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}'+
-'.map-island-label{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;padding:2px 8px;border-radius:6px;background:rgba(15,22,38,.9);border:1px solid #4ade80;color:#fff;font-size:.68rem;font-weight:800;pointer-events:auto;cursor:pointer;z-index:3;box-shadow:0 0 6px rgba(74,222,128,.45)}'+
-'.map-island-label .il-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:4px;vertical-align:0}'+
-'.map-island-label.hl{border-color:#fff;background:rgba(255,255,255,.16);box-shadow:0 0 10px 3px rgba(255,255,255,.7);animation:island-hl-pulse 1.1s ease-in-out infinite}'+
-'@keyframes island-hl-pulse{0%,100%{box-shadow:0 0 4px 1px rgba(255,255,255,.6)}50%{box-shadow:0 0 14px 6px rgba(255,255,255,.95)}}'+
-'.map-island-label.no-sub{cursor:default;opacity:.72;border-style:dashed}'+
+'.map-island-label{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;padding:1px 6px;border-radius:4px;background:rgba(15,22,38,.68);border:1px solid rgba(74,222,128,.5);color:#c6d1e4;font-size:.62rem;font-weight:800;pointer-events:auto;cursor:pointer;z-index:3}'+
+'.map-island-label .il-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;margin-right:3px;vertical-align:1px;opacity:.8}'+
+'.map-island-label.no-sub{cursor:default}'+
+'.map-island-label.hl{border-color:#fff;background:rgba(255,255,255,.14);color:#fff;box-shadow:0 0 6px 1px rgba(255,255,255,.5);animation:island-hl-pulse 1.1s ease-in-out infinite}'+
+'@keyframes island-hl-pulse{0%,100%{box-shadow:0 0 3px 1px rgba(255,255,255,.4)}50%{box-shadow:0 0 10px 4px rgba(255,255,255,.7)}}'+
 '.map-back-btn{flex:0 0 auto;padding:4px 12px;font-family:inherit;font-size:.75rem;font-weight:800;border:1px solid var(--frame);background:rgba(43,74,111,.85);color:#fff;border-radius:4px;cursor:pointer;white-space:nowrap}'+
 '.map-back-btn:hover{background:rgba(124,196,248,.28)}';
 
@@ -645,6 +646,9 @@ var stat_data=loadStatData();
  * 让外部 Workshop 在 AI 回复前就能读到最新队伍；同时公开只读实时接口。
  */
 var __pkmHudPersistQueue=Promise.resolve();
+/* v1.7.5：所有 HUD → MVU 写入带 epoch。外部权威资产事务会提升 epoch，
+ * 尚未开始的旧乐观快照写入会自动作废；权威写入排在已有队列之后，确保最终状态不会被旧快照“复活”。 */
+var __pkmHudPersistEpoch=0;
 function pkmHudClone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
 function pkmHudMvuTarget(){
   try{
@@ -671,10 +675,14 @@ function pkmHudMvuTarget(){
   }catch(e){}
   return null;
 }
-function pkmHudPersistStatData(){
+function pkmHudPersistStatData(opt){
+  opt=opt||{};
   pkmLastLocalWrite=Date.now();
+  var epoch=(opt.epoch==null?__pkmHudPersistEpoch:Number(opt.epoch)||0);
   var snap=pkmHudClone(stat_data);
   __pkmHudPersistQueue=__pkmHudPersistQueue.catch(function(){return false;}).then(function(){
+    /* 旧的普通乐观写入若在权威资产事务之后才轮到执行，直接跳过。 */
+    if(!opt.force&&epoch!==__pkmHudPersistEpoch)return false;
     var t=pkmHudMvuTarget();
     if(!t||!t.mv||typeof t.mv.replaceMvuData!=='function')return false;
     var n=pkmHudClone(t.data)||{};
@@ -687,6 +695,31 @@ function pkmHudPersistStatData(){
     }).catch(function(){return false;});
   });
   return __pkmHudPersistQueue;
+}
+function pkmHudAuthoritativeAssetMutation(opt){
+  opt=opt&&typeof opt==='object'?opt:{};
+  var action=String(opt.action||''),id=String(opt.pokemonId||opt.pokemon_id||'').trim();
+  if(!id)return Promise.reject(new Error('缺少永久精灵ID'));
+  if(action!=='remove-box-by-id'&&action!=='replace-box-by-id')return Promise.reject(new Error('HUD 不支持该资产变动：'+action));
+  var loc=hudFindPokemonLocations(id);
+  if(loc.length>1)return Promise.reject(new Error('HUD 检测到 '+loc.length+' 个同一精灵ID实体，已拒绝自动修改'));
+  if(!loc.length)return Promise.resolve({ok:true,notFound:true,pokemonId:id});
+  var hit=loc[0];
+  if(hit.type!=='box')return Promise.reject(new Error('同ID精灵当前位于队伍，不能由云仓自动清理'));
+  stat_data.盒子=stat_data.盒子||{};
+  var box=stat_data.盒子[String(hit.box)];
+  if(!box)return Promise.reject(new Error('HUD 盒子位置已变化，请重新扫描'));
+  var current=box[String(hit.slot)];
+  if(!current||hudPokemonId(current)!==id)return Promise.reject(new Error('HUD 精灵位置已变化，请重新扫描'));
+  var replacement=(opt.replacement&&typeof opt.replacement==='object')?pkmHudClone(opt.replacement):{名字:'空'};
+  box[String(hit.slot)]=replacement;
+  __pkmHudPersistEpoch++;
+  var authoritativeEpoch=__pkmHudPersistEpoch;
+  return pkmHudPersistStatData({force:true,epoch:authoritativeEpoch}).then(function(ok){
+    if(!ok)throw new Error('HUD 权威资产状态写回 MVU 失败');
+    try{pkmHudRenderCurrent();}catch(e){}
+    return {ok:true,pokemonId:id,type:'box',box:String(hit.box),slot:String(hit.slot),replacement:pkmHudClone(replacement),stateRevision:hudStateRevision()};
+  });
 }
 function pkmHudRenderCurrent(){
   try{render();resizeFrame();return true;}catch(e){return false;}
@@ -794,6 +827,22 @@ function hudAssetLocks(){try{var x=JSON.parse(WIN.localStorage.getItem(PKM_ASSET
 function hudPokemonLockById(id){id=String(id||'');if(!id)return null;var a=hudAssetLocks();for(var i=0;i<a.length;i++)if(String(a[i]&&a[i].pokemonId||'')===id)return a[i];return null;}
 function hudPokemonLock(p){return hudPokemonLockById(hudPokemonId(p));}
 function hudAssertPokemonMutable(p,action){if(!p||!p.名字||p.名字==='空')return true;if(hudIsCloudStub(p)){hudMsg('这是得文云仓的冷存引用，不能在 HUD 中直接'+String(action||'修改')+'。请到小手机 → 培育中心 → 得文云仓正式取回。');return false;}var l=hudPokemonLock(p);if(l){var label=String(l.type||'资产事务');hudMsg('这只精灵正在执行「'+label+'」，HUD 已暂时锁定'+String(action||'修改')+'操作。请先在小手机完成/恢复该事务。');return false;}return true;}
+function hudPhoneAssetBridge(){try{return (WIN.__PokemonPhoneSuite&&WIN.__PokemonPhoneSuite.pokemonAssets)||(window.__PokemonPhoneSuite&&window.__PokemonPhoneSuite.pokemonAssets)||null;}catch(e){return null;}}
+function hudEnsurePokemonIdentity(p){
+  if(!p||typeof p!=='object'||!p.名字||p.名字==='空')return '';
+  var id=hudPokemonId(p);if(id)return id;
+  try{var a=hudPhoneAssetBridge();if(a&&typeof a.makePokemonId==='function'&&typeof a.stampIdentity==='function'){id=String(a.makePokemonId('PKM-HUD')||'');if(id)a.stampIdentity(p,id);}}catch(e){}
+  return hudPokemonId(p);
+}
+function hudRecordAssetMutation(p,opt){
+  try{
+    if(!p||typeof p!=='object')return false;
+    hudEnsurePokemonIdentity(p);
+    var a=hudPhoneAssetBridge();
+    if(a&&typeof a.recordMutation==='function')return !!a.recordMutation(p,opt||{});
+  }catch(e){}
+  return false;
+}
 function hudFindPokemonLocations(id){id=String(id||'');var out=[];if(!id)return out;var t=(stat_data&&stat_data.队伍)||{};for(var i=1;i<=6;i++){var p=t[String(i)];if(p&&hudPokemonId(p)===id)out.push({type:'team',slot:String(i),pokemon:pkmHudClone(p)});}var bs=(stat_data&&stat_data.盒子)||{};Object.keys(bs).forEach(function(b){var box=bs[b]||{};Object.keys(box).forEach(function(sl){var p=box[sl];if(p&&hudPokemonId(p)===id)out.push({type:'box',box:String(b),slot:String(sl),pokemon:pkmHudClone(p)});});});return out;}
 function hudStateRevision(){try{var raw=JSON.stringify({队伍:(stat_data&&stat_data.队伍)||{},盒子:(stat_data&&stat_data.盒子)||{}}),h=2166136261;for(var i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}catch(e){return '';}}
 
@@ -802,8 +851,8 @@ function hudStateRevision(){try{var raw=JSON.stringify({队伍:(stat_data&&stat_
  */
 (function(){
   var api={
-    version:'2.0.0',
-    capabilities:{pokemonIdentity:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true},
+    version:'2.1.0',
+    capabilities:{pokemonIdentity:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true},
     getStatData:function(){return pkmHudClone(stat_data);},
     getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
     getBoxes:function(){return pkmHudClone((stat_data&&stat_data.盒子)||{});},
@@ -811,6 +860,9 @@ function hudStateRevision(){try{var raw=JSON.stringify({队伍:(stat_data&&stat_
     findPokemonLocations:function(id){return hudFindPokemonLocations(id);},
     getPokemonLock:function(id){var x=hudPokemonLockById(id);return x?pkmHudClone(x):null;},
     isCloudStub:function(p){return hudIsCloudStub(p);},
+    ensurePokemonIdentity:function(p){return hudEnsurePokemonIdentity(p);},
+    recordAssetMutation:function(p,opt){return hudRecordAssetMutation(p,opt||{});},
+    applyAssetMutation:function(opt){return pkmHudAuthoritativeAssetMutation(opt||{});},
     getStateRevision:function(){return hudStateRevision();},
     getDiyData:function(){try{diySyncFromStorage(false);}catch(e){}return pkmHudClone(diyData||{});},
     reloadDiy:function(){try{diySyncFromStorage(true);pkmHudRenderCurrent();return true;}catch(e){return false;}},
@@ -3309,7 +3361,8 @@ function mapHTML(){
         var hl=(spot&&spot.island===i);
         var cls='map-island-label'+(hl?' hl':'')+(is.img?'':' no-sub');
         var inner='<span class="il-dot"></span>'+esc(is.name)+(hl?' 📍':'');
-        return '<div class="'+cls+'" data-island="'+i+'" data-x="'+is.x+'" data-y="'+is.y+'">'+inner+'</div>';
+        var tip=is.img?is.name:is.name+'（无子地图）';
+        return '<div class="'+cls+'" data-island="'+i+'" data-x="'+is.x+'" data-y="'+is.y+'" title="'+esc(tip)+'">'+inner+'</div>';
       }).join('');
       var inner2='';
       if(m.img){
@@ -5761,6 +5814,7 @@ function storePkm(c,boxName){
   if(!p || !p.名字 || p.名字==='空'){ hudMsg('没有可存入的精灵'); return; }
   if(c.where!=='team'){ hudMsg('只能从队伍存入盒子'); return; }
   if(!hudAssertPokemonMutable(p,'移动'))return;
+  hudEnsurePokemonIdentity(p);
   var slot=findBoxSlot(boxName);
   var fromSlot=String(c.slot);
   stat_data.盒子[boxName][slot]=p;
@@ -5769,6 +5823,7 @@ function storePkm(c,boxName){
   stat_data.队伍[fromSlot]=p;
   delete stat_data.盒子[boxName][slot];
 }, '把队伍中的'+p.名字+'存入'+boxDisp(boxName)+'。');
+  hudRecordAssetMutation(p,{action:'move',method:'HUD 队伍→盒子',fromLocation:'队伍第'+fromSlot+'位',toLocation:boxDisp(boxName)+' 第'+slot+'格',location:boxDisp(boxName)+' 第'+slot+'格'});
   render(); resizeFrame();
   hudMsg('已把《'+p.名字+'》存入《'+boxName+'》');
 }
@@ -5780,6 +5835,7 @@ function withdrawPkm(c,teamSlot){
   if(teamSlot<1 || teamSlot>6){ hudMsg('无效的队伍位置'); return; }
   var dst=stat_data.队伍[String(teamSlot)];
   if(dst && dst.名字 && dst.名字!=='空'){ hudMsg('该队伍位置已有精灵'); return; }
+  hudEnsurePokemonIdentity(p);
   var boxName=c.boxName, boxSlot=c.slot;
   stat_data.队伍[String(teamSlot)]=p;
   delete stat_data.盒子[boxName][boxSlot];
@@ -5787,6 +5843,7 @@ function withdrawPkm(c,teamSlot){
   stat_data.盒子[boxName][boxSlot]=p;
   stat_data.队伍[String(teamSlot)]={名字:'空'};
 }, '把'+boxDisp(boxName)+'里的'+p.名字+'取出到队伍第'+teamSlot+'位。');
+  hudRecordAssetMutation(p,{action:'move',method:'HUD 盒子→队伍',fromLocation:boxDisp(boxName)+' 第'+boxSlot+'格',toLocation:'队伍第'+teamSlot+'位',location:'队伍第'+teamSlot+'位'});
   render(); resizeFrame();
   hudMsg('已把《'+p.名字+'》取出到队伍第 '+teamSlot+' 位');
 }
@@ -5922,6 +5979,7 @@ function moveBoxPkm(c,targetBox){
   if(!hudAssertPokemonMutable(p,'移动'))return;
   if(targetBox===c.boxName){ hudMsg('目标盒子不能是当前盒子'); return; }
 
+  hudEnsurePokemonIdentity(p);
   var srcBox=c.boxName, srcSlot=c.slot;
   var slot=findBoxSlot(targetBox);
   stat_data.盒子[targetBox][slot]=p;
@@ -5931,6 +5989,7 @@ function moveBoxPkm(c,targetBox){
   delete stat_data.盒子[targetBox][slot];
   stat_data.盒子[srcBox][srcSlot]=p;
 }, '把'+p.名字+'从'+boxDisp(srcBox)+'移动到'+boxDisp(targetBox));
+  hudRecordAssetMutation(p,{action:'move',method:'HUD 盒子间移动',fromLocation:boxDisp(srcBox)+' 第'+srcSlot+'格',toLocation:boxDisp(targetBox)+' 第'+slot+'格',location:boxDisp(targetBox)+' 第'+slot+'格'});
 
 render();
 resizeFrame();
