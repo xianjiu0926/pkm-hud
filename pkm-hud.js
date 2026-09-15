@@ -3,12 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.7.1';
+var PK_VER='1.7.2';
 /*PK_NOTICE_BEGIN
-1. 地图完整显示、无黑边、无滚动条；
-2. 悬浮窗/内嵌模式地图统一全屏显示；
-3. 打开地图默认显示全部城镇（城镇/道路/特殊地点可开关）。
-4.@狮子酱：小手机功能适配
+改点东西
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3642,6 +3639,15 @@ function regionFromLocation(loc){
   var s=t2s(String(loc||'').trim());
   if(!s)return '';
   if(LOC_REGION[s])return LOC_REGION[s];
+  /* 当前地点格式为 "地区-地点-场所"（如"关都-真新镇 - 大木研究所"），
+     优先直接取最前一段定地区，不再依赖地点名反推 */
+  var head=String(s).split(/[-－—|｜]/)[0];
+  if(head){head=head.trim();}
+  if(head&&head!==s){
+    if(LOC_REGION[head])return LOC_REGION[head];
+    var hh=t2s(head);
+    for(var k0 in LOC_REGION){if(t2s(k0)===hh)return LOC_REGION[k0];}
+  }
   var sfx=['地区','地方','市','镇','岛','村','町','山','冻土','原野','湿地','海岸','山麓','洞窟','遗迹','森林','道路'];
   var key=s;
   for(var i=0;i<sfx.length;i++){
