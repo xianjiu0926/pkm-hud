@@ -364,16 +364,79 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.9';
+var PK_VER='1.6.0';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-修bug
-内嵌模式变量更新自动刷新
+抄一下小手机的更新方式
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
+/* ===== 分阶段更新启动器 =====
+ * 每次脚本加载时：若本地暂存了比当前更高版本的脚本，先尝试运行暂存版；
+ * 暂存版完成启动握手后接管，当前旧版直接退出；失败则自动回退并清理暂存。 */
+function pkVerCompare(a,b){
+  function p(v){var m=String(v==null?'':v).match(/^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?$/);return m?[Number(m[1]),Number(m[2]),Number(m[3]),m[4]||'']:null;}
+  var x=p(a),y=p(b);
+  if(!x||!y)return 0;
+  for(var i=0;i<3;i++){if(x[i]!==y[i])return x[i]>y[i]?1:-1;}
+  if(x[3]===y[3])return 0;
+  if(!x[3])return 1;
+  if(!y[3])return -1;
+  var xs=x[3].split('.'),ys=y[3].split('.');
+  for(var j=0;j<Math.max(xs.length,ys.length);j++){
+    if(xs[j]===undefined)return -1;
+    if(ys[j]===undefined)return 1;
+    var xn=/^\d+$/.test(xs[j]),yn=/^\d+$/.test(ys[j]);
+    if(xn&&yn){if(Number(xs[j])!==Number(ys[j]))return Number(xs[j])>Number(ys[j])?1:-1;}
+    else if(xs[j]!==ys[j])return xs[j]>ys[j]?1:-1;
+  }
+  return 0;
+}
+var PK_STAGE_KEY='pk_stage_update_v2';
+function pkStageRead(){
+  try{
+    var raw=localStorage.getItem(PK_STAGE_KEY);
+    if(!raw)return null;
+    var o=JSON.parse(raw);
+    if(o&&typeof o.v==='string'&&typeof o.c==='string'&&o.c.indexOf('PK_VER')>=0&&o.c.indexOf('pkm-hud-btn')>=0)return o;
+  }catch(e){}
+  return null;
+}
+function pkStageWrite(ver,content){
+  try{localStorage.setItem(PK_STAGE_KEY,JSON.stringify({v:ver,c:content,t:Date.now()}));return true;}catch(e){return false;}
+}
+function pkStageClear(){
+  try{localStorage.removeItem(PK_STAGE_KEY);}catch(e){}
+}
+function pkCurrentVer(){
+  var s=pkStageRead();
+  if(s&&s.v&&pkVerCompare(s.v,PK_VER)>0)return s.v;
+  return PK_VER;
+}
+var pkDelegatedFlag=false;
+try{pkDelegatedFlag=!!WIN.__PK_HUD_DELEGATED__;}catch(e){}
+if(pkDelegatedFlag){
+  try{if(WIN.__PK_HUD_DELEGATED__&&typeof WIN.__PK_HUD_DELEGATED__.ack==='function')WIN.__PK_HUD_DELEGATED__.ack();}catch(e){}
+}else{
+  try{
+    var pkStagedObj=pkStageRead();
+    if(pkStagedObj&&pkStagedObj.v&&pkVerCompare(pkStagedObj.v,PK_VER)>0){
+      var pkBootState={v:pkStagedObj.v,ack:false};
+      WIN.__PK_HUD_DELEGATED__=pkBootState;
+      var pkRanNew=false;
+      try{new Function(pkStagedObj.c).call(window);pkRanNew=true;}catch(e){pkRanNew=false;}
+      try{delete WIN.__PK_HUD_DELEGATED__;}catch(e){}
+      if(pkRanNew&&pkBootState.ack){
+        return;
+      }
+      pkStageClear();
+    }else if(pkStagedObj){
+      pkStageClear();
+    }
+  }catch(e){}
+}
 /* 每次进聊天（脚本重新执行）都像第一次一样完整重建 HUD：
  * 先清掉上一轮留下的悬浮球/遮罩/窗口/样式，再从头加载缓存数据重新渲染。 */
 try{
@@ -4726,7 +4789,7 @@ function pkReadUpdateCache(){
   try{
     var s=localStorage.getItem('pk_hasupdate')||'';
     var parts=s.split('>');
-    if(parts.length===2&&parts[0]===PK_VER&&parts[1]){
+    if(parts.length===2&&parts[1]&&pkVerCompare(parts[1],pkCurrentVer())>0){
       pkHasUpdate=true;
       pkLatestVer=parts[1];
     }
@@ -4750,7 +4813,7 @@ function pkAutoCheckUpdate(){
       .then(function(txt){
         var m=txt.match(/PK_VER='([^']+)'/);
         var ver=m?m[1]:null;
-        if(ver && ver!==PK_VER){
+        if(ver && pkVerCompare(ver,pkCurrentVer())>0){
           pkLatestContent=txt;
           pkLatestVer=ver;
           var nm=txt.match(/\*PK_NOTICE_BEGIN([\s\S]*?)PK_NOTICE_END\*/);
@@ -4793,8 +4856,8 @@ function pkCheckUpdate(){
   var nm=txt.match(/\*PK_NOTICE_BEGIN([\s\S]*?)PK_NOTICE_END\*/);
   pkLatestNotice=nm?nm[1].replace(/^\s+|\s+$/g,''):'';
   if(!pkLatestVer){ pkSetUpdateMsg('❌ 远程脚本里没有 PK_VER，请确认上传的是同一个脚本'); return; }
-  if(pkLatestVer===PK_VER){ pkSetUpdateMsg('✅ 已是最新版本 v'+PK_VER); }
-  else{ pkSetUpdateMsg('发现新版本 v'+pkLatestVer+'（当前 v'+PK_VER+'）'); if(updBtn) updBtn.style.display='block'; pkMarkHasUpdate(pkLatestVer); showNoticeModal(pkLatestVer,pkLatestNotice); }
+  if(pkVerCompare(pkLatestVer,pkCurrentVer())<=0){ pkSetUpdateMsg('✅ 已是最新版本 v'+pkCurrentVer()); }
+  else{ pkSetUpdateMsg('发现新版本 v'+pkLatestVer+'（当前 v'+pkCurrentVer()+'）'); if(updBtn) updBtn.style.display='block'; pkMarkHasUpdate(pkLatestVer); showNoticeModal(pkLatestVer,pkLatestNotice); }
 })
       .catch(function(){ pkSetUpdateMsg('❌ 检查失败：网络问题或 PK_UPDATE_URL 地址不对'); });
   }catch(e){ pkSetUpdateMsg('❌ 检查失败：'+e.message); }
@@ -4890,17 +4953,31 @@ function pkSaveCharacter(char){
     return Promise.resolve(false);
   }
 }
+function pkClearHasUpdate(){
+  pkHasUpdate=false;
+  try{localStorage.removeItem('pk_hasupdate');}catch(e){}
+  try{
+    var items=document.querySelectorAll('.menu-item[data-page="settings"] .menu-label .menu-badge');
+    for(var i=0;i<items.length;i++){items[i].parentNode.removeChild(items[i]);}
+  }catch(e){}
+  applyFabUpdateBadge();
+}
 function pkDoUpdate(){
   if(!pkLatestContent){ pkSetUpdateMsg('请先检查更新'); return; }
-  pkSetUpdateMsg('正在更新...');
-  pkUpdateScript(pkLatestContent).then(function(res){
-    pkSetUpdateMsg(res.msg);
+  if(!pkLatestVer){ pkSetUpdateMsg('❌ 新版版本号缺失，无法安装'); return; }
+  if(pkVerCompare(pkLatestVer,pkCurrentVer())<=0){ pkSetUpdateMsg('✅ 已是 v'+pkCurrentVer()+' 或更高版本'); return; }
+  pkSetUpdateMsg('正在暂存新版...');
+  var ok=pkStageWrite(pkLatestVer,pkLatestContent);
+  if(ok){
+    pkClearHasUpdate();
+    var updBtn=document.querySelector('[data-pk-do-update]');
+    if(updBtn)updBtn.style.display='none';
+    pkSetUpdateMsg('✅ 新版 v'+pkLatestVer+' 已暂存到本地，下次进入聊天/刷新页面会自动切换；若新版启动失败会自动回退当前版。');
+  }else{
+    pkSetUpdateMsg('❌ 暂存失败（本地存储空间不足）。请点「复制新版内容」手动更新。');
     var sc=document.querySelector('[data-pk-show-content]');
     if(sc)sc.style.display='block';
-    if(!res.ok){
-      try{ diyCopyText(pkLatestContent, function(){}); }catch(e){}
-    }
-  });
+  }
 }
 
 function recordOwnedOnly(){
