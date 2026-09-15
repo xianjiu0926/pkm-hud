@@ -2,7 +2,14 @@
 /* ===== 分阶段更新核心（IndexedDB，参照小手机脚本）===== */
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
-var PK_VER='1.6.6';
+/* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
+var PK_VER='1.7.1';
+/*PK_NOTICE_BEGIN
+1. 地图完整显示、无黑边、无滚动条；
+2. 悬浮窗/内嵌模式地图统一全屏显示；
+3. 打开地图默认显示全部城镇（城镇/道路/特殊地点可开关）。
+4.@狮子酱：小手机功能适配
+PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
   function p(v){var m=String(v==null?'':v).match(/^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?$/);return m?[Number(m[1]),Number(m[2]),Number(m[3]),m[4]||'']:null;}
@@ -134,6 +141,9 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.page-overlay{position:absolute;inset:0;background:rgba(10,16,30,.45);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;z-index:500;padding:12px}'+
 '.page-overlay.open{display:flex}'+
 '.page{position:relative;width:100%;max-width:600px;max-height:100%;overflow-y:auto;background-color:#0f1626;border:2px solid var(--frame);border-radius:10px;box-shadow:0 0 14px rgba(170,204,255,.5)}'+
+'.page-overlay.popout{position:fixed;inset:0;z-index:2147483601;padding:10px;align-items:flex-start;justify-content:center}'+
+'.page-overlay.popout .page{max-width:min(94vw,900px);max-height:86vh;overflow:hidden}'+
+'.page-overlay.popout .page::before{background-image:none}'+
 '.page::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:8px;z-index:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px),repeating-linear-gradient(90deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px)}'+
 '.page-head{position:relative;z-index:2;display:flex;align-items:center;justify-content:flex-end;padding:4px 10px;border-bottom:1px solid rgba(170,204,255,.3);background:rgba(43,74,111,.7);position:sticky;top:0}'+
 '.page-close{background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;opacity:.8}'+
@@ -430,10 +440,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.map-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}'+
 '.map-tab{flex:0 0 auto;padding:2px 12px;font-family:inherit;font-size:.72rem;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer}'+
 '.map-tab.active{background:rgba(43,74,111,.8);color:#fff}'+
-'.map-wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--frame);border-radius:8px;background:#0a1020;touch-action:none;cursor:grab}'+
+'.map-wrap{position:relative;width:100%;height:auto;min-height:140px;overflow:hidden;border:0;border-radius:8px;background:#0a1020;touch-action:none;cursor:grab}'+
 '.map-wrap.dragging{cursor:grabbing}'+
-'.map-stage{position:relative;width:100%;transform-origin:0 0}'+
-'.map-img{display:block;width:100%;height:auto;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}'+
+'.map-stage{position:relative;width:100%;height:100%;transform-origin:0 0}'+
+'.map-img{display:block;width:100%;height:100%;object-fit:fill;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}'+
 '.map-pin{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#7cc4f8;border:2px solid #fff;box-shadow:0 0 10px rgba(124,196,248,.9);animation:map-pin-pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:2}'+
 '.map-pin-label{position:absolute;transform:translate(-50%,-135%);white-space:nowrap;padding:1px 6px;border-radius:4px;background:rgba(15,22,38,.92);border:1px solid var(--frame);font-size:.68rem;font-weight:800;color:#fff;pointer-events:none;z-index:2}'+
 '.map-no-loc{padding:10px;text-align:center;color:var(--dim);font-size:.78rem;letter-spacing:1px}'+
@@ -471,9 +481,6 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes pkm-refresh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}'+
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
-/*PK_NOTICE_BEGIN
-修bug
-PK_NOTICE_END*/
 /* 每次进聊天（脚本重新执行）都像第一次一样完整重建 HUD：
  * 先清掉上一轮留下的悬浮球/遮罩/窗口/样式，再从头加载缓存数据重新渲染。 */
 try{
@@ -2659,7 +2666,7 @@ function trainerHTML(){var tr=stat_data.训练家||{};var hearts='';for(var i=0;
 function envStripHTML(){var e=stat_data.环境||{};if(!e.赛程)return '';return '<div class="env-strip"><div class="env-line"><span class="env-item">🏁 '+esc(e.赛程)+'</span></div></div>';}
 function nearbyHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return frame('附近宝可梦','<div class="empty">暂无</div>');var show=nearbyOpen?keys:keys.slice(0,6);var cells=show.map(function(key){var p=obj[key];var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'nb-icon');var tags=(p.是否闪光?'<span class="tag shiny">闪</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'');return '<div class="nb-cell" data-nearby-open="'+esc(key)+'">'+img+'<div class="nb-name">'+esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+tags+'</div><div class="nb-cnt">×'+num(p.数量,1)+'</div></div>';}).join('');var more=keys.length>6?'<span class="nb-toggle" data-nearby-toggle>'+(nearbyOpen?'收起 ▲':'展开全部('+keys.length+') ▼')+'</span>':'';return '<div class="info-frame nearby-frame">'+svgFrame+'<div class="info-inner"><div class="info-title">附近宝可梦'+more+'</div><div class="nb-grid">'+cells+'</div></div></div>';}
 function nearbyPageHTML(){var obj=stat_data.附近宝可梦||{};var keys=Object.keys(obj);if(!keys.length)return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="empty">暂无</div></div>';var cells=keys.map(function(key){var p=obj[key];var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'box-icon');var nm=esc(p.名字)+(/霸主|头目|頭目/.test(p.名字+' '+p.状态)?'<img class="mega-ic" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" onerror="this.remove()">':'')+(p.是否闪光?'<span class="tag shiny">闪光</span>':'')+(p.状态&&p.状态!=='普通'?'<span class="tag boss">'+esc(p.状态)+'</span>':'')+' ×'+num(p.数量,1);return '<div class="box-cell nearby-cell" data-nearby="'+esc(key)+'">'+img+'<div class="box-name">'+nm+'</div></div>';}).join('');return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="nearby-grid">'+cells+'</div></div>';}
-function openNearbyPage(){pageOverlay.innerHTML='<div class="page nearby-page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body nearby-body">'+nearbyPageHTML()+'</div></div>';pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);}
+function openNearbyPage(){pageOverlayPopout(false);pageOverlay.innerHTML='<div class="page nearby-page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body nearby-body">'+nearbyPageHTML()+'</div></div>';pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);}
 
 function bagCategories(){var cats=[{key:'道具',label:'道具',items:[]},{key:'精灵球',label:'精灵球',items:[]},{key:'重要物品',label:'重要物品',items:[]}];var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var c=cats.find(function(x){return x.key===it.类型;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
 var activeBag='道具';
@@ -3047,9 +3054,7 @@ function updateMapLabels(wrap){
     el.style.top=(y/100*sh*scale+ty)+'px';
   }
   var lbls=wrap.querySelectorAll('.map-spot-label,.map-pin-label');
-var fs=(mapLabelSize||10)*Math.pow(scale/8,0.25);
-if(fs<4)fs=4;
-for(var j=0;j<lbls.length;j++){lbls[j].style.fontSize=fs+'px';}
+for(var j=0;j<lbls.length;j++){lbls[j].style.fontSize=mapLabelSize+'px';}
 }
 function mapAllSpots(map){
   var out=[];
@@ -3147,18 +3152,26 @@ if(locRegion){
 var sizeBtn='<button class="map-size-btn" data-map-size-btn>🔤 字号 '+mapLabelSize+'</button>';
 var sizePop='<div class="map-size-pop" data-map-size-pop><span class="dim">名称字号</span><input type="range" min="6" max="24" step="1" value="'+mapLabelSize+'" data-map-size><span class="dim" data-map-size-val>'+mapLabelSize+'px</span><button class="map-size-done" data-map-size-done>✓</button></div>';
 var controls='<div class="map-controls">'+sizeBtn+filterBar+sizePop+'</div>';
-return '<div class="map-page"><div class="map-toolbar"><div class="map-tabs">'+tabs+'</div><button class="map-eye'+(mapSpotOn?' on':'')+'" data-map-eye title="点击显示/隐藏地点">👁</button></div>'+controls+inner+'<div class="map-zoom-hint">👁 开启地点显示 · 城镇/道路/特殊地点可组合点选 · 点击「字号」弹出滑条 · 双指/滚轮缩放（名称随缩放反向缩小） · 拖动平移 · 双击复位</div></div>';
+return '<div class="map-page"><div class="map-toolbar"><div class="map-tabs">'+tabs+'</div><button class="map-eye'+(mapSpotOn?' on':'')+'" data-map-eye title="点击显示/隐藏地点">👁</button></div>'+controls+inner+'<div class="map-zoom-hint">👁 开启地点显示 · 城镇/道路/特殊地点可组合点选 · 点击「字号」弹出滑条 · 双指/滚轮缩放 · 拖动平移 · 双击复位</div></div>';
 }
 function bindMapViewer(wrap){
   if(!wrap)return;
   var stage=wrap.querySelector('.map-stage');
   if(!stage)return;
-  var scale=1,tx=0,ty=0,MIN=1,MAX=8;
+  var fitScale=1, scale=1, tx=0, ty=0, MAX=8;
+  function computeFit(){
+    var rw=wrap.clientWidth||1, rh=wrap.clientHeight||1;
+    var sw=stage.offsetWidth||1, sh=stage.offsetHeight||1;
+    var f=Math.min(rw/sw, rh/sh);
+    if(!isFinite(f)||f<0.02)f=1;
+    if(f>1)f=1;
+    return f;
+  }
   function apply(){
   var rw=wrap.clientWidth||1, rh=wrap.clientHeight||1;
   var sw=stage.offsetWidth*scale, sh=stage.offsetHeight*scale;
-  if(sw<=rw){tx=0;}else{tx=Math.min(0,Math.max(tx,rw-sw));}
-  if(sh<=rh){ty=0;}else{ty=Math.min(0,Math.max(ty,rh-sh));}
+  if(sw<=rw){tx=(rw-sw)/2;}else{tx=Math.min(0,Math.max(tx,rw-sw));}
+  if(sh<=rh){ty=(rh-sh)/2;}else{ty=Math.min(0,Math.max(ty,rh-sh));}
   stage.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
   wrap._mapScale=scale;
   wrap._mapTx=tx;
@@ -3194,7 +3207,7 @@ function bindMapViewer(wrap){
       var ks=Object.keys(pts);
       var d=dist(pts[ks[0]],pts[ks[1]]);
       if(pinchStart.d>0){
-        var ns=Math.max(MIN,Math.min(MAX,pinchStart.scale*d/pinchStart.d));
+        var ns=Math.max(fitScale,Math.min(MAX,pinchStart.scale*d/pinchStart.d));
         var mid={x:(pts[ks[0]].x+pts[ks[1]].x)/2,y:(pts[ks[0]].y+pts[ks[1]].y)/2};
         var r=wrap.getBoundingClientRect();
         var ox=mid.x-r.left, oy=mid.y-r.top;
@@ -3222,7 +3235,7 @@ function bindMapViewer(wrap){
     var r=wrap.getBoundingClientRect();
     var ox=e.clientX-r.left, oy=e.clientY-r.top;
     var f=e.deltaY<0?1.15:1/1.15;
-    var ns=Math.max(MIN,Math.min(MAX,scale*f));
+    var ns=Math.max(fitScale,Math.min(MAX,scale*f));
     var k=ns/scale;
     tx=ox-(ox-tx)*k;
     ty=oy-(oy-ty)*k;
@@ -3230,11 +3243,58 @@ function bindMapViewer(wrap){
     apply();
   },{passive:false});
   wrap.addEventListener('dblclick',function(){
-    scale=1;tx=0;ty=0;apply();
+    scale=fitScale;tx=0;ty=0;apply();
   });
   var mapImgEl=wrap.querySelector('.map-img');
-  if(mapImgEl){mapImgEl.addEventListener('load',function(){apply();});}
-  apply();
+  /* 按图片实际尺寸自适应：算出能完整显示地图的 px 宽高（不裁剪、不黑边） */
+  function fitMap(){
+    var vp=vpSize();
+    var page=wrap.closest('.page');
+    var maxW=Math.min(Math.floor(vp.w*0.94),900);
+    /* 宽度按视口算，不读 page.clientWidth，避免竖向滚动条出现/消失导致宽度来回抖 */
+    var availW=maxW-8;
+    if(availW<120)availW=120;
+    var availH=Math.floor(vp.h*0.82);
+    if(page){
+      var pr=page.getBoundingClientRect();
+      var wr=wrap.getBoundingClientRect();
+      var hint=page.querySelector('.map-zoom-hint');
+      var noLoc=page.querySelector('.map-no-loc');
+      var above=wr.top-pr.top;
+      var below=(hint?hint.offsetHeight:0)+(noLoc?noLoc.offsetHeight:0)+34; /* 底部留足余量，杜绝滚动条 */
+      availH=Math.floor(vp.h*0.82)-above-below;
+      if(availH<120)availH=120;
+    }
+    var nw=mapImgEl&&mapImgEl.naturalWidth||0, nh=mapImgEl&&mapImgEl.naturalHeight||0;
+    var imgW=availW, imgH=Math.round(availW*0.75);
+    if(nw>0&&nh>0){
+      var ar=nw/nh;
+      imgH=Math.round(availW/ar);
+      if(imgH>availH){imgH=availH;imgW=Math.round(imgH*ar);}
+      if(imgW<40)imgW=40; if(imgH<40)imgH=40;
+    }else{
+      if(imgH>availH)imgH=availH;
+    }
+    /* 容器=图片显示尺寸，用 margin 居中 */
+    wrap.style.width=imgW+'px';
+    wrap.style.height=imgH+'px';
+    wrap.style.margin='0 auto';
+    fitScale=computeFit();
+    scale=fitScale;tx=0;ty=0;
+    apply();
+  }
+  if(mapImgEl){
+    if(mapImgEl.complete&&mapImgEl.naturalWidth){fitMap();}
+    mapImgEl.addEventListener('load',fitMap);
+  }
+  fitMap();
+  var _fitT=null;
+  function _scheduleFit(){if(_fitT)return;_fitT=setTimeout(function(){_fitT=null;fitMap();},120);}
+  try{
+    var _ro=new window.ResizeObserver(_scheduleFit);
+    var _pg=wrap.closest('.page'); if(_pg)_ro.observe(_pg);
+  }catch(e){}
+  try{WIN.addEventListener('resize',_scheduleFit);}catch(e2){}
 }
 
 var activeBox='1';var nearbyOpen=false;var foldState={};function foldHTML(key,label,fn){var open=!!foldState[key];return '<div class="fold-box"><div class="fold-head" data-fold="'+key+'"><span>'+label+'</span><span class="fold-arrow">'+(open?'▾':'▸')+'</span></div>'+(open?'<div class="fold-body">'+fn()+'</div>':'')+'</div>';}function bagPlainHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return '<div class="fold-inner"><div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div></div>';}function relPlainHTML(){var rel=stat_data.人际关系||{};var ks=Object.keys(rel);if(!ks.length)return '<div class="fold-inner"><div class="empty">暂无</div></div>';return '<div class="fold-inner">'+ks.map(function(k){var val=rel[k];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(k)+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('')+'</div>';}
@@ -5161,7 +5221,7 @@ function confirmClearModal(){
 function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':return boxHTML();case 'rel':return relHTML();case 'rivals':return rivalsHTML();case 'breeding':return breedingHTML();case 'pokedex':return pokedexHTML();case 'badge':return badgePageHTML();case 'diy':return diyHTML();case 'map':return mapHTML();case 'settings':return settingsHTML();case 'typechart':return typeChartHTML();default:return '<div class="empty">暂无</div>';}}
 function pageHTML(title,content){return '<div class="page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body">'+content+'</div></div>';}
 
-var overlay,pageOverlay,cards;
+var overlay,pageOverlay,cards,pageOverlayHost=null;
 var currentPageKey='';
 var quickMapFromFab=false;
 var hudActionCard=null;
@@ -5435,14 +5495,28 @@ bindDevPanel();
 function bindBadge(){var bc=document.getElementById('badge-cycle');if(bc){bc.addEventListener('click',badgeClick);}var bo=document.querySelector('[data-badge-open]');if(bo){bo.addEventListener('click',function(e){e.stopPropagation();openPage('badge');});}}
 function badgeClick(e){e.stopPropagation();var rs=parseBadges();if(rs.length>1){var cur=pickRegion(rs),i=0,k;for(k=0;k<rs.length;k++){if(rs[k].region===cur)i=k;}try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:rs[(i+1)%rs.length].region}));}catch(err){}var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();bindBadge();bindHudRefresh();}return;}openPage('badge');}
 
+function pageOverlayPopout(on){
+  if(!pageOverlay)return;
+  if(on){
+    pageOverlay.classList.add('popout');
+    if(pageOverlayHost&&pageOverlay.parentElement!==document.body){try{document.body.appendChild(pageOverlay);}catch(e){}}
+  }else{
+    pageOverlay.classList.remove('popout');
+    if(pageOverlayHost&&pageOverlay.parentElement!==pageOverlayHost){try{pageOverlayHost.appendChild(pageOverlay);}catch(e){}}
+  }
+}
 function openPage(key){
   var m=MENU.find(function(x){return x.key===key;})||(key==='typechart'?{label:'克制表'}:null);if(!m)return;
   if(key==='map'){
     var _loc=(stat_data.环境&&stat_data.环境.当前地点)||'';
     var _reg=regionOfLocation(_loc);
     if(_reg&&MAPS.some(function(x){return x.name===_reg;}))activeMap=_reg;
+    mapSpotOn=true;
+    mapFilter={town:true,road:false,special:false};
   }
   currentPageKey=key;
+  pageOverlayPopout(key==='map');
+  pageOverlay.style.paddingTop='';
   pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);resolveItemImgs(pageOverlay);
 }
 
@@ -5770,7 +5844,7 @@ resolvePkmImgs(app);
 resolveItemImgs(app);
   var hudEl=app.querySelector('.hud')||document.querySelector('.hud');
 overlay=document.createElement('div');overlay.className='overlay';hudEl.appendChild(overlay);
-pageOverlay=document.createElement('div');pageOverlay.className='page-overlay';hudEl.appendChild(pageOverlay);
+pageOverlay=document.createElement('div');pageOverlay.className='page-overlay';hudEl.appendChild(pageOverlay);pageOverlayHost=hudEl;
   cards=buildCards();
 bindHudCmdBar();bindCmdPanel();bindHudRefresh();
 for(var i=0;i<cards.length;i++){preloadMoves(cards[i].skills);}
@@ -5799,6 +5873,7 @@ var tb=e.target.closest('[data-tc-big]');
 if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-width:none;width:100%"><div class="modal-head"><div class="modal-name">属性克制表（可滚动查看）</div><button class="close" data-close>✕</button></div><div class="modal-body" style="padding:8px;overflow:auto;text-align:center"><img src="'+tb.getAttribute('data-tc-big')+'" style="width:200%;max-width:none;height:auto"></div></div>';overlay.classList.add('open');return;}
   if(e.target===pageOverlay||e.target.closest('[data-page-close]')){
   pageOverlay.classList.remove('open');
+  pageOverlayPopout(false);
   currentPageKey='';
   if(quickMapFromFab){
   quickMapFromFab=false;
@@ -6152,13 +6227,13 @@ function renderStatusBar(){
     var at=document.querySelector('#pkm-hud-inline .tab-btn.active');
     if(at)activeTab=at.getAttribute('data-tab')||'1';
     var pageWasOpen=false, pageKey=currentPageKey;
-    var po=document.querySelector('#pkm-hud-inline .page-overlay');
-    if(po&&po.classList.contains('open'))pageWasOpen=true;
+    if(pageOverlay&&pageOverlay.classList.contains('open'))pageWasOpen=true;
     var all=document.querySelectorAll('.mes[is_user="false"]');
     if(!all.length){all=document.querySelectorAll('.mes');}
     if(!all.length)return;
     var last=all[all.length-1];
     document.querySelectorAll('#pkm-hud-inline').forEach(function(el){el.remove();});
+    if(pageOverlay&&pageOverlay.parentElement===document.body){try{pageOverlay.remove();}catch(e){}}
     var ic=document.createElement('div');
     ic.id='pkm-hud-inline';
     var textEl=last.querySelector('.mes_text');
