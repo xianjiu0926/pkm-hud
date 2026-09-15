@@ -3,10 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.7.5';
+var PK_VER='1.7.6';
 /*PK_NOTICE_BEGIN
-@狮子酱
-v1.7.5：增加 Phone Suite 权威资产变动桥。云仓“完成存入”等外部资产事务可以直接修改 HUD 当前内存并串行写回 MVU，旧的排队写入会失效，避免已移出精灵被旧 HUD 快照重新写回盒子。
+修地图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -139,7 +138,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.page-overlay{position:absolute;inset:0;background:rgba(10,16,30,.45);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;z-index:500;padding:12px}'+
 '.page-overlay.open{display:flex}'+
 '.page{position:relative;width:100%;max-width:600px;max-height:100%;overflow-y:auto;background-color:#0f1626;border:2px solid var(--frame);border-radius:10px;box-shadow:0 0 14px rgba(170,204,255,.5)}'+
-'.page-overlay.popout{position:fixed;inset:0;z-index:2147483601;padding:10px;align-items:flex-start;justify-content:center}'+
+'.page-overlay.popout{position:fixed;inset:0;z-index:2147483601;padding:10px;align-items:center;justify-content:center}'+
 '.page-overlay.popout .page{max-width:min(94vw,900px);max-height:86vh;overflow:hidden}'+
 '.page-overlay.popout .page::before{background-image:none}'+
 '.page::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:8px;z-index:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px),repeating-linear-gradient(90deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px)}'+
