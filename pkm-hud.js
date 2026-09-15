@@ -364,10 +364,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-win .trainer-frame .info-title{padding-right:28px}';
 
 /* ===== 脚本版本 & 自动更新 ===== */
-var PK_VER='1.5.8';
+var PK_VER='1.5.9';
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 /*PK_NOTICE_BEGIN
-刷新键调整
+修bug
+内嵌模式变量更新自动刷新
 PK_NOTICE_END*/
 
 /* 主窗口 document（脚本在助手 iframe 里运行时指向酒馆主页面） */
@@ -499,9 +500,9 @@ function loadFromText(text){
     return out;
   }catch(e){return null;}
 }
-function loadStatData(){
+function loadStatDataLight(){
   var d=loadFromMvu();
-  if(d){try{localStorage.setItem('pk_mvu_backup_'+chatKey(),JSON.stringify(d));}catch(e){}return d;}
+  if(d)return d;
   try{var backup=JSON.parse(localStorage.getItem('pk_mvu_backup_'+chatKey())||'null');if(backup&&backup.训练家)return backup;}catch(e){}
   try{
     var el=WIN.document.querySelector('.statusbar-data-source')||document.querySelector('.statusbar-data-source');
@@ -511,6 +512,11 @@ function loadStatData(){
     }
   }catch(e){}
   return DEFAULT_STAT;
+}
+function loadStatData(){
+  var d=loadFromMvu();
+  if(d){try{localStorage.setItem('pk_mvu_backup_'+chatKey(),JSON.stringify(d));}catch(e){}return d;}
+  return loadStatDataLight();
 }
 
 var stat_data=loadStatData();
@@ -547,6 +553,7 @@ function pkmHudMvuTarget(){
   return null;
 }
 function pkmHudPersistStatData(){
+  pkmLastLocalWrite=Date.now();
   var snap=pkmHudClone(stat_data);
   __pkmHudPersistQueue=__pkmHudPersistQueue.catch(function(){return false;}).then(function(){
     var t=pkmHudMvuTarget();
@@ -1342,6 +1349,13 @@ function diyLorebookHTML(){
   var inputHtml='<div id="diy-lore-input-wrap"'+(selActive?' style="display:none"':'')+'><input type="text" id="diy-lorebook-custom" placeholder="世界书文件名，如 宝可梦DIY" value="'+esc(diyLorebook)+'" style="'+DIY_INPUT_STYLE+'"></div>';
   return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">写入世界书(推荐自建外挂世界书，方便删除，删除缓存不会删除世界书条目，只会关闭)</div>'+modeBtn+selectHtml+inputHtml+'</div></div>';
 }
+function diyLoreCreateCmd(type,name,obj,book){
+  var text=diyLoreText(type,obj);
+  var one=text.replace(/\"/g,'＂').replace(/\|/g,'｜');
+  var title=('自创'+diyLabel(type)+'：'+name).replace(/\"/g,'＂').replace(/\|/g,'｜');
+  var book2=book.replace(/\"/g,'＂').replace(/\|/g,'｜');
+  return '/createentry file="'+book2+'" '+one+' | /setvar key=uid {{pipe}} | /setentryfield file="'+book2+'" uid={{pipe}} field=comment '+title+' | /getvar uid | /setentryfield file="'+book2+'" uid={{pipe}} field=constant true';
+}
 function diyWriteLorebook(type,name,oldName,silent){
   var obj=diyGet(type,name);
   if(!obj){if(!silent)diyDoneMsg();return;}
@@ -1362,8 +1376,7 @@ if(!book){if(!silent)diyMsg('已保存 DIY（未填写世界书文件名，未�
     var oldTitle=('自创'+diyLabel(type)+'：'+oldName).replace(/\"/g,'＂').replace(/\|/g,'｜');
     dis='/findentry file="'+book2+'" field=comment "'+oldTitle+'" | /setentryfield file="'+book2+'" uid={{pipe}} field=disable true | ';
   }
-  var cmd=dis+'/createentry file="'+book2+'" '+one+' | /setvar key=uid {{pipe}} | /setentryfield file="'+book2+'" uid={{pipe}} field=comment '+title+' | /getvar uid | /setentryfield file="'+book2+'" uid={{pipe}} field=constant true';
-  sendMessage(cmd);
+  sendMessage(dis+diyLoreCreateCmd(type,name,obj,book));
   if(!silent)diyMsg('已保存 DIY，并已写入世界书「'+book+'」（蓝灯常驻）');
 }
 function diyDisableLorebook(type,name){
@@ -1525,13 +1538,13 @@ var raw=diyDecode(c);
   var t=o.t,n=String(o.n);
   diyData[t]=diyData[t]||{};
   diyData[t][n]=o.d;
-  var extraAbi=[];
+  var bundledAbiNames=[];
   if(o.x&&o.x.ability&&typeof o.x.ability==='object'){
     diyData.ability=diyData.ability||{};
     var aks=Object.keys(o.x.ability);
     for(var ai=0;ai<aks.length;ai++){
       var an=aks[ai],av=o.x.ability[an];
-      if(av&&typeof av==='object'&&!diyData.ability[an]){diyData.ability[an]=av;extraAbi.push(an);}
+      if(av&&typeof av==='object'){bundledAbiNames.push(an);if(!diyData.ability[an]){diyData.ability[an]=av;}}
     }
   }
   diySave();
@@ -1541,8 +1554,13 @@ var raw=diyDecode(c);
   var tabs=document.querySelectorAll('[data-diy-tab]');
   for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-diy-tab')===t);}
   var inp=document.getElementById('diy-import-code');if(inp)inp.value='';
-  for(var k=0;k<extraAbi.length;k++){diyWriteLorebook('ability',extraAbi[k],'',true);}
+  /* 分开写世界书：先写精灵，再把捆绑的特性各自单独写一条（错开执行，避免连续发送被吞） */
   diyWriteLorebook(t,n);
+  var abiDelay=600;
+  for(var k=0;k<bundledAbiNames.length;k++){
+    (function(abName,d){setTimeout(function(){diyWriteLorebook('ability',abName,'',true);},d);})(bundledAbiNames[k],abiDelay);
+    abiDelay+=600;
+  }
   diyRefreshTeam();
 }
 function diyChainText(obj){
@@ -4401,8 +4419,17 @@ function sendMessage(text){
   try{
     var w=WIN;
     var ta=w.document.querySelector('#send_textarea');
-    var sb=w.document.querySelector('#send_but');
-    if(ta&&sb){ta.value=text;ta.dispatchEvent(new Event('input',{bubbles:true}));sb.click();return;}
+    var sb=w.document.querySelector('#send_but')||w.document.querySelector('button#send_but')||w.document.querySelector('[data-testid="send-button"]');
+    if(ta&&sb){
+      try{
+        var proto=(WIN.HTMLTextAreaElement&&WIN.HTMLTextAreaElement.prototype)||(w.HTMLTextAreaElement&&w.HTMLTextAreaElement.prototype);
+        var set=proto?Object.getOwnPropertyDescriptor(proto,'value'):null;
+        if(set&&set.set){set.set.call(ta,text);}else{ta.value=text;}
+      }catch(e){ta.value=text;}
+      try{ta.dispatchEvent(new Event('input',{bubbles:true}));}catch(e){}
+      try{ta.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}
+      sb.click();return;
+    }
     w.postMessage({type:'send_message',message:text},'*');return;
   }catch(e){}
   alert('已生成指令：'+text);
@@ -4934,6 +4961,7 @@ function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':ret
 function pageHTML(title,content){return '<div class="page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body">'+content+'</div></div>';}
 
 var overlay,pageOverlay,cards;
+var currentPageKey='';
 var quickMapFromFab=false;
 var hudActionCard=null;
 var hudConfirmCb=null;
@@ -5213,6 +5241,7 @@ function openPage(key){
     var _reg=regionOfLocation(_loc);
     if(_reg&&MAPS.some(function(x){return x.name===_reg;}))activeMap=_reg;
   }
+  currentPageKey=key;
   pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);resolveItemImgs(pageOverlay);
 }
 
@@ -5564,6 +5593,7 @@ var tb=e.target.closest('[data-tc-big]');
 if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-width:none;width:100%"><div class="modal-head"><div class="modal-name">属性克制表（可滚动查看）</div><button class="close" data-close>✕</button></div><div class="modal-body" style="padding:8px;overflow:auto;text-align:center"><img src="'+tb.getAttribute('data-tc-big')+'" style="width:200%;max-width:none;height:auto"></div></div>';overlay.classList.add('open');return;}
   if(e.target===pageOverlay||e.target.closest('[data-page-close]')){
   pageOverlay.classList.remove('open');
+  currentPageKey='';
   if(quickMapFromFab){
   quickMapFromFab=false;
   var _win=document.getElementById('pkm-hud-win');
@@ -5912,6 +5942,12 @@ function endDrag(e){
 function renderStatusBar(){
   try{
     if(winMode==='1')return;
+    var activeTab='1';
+    var at=document.querySelector('#pkm-hud-inline .tab-btn.active');
+    if(at)activeTab=at.getAttribute('data-tab')||'1';
+    var pageWasOpen=false, pageKey=currentPageKey;
+    var po=document.querySelector('#pkm-hud-inline .page-overlay');
+    if(po&&po.classList.contains('open'))pageWasOpen=true;
     var all=document.querySelectorAll('.mes[is_user="false"]');
     if(!all.length){all=document.querySelectorAll('.mes');}
     if(!all.length)return;
@@ -5922,6 +5958,11 @@ function renderStatusBar(){
     var textEl=last.querySelector('.mes_text');
     if(textEl){textEl.insertAdjacentElement('afterend',ic);}else{last.appendChild(ic);}
     render();
+    var tabs=document.querySelectorAll('#pkm-hud-inline .tab-btn');
+    for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-tab')===activeTab);}
+    var panels=document.querySelectorAll('#pkm-hud-inline .tab-panel');
+    for(var j=0;j<panels.length;j++){panels[j].classList.toggle('active',panels[j].id==='tab-'+activeTab);}
+    if(pageWasOpen&&pageKey){try{openPage(pageKey);}catch(e){}}
   }catch(e){}
 }
 var pkmAutoRefreshBound=false;
@@ -5966,9 +6007,69 @@ function pkBindAutoRefresh(){
   try{setTimeout(updateDexContext,300);}catch(e){}
   try{setTimeout(updateDexContext,2500);}catch(e){}
 }
+var pkmAutoSnap='';
+var pkmAutoTimer=null;
+var pkmAutoPending=false;
+var pkmAutoChatObserver=null;
+var pkmLastLocalWrite=0;
+function pkmAutoCheck(){
+  try{
+    if(hudPendingActions&&hudPendingActions.length)return;
+    if((Date.now()-pkmLastLocalWrite)<1500)return;
+    var ov=document.querySelector('.overlay.open,.page-overlay.open');
+    if(ov)return;
+    var d=loadStatDataLight();
+    if(!d)return;
+    var snap=JSON.stringify(d);
+    if(snap===pkmAutoSnap)return;
+    pkmAutoSnap=snap;
+    pkRefreshData();
+  }catch(e){}
+}
+function pkmAutoSchedule(){
+  if(pkmAutoPending)return;
+  pkmAutoPending=true;
+  setTimeout(function(){pkmAutoPending=false;pkmAutoCheck();},700);
+}
+function pkmStartAutoUpdate(){
+  try{pkmAutoSnap=JSON.stringify(stat_data);}catch(e){pkmAutoSnap='';}
+  /* 1) 监听聊天区新增 AI 消息：变量通常随新消息一起更新 */
+  try{
+    if(window.MutationObserver){
+      var root=WIN.document.body||document.body;
+      pkmAutoChatObserver=new MutationObserver(function(muts){
+        for(var i=0;i<muts.length;i++){
+          var m=muts[i];
+          if(m.type!=='childList')continue;
+          for(var j=0;j<m.addedNodes.length;j++){
+            var n=m.addedNodes[j];
+            if(n&&n.nodeType===1&&(n.matches?n.matches('.mes'):(' '+(n.className||'')+' ').indexOf(' mes ')>=0)){
+              pkmAutoSchedule();return;
+            }
+          }
+        }
+      });
+      pkmAutoChatObserver.observe(root,{subtree:true,childList:true});
+    }
+  }catch(e){}
+  /* 2) 状态栏文本：手动改变量时触发 */
+  try{
+    var sb=WIN.document.querySelector('.statusbar-data-source')||document.querySelector('.statusbar-data-source');
+    if(sb){
+      var h=function(){pkmAutoSchedule();};
+      sb.addEventListener('input',h);
+      sb.addEventListener('change',h);
+    }
+  }catch(e){}
+  /* 3) 兜底：低频轮询，只在内容真正变化时重绘（不会每几秒闪一下） */
+  if(!pkmAutoTimer){
+    try{pkmAutoTimer=setInterval(function(){try{if(WIN.document.visibilityState==='hidden')return;}catch(e){}pkmAutoCheck();},5000);}catch(e){}
+  }
+}
 function safeRender(){
   try{pkAutoCheckUpdate();}catch(e){}
   try{pkBindAutoRefresh();}catch(e){}
+  try{pkmStartAutoUpdate();}catch(e){}
   try{recordSeen();}catch(e){}
   try{updateDexContext();}catch(e){}
   try{renderStatusBar();}catch(e){}
