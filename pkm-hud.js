@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.8.4';
+var PK_VER='1.8.5';
 /*PK_NOTICE_BEGIN
-v1.8.4 模态隔离与工坊 DIY 桥接优化版：保留 v1.8.3 全部 Sprite Provider、地图移动/缩放、资产与 HUD 功能；地图弹窗新增移动端友好的背景虚化/压暗聚焦效果；子容器打开时隔离后层点击并加入关闭手势防穿透；悬浮球增加点击手势消费与 ghost-click 屏蔽，避免与状态栏按钮重叠时一次点击触发两层；强化 Phone Suite 创意工坊 → HUD DIY 桥接，installDiyBundle 支持规范化 bundle、可选世界书同步与同名更新去重，并监听工坊导入事件自动刷新 DIY。
+v1.8.5 悬浮球点击修复版：修复悬浮窗模式下悬浮球需点两次才能打开的问题（touchend 后补发的兼容 mousedown/mouseup 造成开→立即关）；轻点统一由 click 触发一次 toggleHud，兼容鼠标事件用时间窗屏蔽；悬浮球在轻点时保持可见到 click，避免兼容点击穿透到下层按钮；ghost-click 屏蔽只吞 HUD 之外的目标，HUD 自身（窗口/遮罩/悬浮球/弹层）点击一律放行，修复打开后短时间内第一次点击被误吞；长按弹地图按钮在触屏下也不再被兼容事件打断。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5692,22 +5692,32 @@ function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':ret
 function pageHTML(title,content){var mapCtl=(title==='地图')?'<button type="button" class="map-pad-toggle'+(mapManualControlsOpen?' on':'')+'" data-map-pad-toggle title="显示/隐藏地图方向与缩放按钮" aria-label="显示或隐藏地图方向与缩放按钮">🎮</button>':'';return '<div class="page"><div class="page-head">'+mapCtl+'<button class="page-close" data-page-close>✕</button></div><div class="page-body">'+content+'</div></div>';}
 
 var overlay,pageOverlay,cards,pageOverlayHost=null;
-/* v1.8.4：模态隔离与点击穿透保护。
+/* v1.8.5：模态隔离与点击穿透保护。
  * - 子容器打开时让 HUD 后层 inert / pointer-events:none；
- * - 关闭/悬浮球手势完成后的兼容 click 若落到别的元素上，短时吞掉，避免一次点击触发两层。
+ * - 手势结束后的兼容 click 只吞“落到 HUD 之外”的，HUD 自身（悬浮球/窗口/遮罩/弹层）里的点击一律放行，
+ *   避免打开/关闭后短时间内第一次点击被误吞（需点两次才打开）。
  */
 var hudGestureShieldUntil=0,hudGestureShieldOrigin=null,hudModalIsolationObserver=null;
 function hudArmGestureShield(origin,ms){
   hudGestureShieldOrigin=origin||null;
   hudGestureShieldUntil=Date.now()+Math.max(250,Number(ms)||700);
 }
+function hudDisarmGestureShield(){
+  hudGestureShieldOrigin=null;
+  hudGestureShieldUntil=0;
+}
 function hudGhostClickGuard(e){
   if(Date.now()>hudGestureShieldUntil)return;
-  var o=hudGestureShieldOrigin,t=e&&e.target;
-  try{if(o&&o.isConnected&&t&&(o===t||o.contains(t)))return;}catch(_e){}
-  try{if(e.cancelable)e.preventDefault();}catch(_e2){}
-  try{e.stopPropagation();}catch(_e3){}
-  try{e.stopImmediatePropagation();}catch(_e4){}
+  var t=e&&e.target;
+  try{
+    if(t&&t.nodeType!==1)t=t.parentElement;
+    if(t&&t.closest&&t.closest('#pkm-hud-win,#pkm-hud-inline,#pkm-hud-btn,#pkm-hud-mapfab,#pkm-hud-mask,#pkm-hud-close,.pkm-hud-overlay,.pkm-hud-page-overlay'))return;
+  }catch(_e){}
+  var o=hudGestureShieldOrigin;
+  try{if(o&&o.isConnected&&t&&(o===t||o.contains(t)))return;}catch(_e2){}
+  try{if(e.cancelable)e.preventDefault();}catch(_e3){}
+  try{e.stopPropagation();}catch(_e4){}
+  try{e.stopImmediatePropagation();}catch(_e5){}
 }
 hudScope.listen(document,'click',hudGhostClickGuard,true);
 function hudSetInert(el,on){
@@ -6452,8 +6462,8 @@ pkImgFix(app);
 resolvePkmImgs(app);
 resolveItemImgs(app);
   var hudEl=app.querySelector('.hud')||document.querySelector('.hud');
-overlay=document.createElement('div');overlay.className='overlay';hudEl.appendChild(overlay);
-pageOverlay=document.createElement('div');pageOverlay.className='page-overlay';hudEl.appendChild(pageOverlay);pageOverlayHost=hudEl;
+overlay=document.createElement('div');overlay.className='overlay pkm-hud-overlay';hudEl.appendChild(overlay);
+pageOverlay=document.createElement('div');pageOverlay.className='page-overlay pkm-hud-page-overlay';hudEl.appendChild(pageOverlay);pageOverlayHost=hudEl;
 hudBindModalIsolation();
 /* 子层内部的 pointer/touch/mouse 手势到此为止，不再冒泡给 HUD/酒馆后层。 */
 ['pointerdown','pointerup','mousedown','mouseup','touchstart','touchend'].forEach(function(type){
@@ -6711,10 +6721,15 @@ function closeHud(){
 }
   function toggleHud(){ if(win.classList.contains('open'))closeHud(); else open(); }
 
-  /* 拖动：手机触摸 + 桌面鼠标（长按弹地图按钮） */
+  /* 拖动：手机触摸 + 桌面鼠标（长按弹地图按钮）。
+   * 轻点只在 click 里统一 toggleHud，touchend/mouseup 不再直接切换，
+   * 避免移动端 touchend 后浏览器补发的兼容 mousedown/mouseup 造成“开→立即关”（要点两次）。
+   * 兼容鼠标事件用 fabSuppressMouseUntil 窗口屏蔽；轻点时悬浮球保持可见直到 click，
+   * 因此兼容 click 仍落在悬浮球上，不会穿透到下方重叠的按钮。 */
 var drag=null;
 var longPressTimer=null,longPressFired=false;
 var fabSkipClick=false;
+var fabSuppressMouseUntil=0;
 var mapFab=document.createElement('button');
 mapFab.id='pkm-hud-mapfab';
 mapFab.type='button';
@@ -6745,7 +6760,6 @@ hudScope.listen(document,'click',function(e){
   if(!t||(!t.closest('#pkm-hud-mapfab') && !t.closest('#pkm-hud-btn'))){hideMapFab();}
 });
 function startDrag(cx,cy){
-  hudArmGestureShield(btn,900);
   hideMapFab();
   hudScope.clearTimeout(longPressTimer);
   longPressFired=false;
@@ -6753,6 +6767,7 @@ function startDrag(cx,cy){
   longPressTimer=hudScope.setTimeout(function(){
     if(drag && !drag.moved){
       longPressFired=true;
+      hudDisarmGestureShield();
       showMapFab();
       try{if(navigator.vibrate)navigator.vibrate(30);}catch(e2){}
     }
@@ -6777,14 +6792,21 @@ function endDrag(e){
   var fired=longPressFired;
   drag=null;
   hudScope.clearTimeout(longPressTimer);longPressTimer=null;
-  fabSkipClick=true;
   if(wasMove){
+    /* 拖动结束：吞掉随后的 click，避免误开 HUD */
+    fabSkipClick=true;
     try{ localStorage.setItem('pkm_fab_pos', JSON.stringify({l:parseFloat(btn.style.left), t:parseFloat(btn.style.top)})); }catch(err){}
+    hudArmGestureShield(btn,750);
     if(e && e.cancelable){ e.preventDefault(); }
-  }else if(!fired){
+  }else if(fired){
+    /* 长按已弹出地图按钮：吞掉随后的 click，并清除手势盾以免地图按钮点不动 */
+    fabSkipClick=true;
+    hudDisarmGestureShield();
+  }else{
+    /* 轻点：交给 click 统一触发 toggleHud，这里只做好手势盾与地图按钮隐藏 */
+    fabSkipClick=false;
     hudArmGestureShield(btn,900);
     hideMapFab();
-    toggleHud();
   }
 }
 
@@ -6794,18 +6816,18 @@ function endDrag(e){
     var t=e.touches[0]; moveDrag(t.clientX,t.clientY);
     if(drag && drag.moved && e.cancelable){ e.preventDefault(); }
   }, {passive:false});
-  btn.addEventListener('touchend', function(e){ e.stopPropagation();hudArmGestureShield(btn,900);endDrag(e); });
-  btn.addEventListener('touchcancel', function(e){try{e.stopPropagation();}catch(_e){}drag=null; });
+  btn.addEventListener('touchend', function(e){ e.stopPropagation();fabSuppressMouseUntil=Date.now()+750;endDrag(e); });
+  btn.addEventListener('touchcancel', function(e){try{e.stopPropagation();}catch(_e){}fabSuppressMouseUntil=Date.now()+750;drag=null;hudScope.clearTimeout(longPressTimer);longPressTimer=null;hideMapFab(); });
 
-  btn.addEventListener('mousedown', function(e){ e.stopPropagation();hudArmGestureShield(btn,900);startDrag(e.clientX,e.clientY); e.preventDefault(); });
-  hudScope.listen(document,'mousemove', function(e){ if(drag) moveDrag(e.clientX,e.clientY); });
-  hudScope.listen(document,'mouseup', function(e){ endDrag(e); });
-  /* mouseup/touchend 可能先把悬浮球隐藏；随后浏览器生成的兼容 click 会由 hudGhostClickGuard 吞掉，
-     因而不会落到与悬浮球重叠的状态栏按钮。 */
+  btn.addEventListener('mousedown', function(e){ e.stopPropagation();if(Date.now()<fabSuppressMouseUntil){if(e.cancelable)e.preventDefault();return;}startDrag(e.clientX,e.clientY); e.preventDefault(); });
+  hudScope.listen(document,'mousemove', function(e){ if(Date.now()<fabSuppressMouseUntil)return; if(drag) moveDrag(e.clientX,e.clientY); });
+  hudScope.listen(document,'mouseup', function(e){ if(Date.now()<fabSuppressMouseUntil)return; endDrag(e); });
+  /* 轻点时悬浮球在 click 之前保持可见，兼容 click 会命中悬浮球并在此被消费；
+     若点击仍落到 HUD 之外的其它按钮，则由 hudGhostClickGuard 短时吞掉。 */
   btn.addEventListener('click', function(e){
     if(e.cancelable)e.preventDefault();e.stopPropagation();try{e.stopImmediatePropagation();}catch(_e){}
-    hudArmGestureShield(btn,900);
     if(fabSkipClick){fabSkipClick=false;return;}
+    hudArmGestureShield(btn,900);
     hideMapFab();
     toggleHud();
   });
