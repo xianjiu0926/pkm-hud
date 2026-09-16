@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.8.8';
+var PK_VER='1.8.9';
 /*PK_NOTICE_BEGIN
-v1.8.7 手机地图弹窗修复：修复手机浏览器上地图页整体偏高、只能看到下半张图、顶部返回键被裁掉的问题。原因是弹层用 vh 设高度上限，手机浏览器 vh 常大于实际可见高度，配合居中导致顶部溢出；现改为按 visualViewport 实际可见高度给地图页设 px 上限，并加入 align-items:safe center 兜底（超高的内容自动改为顶部对齐，保证返回键可见）。
+v1.8.9 流式生成防闪屏：修复 AI 流式生成时状态栏（回复下方的 HUD）一直闪烁的问题。原 renderStatusBar 每次刷新都会移除并重建 #pkm-hud-inline；现改为锚点（最后一条消息）不变时就地刷新内容，并做数据快照去重，只在出现新消息时才移动节点，流式过程中不再反复闪屏。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6890,7 +6890,16 @@ function endDrag(e){
   }catch(e){}
 }
 
-function renderStatusBar(){
+var pkmInlineAnchorMes=null, pkmLastRenderedSnap='';
+function restoreInlineTabs(activeTab){
+  try{
+    var tabs=document.querySelectorAll('#pkm-hud-inline .tab-btn');
+    for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-tab')===activeTab);}
+    var panels=document.querySelectorAll('#pkm-hud-inline .tab-panel');
+    for(var j=0;j<panels.length;j++){panels[j].classList.toggle('active',panels[j].id==='tab-'+activeTab);}
+  }catch(e){}
+}
+function renderStatusBar(force){
   try{
     if(winMode==='1')return;
     var activeTab='1';
@@ -6902,18 +6911,31 @@ function renderStatusBar(){
     if(!all.length){all=document.querySelectorAll('.mes');}
     if(!all.length)return;
     var last=all[all.length-1];
-    document.querySelectorAll('#pkm-hud-inline').forEach(function(el){el.remove();});
-    if(pageOverlay&&pageOverlay.parentElement===document.body){try{pageOverlay.remove();}catch(e){}}
-    var ic=document.createElement('div');
-    ic.id='pkm-hud-inline';
-    var textEl=last.querySelector('.mes_text');
-    if(textEl){textEl.insertAdjacentElement('afterend',ic);}else{last.appendChild(ic);}
+    var inline=document.getElementById('pkm-hud-inline');
+    var anchoredOk=!!(inline&&inline.isConnected&&last===pkmInlineAnchorMes);
+
+    if(!anchoredOk){
+      /* 首次/新消息：需要重建并移动锚点（低频，直接执行） */
+      pkmLastRenderedSnap=pkmStateSnapshot(stat_data);
+      document.querySelectorAll('#pkm-hud-inline').forEach(function(el){el.remove();});
+      if(pageOverlay&&pageOverlay.parentElement===document.body){try{pageOverlay.remove();}catch(e){}}
+      var ic=document.createElement('div');
+      ic.id='pkm-hud-inline';
+      var textEl=last.querySelector('.mes_text');
+      if(textEl){textEl.insertAdjacentElement('afterend',ic);}else{last.appendChild(ic);}
+      pkmInlineAnchorMes=last;
+      render();
+      restoreInlineTabs(activeTab);
+      if(pageWasOpen&&pageKey){try{openPage(pageKey);}catch(e){}}
+      return;
+    }
+
+    /* 锚点没变：就地刷新内容，不移除 #pkm-hud-inline，避免流式生成时闪屏 */
+    var snap=pkmStateSnapshot(stat_data);
+    if(!force && snap===pkmLastRenderedSnap)return;
+    pkmLastRenderedSnap=snap;
     render();
-    var tabs=document.querySelectorAll('#pkm-hud-inline .tab-btn');
-    for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-tab')===activeTab);}
-    var panels=document.querySelectorAll('#pkm-hud-inline .tab-panel');
-    for(var j=0;j<panels.length;j++){panels[j].classList.toggle('active',panels[j].id==='tab-'+activeTab);}
-    if(pageWasOpen&&pageKey){try{openPage(pageKey);}catch(e){}}
+    restoreInlineTabs(activeTab);
   }catch(e){}
 }
 var pkmAutoRefreshBound=false;
