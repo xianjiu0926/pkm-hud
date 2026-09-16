@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.8.7';
+var PK_VER='1.8.8';
 /*PK_NOTICE_BEGIN
-v1.8.7 悬浮窗尺寸稳定版：修复反复开关悬浮窗时窗口“第一次大、第二次小”的问题（先临时去掉 max-height 测自然高度再计算，避免测量时机不一致导致高度来回跳）；同时去掉打开动画结束后的二次 centerWin，避免窗口每次打开时出现自左往右的位移。
+v1.8.7 手机地图弹窗修复：修复手机浏览器上地图页整体偏高、只能看到下半张图、顶部返回键被裁掉的问题。原因是弹层用 vh 设高度上限，手机浏览器 vh 常大于实际可见高度，配合居中导致顶部溢出；现改为按 visualViewport 实际可见高度给地图页设 px 上限，并加入 align-items:safe center 兜底（超高的内容自动改为顶部对齐，保证返回键可见）。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -258,12 +258,12 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.page-overlay{position:absolute;inset:0;background:rgba(10,16,30,.45);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;z-index:500;padding:12px}'+
 '.page-overlay.open{display:flex}'+
 '.page{position:relative;width:100%;max-width:600px;max-height:100%;overflow-y:auto;background-color:#0f1626;border:2px solid var(--frame);border-radius:10px;box-shadow:0 0 14px rgba(170,204,255,.5)}'+
-'.page-overlay.popout{position:fixed;inset:0;z-index:2147483601;padding:10px;align-items:center;justify-content:center}'+
+'.page-overlay.popout{position:fixed;inset:0;z-index:2147483601;padding:10px;align-items:center;align-items:safe center;justify-content:center}'+
 '.page-overlay.popout.map-focus{z-index:2147483647;background:radial-gradient(circle at 50% 46%,rgba(19,35,58,.20) 0,rgba(7,12,24,.64) 58%,rgba(4,8,18,.78) 100%);backdrop-filter:blur(12px) saturate(.74) brightness(.66);-webkit-backdrop-filter:blur(12px) saturate(.74) brightness(.66);isolation:isolate;overscroll-behavior:contain}'+
 '.page-overlay.popout.map-focus:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(12,22,38,.10),rgba(3,7,16,.22));z-index:0}'+
 '.page-overlay.popout.map-focus .page{position:relative;z-index:1;filter:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 18px 60px rgba(0,0,0,.58),0 0 0 1px rgba(124,196,248,.10)}'+
 '.hud.page-child-open>:not(.page-overlay),.hud.modal-child-open>:not(.overlay){pointer-events:none!important}'+
-'.page-overlay.popout .page{max-width:min(94vw,900px);max-height:86vh;overflow:hidden}'+
+'.page-overlay.popout .page{box-sizing:border-box;max-width:min(94vw,900px);max-height:86vh;overflow:hidden}'+
 '.page-overlay.popout .page-body{max-height:calc(86vh - 44px);overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}'+
 '.page-overlay.popout .page::before{background-image:none}'+
 '.page::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:8px;z-index:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px),repeating-linear-gradient(90deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px)}'+
@@ -629,7 +629,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.map-dpad [data-map-pan="down"]{grid-column:2;grid-row:3}'+
 '.map-zoom-pad{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto}'+
 '.map-zoom-pad .map-manual-btn{width:44px;height:44px;font-size:24px;line-height:1}'+
-'@media(max-width:600px){.page-overlay.popout{padding:max(6px,env(safe-area-inset-top)) 4px max(6px,env(safe-area-inset-bottom));align-items:center;justify-content:center}.page-overlay.popout .page{width:96vw;max-width:96vw;max-height:90vh;max-height:90dvh}.page-overlay.popout .page-head{min-height:44px;padding:5px 6px}.page-overlay.popout .page-body{padding:10px 8px 12px;max-height:calc(90vh - 44px);max-height:calc(90dvh - 44px);overflow:auto;overflow-x:hidden}.map-page{margin:-10px -8px 0;gap:6px}.map-toolbar{padding:0 8px;gap:4px;min-width:0}.map-toolbar .map-tabs{flex-wrap:nowrap;overflow-x:auto;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.map-toolbar .map-tabs::-webkit-scrollbar{display:none}.map-tab{padding:4px 10px;min-height:30px}.map-controls{padding:2px 8px;overflow-x:auto}.map-zoom-hint{padding:4px 8px;font-size:.62rem;line-height:1.45;letter-spacing:.4px}.map-pad-toggle,.page-close{width:36px;height:36px;font-size:17px}.map-manual-controls{min-height:82px;padding:6px 9px 8px}.map-dpad{grid-template-columns:38px 38px 38px;grid-template-rows:24px 30px 24px}.map-dpad .map-manual-btn{width:36px;height:28px;font-size:17px}.map-zoom-pad{gap:6px}.map-zoom-pad .map-manual-btn{width:42px;height:42px;font-size:23px}}'+
+'@media(max-width:600px){.page-overlay.popout{padding:max(6px,env(safe-area-inset-top)) 4px max(6px,env(safe-area-inset-bottom));align-items:center;align-items:safe center;justify-content:center}.page-overlay.popout .page{box-sizing:border-box;width:96vw;max-width:96vw;max-height:90vh;max-height:90dvh}.page-overlay.popout .page-head{min-height:44px;padding:5px 6px}.page-overlay.popout .page-body{padding:10px 8px 12px;max-height:calc(90vh - 44px);max-height:calc(90dvh - 44px);overflow:auto;overflow-x:hidden}.map-page{margin:-10px -8px 0;gap:6px}.map-toolbar{padding:0 8px;gap:4px;min-width:0}.map-toolbar .map-tabs{flex-wrap:nowrap;overflow-x:auto;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.map-toolbar .map-tabs::-webkit-scrollbar{display:none}.map-tab{padding:4px 10px;min-height:30px}.map-controls{padding:2px 8px;overflow-x:auto}.map-zoom-hint{padding:4px 8px;font-size:.62rem;line-height:1.45;letter-spacing:.4px}.map-pad-toggle,.page-close{width:36px;height:36px;font-size:17px}.map-manual-controls{min-height:82px;padding:6px 9px 8px}.map-dpad{grid-template-columns:38px 38px 38px;grid-template-rows:24px 30px 24px}.map-dpad .map-manual-btn{width:36px;height:28px;font-size:17px}.map-zoom-pad{gap:6px}.map-zoom-pad .map-manual-btn{width:42px;height:42px;font-size:23px}}'+
 '@media(hover:none){.card-frame:hover,.nearby-card:hover,.nb-cell:hover{transform:none!important;filter:none!important}.page-overlay,.overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}'+
 '@media(hover:none){.page-overlay.popout.map-focus{backdrop-filter:blur(9px) saturate(.76) brightness(.68)!important;-webkit-backdrop-filter:blur(9px) saturate(.76) brightness(.68)!important}}'+
 '@media(prefers-reduced-motion:reduce){#pkm-hud-win,#pkm-hud-mask,.card-frame,.nearby-card,.nb-cell,.hp-fill,.exp-fill{transition:none!important}.map-pin,.fab-update-dot,.map-island-label.hl{animation:none!important}}';
@@ -3743,7 +3743,7 @@ function bindMapViewer(wrap){
   if(mapImgEl){if(mapImgEl.complete&&mapImgEl.naturalWidth)fitMap(true);mapImgEl.addEventListener('load',function(){fitMap(true);});}
   fitMap(true);
   var _fitT=null;
-  function _scheduleFit(){if(_fitT)return;_fitT=hudScope.setTimeout(function(){_fitT=null;if(wrap&&wrap.isConnected!==false)fitMap(false);},100);}
+  function _scheduleFit(){if(_fitT)return;_fitT=hudScope.setTimeout(function(){_fitT=null;try{hudSyncMapPopoutHeight();}catch(_e){}if(wrap&&wrap.isConnected!==false)fitMap(false);},100);}
   try{
     if(mapViewerResizeObserver){try{mapViewerResizeObserver.disconnect();}catch(e){}}
     var RO=(typeof ResizeObserver!=='undefined')?ResizeObserver:null;
@@ -6095,7 +6095,7 @@ function openPage(key){
   pageOverlay.classList.toggle('map-focus',key==='map');
   pageOverlayPopout(key==='map');
   pageOverlay.style.paddingTop='';
-  pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');hudSyncModalIsolation();bindPageInteractions();pkImgFix(pageOverlay);resolveItemImgs(pageOverlay);
+  pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');hudSyncModalIsolation();bindPageInteractions();pkImgFix(pageOverlay);resolveItemImgs(pageOverlay);if(key==='map')hudSyncMapPopoutHeight();
 }
 
 function hudMsg(msg){
@@ -6563,6 +6563,22 @@ function vpSize(){
     if(vv&&vv.width&&vv.height){ w=vv.width; h=vv.height; ox=vv.offsetLeft||0; oy=vv.offsetTop||0; }
   }catch(e){}
   return {w:w,h:h,ox:ox,oy:oy};
+}
+/* 地图 popout 在手机浏览器上 vh 可能大于实际可见高度，导致页面整体偏高、顶部返回键被裁掉。
+ * 这里按 visualViewport 实际可见高度给 .page/.page-body 设 px 上限。 */
+function hudSyncMapPopoutHeight(){
+  try{
+    if(!pageOverlay||!pageOverlay.classList.contains('popout'))return;
+    var vh=vpSize().h;
+    var padTop=0,padBottom=0;
+    try{var cs=WIN.getComputedStyle?WIN.getComputedStyle(pageOverlay):null;if(cs){padTop=parseFloat(cs.paddingTop)||0;padBottom=parseFloat(cs.paddingBottom)||0;}}catch(_e2){}
+    var avail=Math.floor(vh-padTop-padBottom-4);
+    if(avail<160)avail=160;
+    var page=pageOverlay.querySelector('.page');
+    if(page)page.style.maxHeight=avail+'px';
+    var body=pageOverlay.querySelector('.page-body');
+    if(body)body.style.maxHeight=Math.max(120,avail-44)+'px';
+  }catch(e){}
 }
 var VP_Y=0.6;
 /* 测量 .hud 的“自然高度”：先临时去掉 max-height，再读 scrollHeight，
