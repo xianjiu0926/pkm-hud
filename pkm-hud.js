@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.8.5';
+var PK_VER='1.8.6';
 /*PK_NOTICE_BEGIN
-v1.8.5 悬浮球点击修复版：修复悬浮窗模式下悬浮球需点两次才能打开的问题（touchend 后补发的兼容 mousedown/mouseup 造成开→立即关）；轻点统一由 click 触发一次 toggleHud，兼容鼠标事件用时间窗屏蔽；悬浮球在轻点时保持可见到 click，避免兼容点击穿透到下层按钮；ghost-click 屏蔽只吞 HUD 之外的目标，HUD 自身（窗口/遮罩/悬浮球/弹层）点击一律放行，修复打开后短时间内第一次点击被误吞；长按弹地图按钮在触屏下也不再被兼容事件打断。
+v1.8.6 悬浮窗尺寸稳定版：修复反复开关悬浮窗时窗口“第一次大、第二次小”的问题。原因是每次打开都会在窗口隐藏/动画期间用当时的 scrollHeight 重新计算 hud 的最大高度，测量时机不一致导致高度来回跳；现改为先临时去掉 max-height 测出自然高度再计算，并在打开动画结束后再校正一次，保证每次打开高度一致。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6565,6 +6565,19 @@ function vpSize(){
   return {w:w,h:h,ox:ox,oy:oy};
 }
 var VP_Y=0.6;
+/* 测量 .hud 的“自然高度”：先临时去掉 max-height，再读 scrollHeight，
+ * 避免上一次打开的 max-height 影响本次测量，保证每次打开高度一致。 */
+function hudMeasureNaturalH(){
+  try{
+    var hud=document.querySelector('.hud');
+    if(!hud)return 0;
+    var had=hud.style.maxHeight;
+    hud.style.maxHeight='none';
+    var h=hud.scrollHeight;
+    if(had)hud.style.maxHeight=had;else hud.style.removeProperty('max-height');
+    return h||0;
+  }catch(e){return 0;}
+}
 function resizeFrame(){
   try{
     var hud=document.querySelector('.hud');
@@ -6582,7 +6595,8 @@ function resizeFrame(){
 if(win){
   var maxH=Math.floor(vpSize().h*0.86);
       win.style.maxHeight=maxH+'px';
-      hud.style.maxHeight=(Math.min(hud.scrollHeight+20,maxH))+'px';
+      var natural=hudMeasureNaturalH();
+      hud.style.maxHeight=(Math.min(natural+20,maxH))+'px';
     }
   }catch(e){}
 }
@@ -6699,6 +6713,12 @@ try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
     centerWin();
     resizeFrame();
   }, 30);
+  /* 打开动画(0.18s)结束后再校正一次：此时 transform 已归位，
+     用自然高度重新定一次窗高，避免动画期间测量出“大/小”两个不同值。 */
+  hudScope.setTimeout(function(){
+    centerWin();
+    resizeFrame();
+  }, 230);
 }
 function closeHud(){
   btn.style.display='';
