@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.8.6';
+var PK_VER='1.8.7';
 /*PK_NOTICE_BEGIN
-v1.8.6 悬浮窗尺寸稳定版：修复反复开关悬浮窗时窗口“第一次大、第二次小”的问题。原因是每次打开都会在窗口隐藏/动画期间用当时的 scrollHeight 重新计算 hud 的最大高度，测量时机不一致导致高度来回跳；现改为先临时去掉 max-height 测出自然高度再计算，并在打开动画结束后再校正一次，保证每次打开高度一致。
+v1.8.7 悬浮窗尺寸稳定版：修复反复开关悬浮窗时窗口“第一次大、第二次小”的问题（先临时去掉 max-height 测自然高度再计算，避免测量时机不一致导致高度来回跳）；同时去掉打开动画结束后的二次 centerWin，避免窗口每次打开时出现自左往右的位移。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6713,10 +6713,9 @@ try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
     centerWin();
     resizeFrame();
   }, 30);
-  /* 打开动画(0.18s)结束后再校正一次：此时 transform 已归位，
-     用自然高度重新定一次窗高，避免动画期间测量出“大/小”两个不同值。 */
+  /* 打开动画(0.18s)结束后只再校正一次窗高（不再重定位），
+     避免 transform 归位后二次 centerWin 造成窗口自左往右的位移。 */
   hudScope.setTimeout(function(){
-    centerWin();
     resizeFrame();
   }, 230);
 }
