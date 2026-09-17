@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.0.2';
+var PK_VER='2.0.3';
 /*PK_NOTICE_BEGIN
-1.pokeos 动图统一按 35ms/帧播放，原图模式不受影响。
+新增图源切换（设置→图源）——pokeos（高清HOME动图，35ms/帧，可调px/原图）或 Showdown（像素小动图）；选 pokeos 才显示“精灵图px”，35ms 仅对 pokeos 生效。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -2702,10 +2702,14 @@ function pkImgSmart(species,icon,shiny){
   var rawIcon=String(icon||'').trim();
   if(rawIcon.indexOf(HUD_DIY_SCHEME)===0){var ru=hudDiyAssetResolveSync(rawIcon);if(ru)return {img:ru};hudDiyAssetResolve(rawIcon);return null;}
   if(/^(?:https?:\/\/|data:image\/)/i.test(rawIcon)){return {img:rawIcon};}
-  if(/^[a-z0-9-]+\.gif$/i.test(rawIcon)){var ic=cachedIconCss(rawIcon,shiny);if(ic)return {bg:ic};return {icon:rawIcon};}
-  var c=cachedSpriteCss(species,shiny);if(c)return {bg:c};
-  /* 统一走异步图源解析（仅 pokeos HOME 动图，无兜底），不再此处直接拼 URL */
-  return null;
+  if(pkmSource==='pokeos'){
+    if(/^[a-z0-9-]+\.gif$/i.test(rawIcon)){var ic=cachedIconCss(rawIcon,shiny);if(ic)return {bg:ic};return {icon:rawIcon};}
+    var c=cachedSpriteCss(species,shiny);if(c)return {bg:c};
+    return null;
+  }
+  if(icon){var u=pkImg(icon,shiny);if(u)return {bg:u};}
+  var c2=cachedSpriteCss(species,shiny);if(c2)return {bg:c2};
+  return {bg:pkImg(species,shiny)};
 }
 /* 统一生成精灵图片元素：DIY/直链图用 <img>（确定能显示），百科图用背景图。 */
 function pkImgHTML(species,icon,shiny,cls){
@@ -2828,6 +2832,8 @@ var pkPokeosOrigVal=false;
 try{pkPokeosOrigVal=localStorage.getItem('pk_pokeos_orig')==='1';}catch(e){}
 function pkPokeosOrig(){return pkPokeosOrigVal;}
 var PKM_POKEOS_DELAY=35;
+var pkmSource='pokeos';
+try{var _psrc=localStorage.getItem('pk_source');pkmSource=(_psrc==='showdown')?'showdown':'pokeos';}catch(e){}
 function pkWrapPokeos(sub,anim){
   if(pkPokeosOrig())return 'https://'+PKM_POKEOS_S3+sub;
   var q='&w='+PKM_POKEOS_W+(anim?'&n=-1&delay='+PKM_POKEOS_DELAY:'');
@@ -2907,7 +2913,20 @@ function pkmPokeosIconUrls(icon,shiny){
   var png=pkWrapPokeos('render/'+(shiny?'shiny/':'')+dex+suf+'.png',false);
   return {gif:gif,png:png};
 }
+function resolvePkmIconShowdown(el,icon,shiny){
+  var fn=String(icon||'').toLowerCase().replace(/\.gif$/,'');
+  var ani='https://play.pokemonshowdown.com/sprites/'+(shiny?'ani-shiny/':'ani/')+fn+'.gif';
+  var png='https://play.pokemonshowdown.com/sprites/'+(shiny?'gen5-shiny/':'gen5/')+fn+'.png';
+  function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');}
+  function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');}
+  function load(u,onErr){if(!u){onErr();return;}var im=noRefImg();im.onload=function(){apply(u);};im.onerror=onErr;im.src=u;}
+  load(ani,function(){load(png,function(){fail();});});
+}
 function resolvePkmIcon(el,icon,shiny){
+  if(pkmSource==='showdown'){resolvePkmIconShowdown(el,icon,shiny);return;}
+  resolvePkmIconPokeos(el,icon,shiny);
+}
+function resolvePkmIconPokeos(el,icon,shiny){
   var r=pkmPokeosIconUrls(icon,shiny);
   function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');setCachedIcon(icon,shiny,u);}
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');}
@@ -2958,7 +2977,50 @@ function hudBuildPokemonSpriteUrls(opt){
   return {providerId:p.id,providerName:p.name,site:p.site||'',kind:p.kind||'',dynamic:!!p.dynamic,slug:primarySlug,pokemonApiId:id,normal:normal,shiny:shiny,normalCandidates:normalCandidates,shinyCandidates:shinyCandidates};
 }
 function noRefImg(){var im=new Image();try{im.referrerPolicy='no-referrer';}catch(e){}return im;}
+function resolvePkmBgShowdown(el,slug,shiny,name){
+  var cands=slugCandidates(fixSlug(slug));
+  var i=0;
+  var dexNo='';
+  if(name){var bn=baseName(String(name).trim());dexNo=(pkmDexCache[bn]||lsGet('pk_ndex_'+bn,''))||'';}
+  function apply(url){
+    el.style.backgroundImage="url('"+url+"')";
+    el.classList.remove('no-img');
+    el.textContent='';
+    el.removeAttribute('data-pkm');
+    if(name){setCachedSprite(name,shiny,url);}
+  }
+  function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';}
+  function tryPokeApi(mi){
+    var n=parseInt(dexNo,10);
+    if(!n||mi>=PA_POKE_MIRRORS.length){fail();return;}
+    var u=PA_POKE_MIRRORS[mi]+(shiny?'shiny/':'')+n+'.png';
+    var im=noRefImg();
+    im.onload=function(){apply(u);};
+    im.onerror=function(){tryPokeApi(mi+1);};
+    im.src=u;
+  }
+  function next(){
+    if(i>=cands.length){tryPokeApi(0);return;}
+    var s=cands[i++];
+    var ani=PKM_SPRITE_BASE+(shiny?'ani-shiny/':'ani/')+s+'.gif';
+    var png=PKM_SPRITE_BASE+(shiny?'gen5-shiny/':'gen5/')+s+'.png';
+    var im=noRefImg();
+    im.onload=function(){apply(ani);};
+    im.onerror=function(){
+      var im2=noRefImg();
+      im2.onload=function(){apply(png);};
+      im2.onerror=next;
+      im2.src=png;
+    };
+    im.src=ani;
+  }
+  next();
+}
 function resolvePkmBg(el,slug,shiny,name){
+  if(pkmSource==='showdown'){resolvePkmBgShowdown(el,slug,shiny,name);return;}
+  resolvePkmBgPokeos(el,slug,shiny,name);
+}
+function resolvePkmBgPokeos(el,slug,shiny,name){
   var p=name?pkmFormParse(name):{base:'',form:''};
   var bn=p.base;
   var dexNo=(bn?(pkmDexCache[bn]||lsGet('pk_ndex_'+bn,'')):'')||'';
@@ -5841,7 +5903,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>'+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -6480,6 +6542,7 @@ var iho=pageOverlay.querySelector('[data-inline-h-open]');
 if(iho){iho.addEventListener('click',function(e){e.stopPropagation();openInlineH();});}
 var ppo=pageOverlay.querySelector('[data-pokeos-px-open]');
 if(ppo){ppo.addEventListener('click',function(e){e.stopPropagation();openPokeosPx();});}
+pageOverlay.querySelectorAll('input[data-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmSource=r.getAttribute('data-source');try{localStorage.setItem('pk_source',pkmSource);}catch(e){}pokeosPxClearSpriteCache();render();openPage('settings');}});});
 var fio=pageOverlay.querySelector('[data-fab-img-open]');
 if(fio){fio.addEventListener('click',function(e){e.stopPropagation();openFabImg();});}
 var pku=pageOverlay.querySelector('[data-pk-check-update]');
