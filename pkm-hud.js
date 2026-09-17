@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.1.2';
+var PK_VER='2.1.3';
 /*PK_NOTICE_BEGIN
 v2.0.6：
 ① 战场「各方」六只宝可梦卡片化：每只一张卡，按属性自动配色（属性色框＋属性标签），特性/道具/招式分行展示，战术与后备信息更清晰。
@@ -5991,9 +5991,92 @@ function pkCheckUpdate(){
       .catch(function(){ pkSetUpdateMsg('❌ 检查失败：网络问题或 PK_UPDATE_URL 地址不对'); });
   }catch(e){ pkSetUpdateMsg('❌ 检查失败：'+e.message); }
 }
+function pkTauriInvoke(cmd,args){
+  var ti=(WIN&&WIN.__TAURI_INTERNALS__)||((typeof window!=='undefined')&&window.__TAURI_INTERNALS__);
+  if(!ti||typeof ti.invoke!=='function')return Promise.reject(new Error('无 __TAURI_INTERNALS__.invoke'));
+  try{return Promise.resolve(ti.invoke(cmd,args||{}));}catch(e){return Promise.reject(e);}
+}
+function pkTauriDesc(v){
+  try{
+    if(v===undefined)return 'undefined';
+    if(v===null)return 'null';
+    if(Array.isArray(v))return 'Array('+v.length+')['+JSON.stringify(v.slice(0,2)).slice(0,160)+']';
+    if(typeof v==='object'){var ks=Object.keys(v);return '{'+ks.slice(0,10).join(',')+(ks.length>10?'…':'')+'}';}
+    return String(v).slice(0,80);
+  }catch(e){return '?';}
+}
+function pkTauriFindHud(char){
+  function scan(o){
+    if(!o||typeof o!=='object')return null;
+    var th=(o.extensions&&o.extensions.tavern_helper)||(o.data&&o.data.extensions&&o.data.extensions.tavern_helper);
+    if(th&&Array.isArray(th.scripts)){
+      for(var i=0;i<th.scripts.length;i++){
+        var s=th.scripts[i];
+        if(s&&typeof s.content==='string'&&s.content.indexOf('pkm-hud-btn')>=0&&s.content.indexOf('PK_VER')>=0)return{scripts:th.scripts,idx:i};
+      }
+    }
+    return null;
+  }
+  return scan(char)||scan(char&&char.data)||scan(char&&char.character);
+}
+function pkTauriGetCharacter(c,cb){
+  var tries=[];
+  if(c&&c.id!=null)tries.push({id:c.id});
+  if(c&&c.characterId!=null)tries.push({characterId:c.characterId});
+  if(c&&c.character_id!=null)tries.push({character_id:c.character_id});
+  if(c&&c.name)tries.push({name:c.name});
+  if(c&&c.ch_name)tries.push({ch_name:c.ch_name});
+  var i=0;
+  function t(){
+    if(i>=tries.length){cb(null);return;}
+    pkTauriInvoke('get_character',tries[i++]).then(function(full){cb(full);}).catch(function(){t();});
+  }
+  t();
+}
+function pkTauriUpdateScript(newContent){
+  return new Promise(function(resolve){
+    var diag=[];
+    function done(ok,msg){resolve({ok:ok,msg:msg+(diag.length?'（诊断:'+diag.slice(-4).join(';')+'）':'')});}
+    function modifySave(target,hit){
+      hit.scripts[hit.idx].content=newContent;
+      pkTauriInvoke('update_character',target).then(function(){done(true,'TT 角色卡脚本已更新');}).catch(function(e){done(false,'TT update_character 失败:'+(e&&e.message||e));});
+    }
+    function processList(arr){
+      var j,hit;
+      for(j=0;j<arr.length;j++){hit=pkTauriFindHud(arr[j]);if(hit){modifySave(arr[j],hit);return;}}
+      var idx=0;
+      function next(){
+        if(idx>=arr.length){done(false,'TT 角色列表里没找到 HUD 脚本（共'+arr.length+'个）');return;}
+        var c=arr[idx++];
+        pkTauriGetCharacter(c,function(full){
+          if(!full){next();return;}
+          diag.push('get='+pkTauriDesc(full));
+          var h=pkTauriFindHud(full);
+          if(h){modifySave(full,h);}else{next();}
+        });
+      }
+      next();
+    }
+    pkTauriInvoke('get_all_characters',{shallow:false}).then(function(res){
+      diag.push('list='+pkTauriDesc(res));
+      var arr=null;
+      if(Array.isArray(res))arr=res;
+      else if(res&&Array.isArray(res.items))arr=res.items;
+      else if(res&&Array.isArray(res.characters))arr=res.characters;
+      else if(res&&Array.isArray(res.data))arr=res.data;
+      else if(res&&Array.isArray(res.list))arr=res.list;
+      if(!arr&&res&&typeof res==='object'){
+        arr=Object.keys(res).map(function(k){var v=res[k];if(v&&typeof v==='object'){if(v.id==null&&v.name==null&&v.characterId==null)v.id=k;}return v;});
+      }
+      if(!arr||!arr.length){done(false,'TT get_all_characters 返回空或格式未识别');return;}
+      processList(arr);
+    }).catch(function(e){done(false,'TT get_all_characters 失败:'+(e&&e.message||e));});
+  });
+}
 function pkUpdateScript(newContent){
   return new Promise(function(resolve){
     try{
+      if(PK_IS_TAURI){ try{pkTauriUpdateScript(newContent).then(resolve);}catch(e){resolve({ok:false,msg:'TT 写回异常:'+(e&&e.message||e)});} return; }
       var ST = WIN.SillyTavern;
       var ctx = ST && ST.getContext ? ST.getContext() : null;
       if(!ctx || !ctx.characterId){ resolve({ok:false, msg:'❌ 读不到酒馆上下文'}); return; }
