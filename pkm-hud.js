@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.0.8';
+var PK_VER='2.0.9';
 /*PK_NOTICE_BEGIN
 v2.0.6：
 ① 战场「各方」六只宝可梦卡片化：每只一张卡，按属性自动配色（属性色框＋属性标签），特性/道具/招式分行展示，战术与后备信息更清晰。
@@ -6089,37 +6089,34 @@ function pkClearHasUpdate(){
   }catch(e){}
   applyFabUpdateBadge();
 }
-function pkFinishInstall(ver,content,label){
-  pkClearHasUpdate();
-  var updBtn=document.querySelector('[data-pk-do-update]');
-  if(updBtn)updBtn.style.display='none';
-  pkSetUpdateMsg('✅ 已保存到本地 v'+ver+'，正在更新角色卡脚本...');
-  function failWrite(msg){
-    pkSetUpdateMsg('✅ 已保存到本地 v'+ver+'（下次刷新自动切换），但角色卡脚本更新失败：'+msg+'。可点「复制新版内容」手动粘贴。');
-    var sc=document.querySelector('[data-pk-show-content]');
-    if(sc)sc.style.display='block';
-  }
-  try{
-    pkUpdateScript(content).then(function(res){
-      if(res&&res.ok){
-        pkSetUpdateMsg('✅ '+label+' v'+ver+' 完成，角色卡脚本内容也已更新，刷新页面生效。');
-      }else{
-        failWrite(res&&res.msg?res.msg:'未知');
-      }
-    }).catch(function(err){
-      failWrite(err&&err.message?err.message:err);
-    });
-  }catch(e){
-    failWrite(e&&e.message?e.message:'未知');
-  }
-}
 function pkDoUpdate(){
   if(!pkLatestContent){ pkSetUpdateMsg('请先检查更新'); return; }
   if(!pkLatestVer){ pkSetUpdateMsg('❌ 新版版本号缺失，无法安装'); return; }
   if(pkVerCompare(pkLatestVer,PK_VER)<=0){ pkSetUpdateMsg('✅ 已是 v'+PK_VER+' 或更高版本'); return; }
   pkSetUpdateMsg('正在更新...');
   pkInstallRecord(pkLatestVer,pkLatestContent).then(function(){
-    pkFinishInstall(pkLatestVer,pkLatestContent,'更新到');
+    pkClearHasUpdate();
+    var updBtn=document.querySelector('[data-pk-do-update]');
+    if(updBtn)updBtn.style.display='none';
+    try{
+      pkUpdateScript(pkLatestContent).then(function(res){
+        if(res&&res.ok){
+          pkSetUpdateMsg('✅ 已更新到 v'+pkLatestVer+'，角色卡脚本内容也已更新，刷新页面生效。');
+        }else{
+          pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
+          var sc=document.querySelector('[data-pk-show-content]');
+          if(sc)sc.style.display='block';
+        }
+      }).catch(function(err){
+        pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败：'+(err&&err.message?err.message:err)+'。可点「复制新版内容」手动粘贴。');
+        var sc=document.querySelector('[data-pk-show-content]');
+        if(sc)sc.style.display='block';
+      });
+    }catch(e){
+      pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败。可点「复制新版内容」手动粘贴。');
+      var sc=document.querySelector('[data-pk-show-content]');
+      if(sc)sc.style.display='block';
+    }
   }).catch(function(err){
     pkSetUpdateMsg('❌ 保存失败：'+(err&&err.message?err.message:err)+'。请点「复制新版内容」手动更新。');
     var sc=document.querySelector('[data-pk-show-content]');
@@ -6142,7 +6139,28 @@ function pkRepair(){
         pkLatestNotice=nm?nm[1].replace(/^\s+|\s+$/g,''):'';
         pkSetUpdateMsg('正在安装 v'+ver+' ...');
         pkInstallRecord(ver,txt).then(function(){
-          pkFinishInstall(ver,txt,'修复重装');
+          pkClearHasUpdate();
+          var updBtn=document.querySelector('[data-pk-do-update]');
+          if(updBtn)updBtn.style.display='none';
+          try{
+            pkUpdateScript(txt).then(function(res){
+              if(res&&res.ok){
+                pkSetUpdateMsg('✅ 已重新安装 v'+ver+'，角色卡脚本内容也已更新，刷新页面生效。');
+              }else{
+                pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
+                var sc=document.querySelector('[data-pk-show-content]');
+                if(sc)sc.style.display='block';
+              }
+            }).catch(function(err){
+              pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败：'+(err&&err.message?err.message:err)+'。可点「复制新版内容」手动粘贴。');
+              var sc=document.querySelector('[data-pk-show-content]');
+              if(sc)sc.style.display='block';
+            });
+          }catch(e){
+            pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败。可点「复制新版内容」手动粘贴。');
+            var sc=document.querySelector('[data-pk-show-content]');
+            if(sc)sc.style.display='block';
+          }
         }).catch(function(err){
           pkSetUpdateMsg('❌ 安装失败：'+(err&&err.message?err.message:err)+'。请点「复制新版内容」手动更新。');
           var sc=document.querySelector('[data-pk-show-content]');
