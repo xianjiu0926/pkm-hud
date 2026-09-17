@@ -1,11 +1,11 @@
 (function(){
-/* ===== 分阶段更新核心（IndexedDB，参照小手机脚本）===== */
+
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.0.3';
+var PK_VER='2.0.5';
 /*PK_NOTICE_BEGIN
-新增图源切换（设置→图源）——pokeos（高清HOME动图，35ms/帧，可调px/原图）或 Showdown（像素小动图）；选 pokeos 才显示“精灵图px”，35ms 仅对 pokeos 生效。
+优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -131,7 +131,7 @@ async function pkValidRecord(r){
   return true;
 }
 function runPkmHud(boot){
-/* ===== v1.8.0 统一生命周期 / 诊断 / 网络 / 缓存基础层 ===== */
+
 var HUD_SCOPE_KEY='__pkmHudScope_v180';
 try{var __oldScope=WIN[HUD_SCOPE_KEY];if(__oldScope&&typeof __oldScope.destroy==='function')__oldScope.destroy();}catch(e){}
 function createHudScope(){
@@ -175,7 +175,7 @@ function hudFetch(url,opt){
   return guarded.catch(function(e){if(timedOut&&e&&e.name==='AbortError'){try{e.message='请求超时';}catch(_){} }hudDiagError('fetch '+String(url).slice(0,180),e);throw e;}).finally(function(){done=true;if(tm)WIN.clearTimeout(tm);hudScope.uncontroller(ctl);hudDiag.activeRequests=Math.max(0,hudDiag.activeRequests-1);});
 }
 
-/* 可重建百科/sprite 缓存迁入 IndexedDB；设置仍留 localStorage。 */
+
 var HUD_CACHE_DB='pk_hud_cache_v2',HUD_CACHE_STORE='kv',HUD_CACHE_TTL=90*24*60*60*1000,HUD_CACHE_MAX_ENTRIES=2500,hudCacheDbP=null,hudCacheMem=Object.create(null),hudCacheReady=false,hudCacheLastTouch=Object.create(null);
 function hudIsCacheKey(k){k=String(k||'');return /^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_mv_|pk_pm_|pk_ab_|pk_fid_|pk_item_|pk_itemimg_|pk_ps_|pk_psf_)/.test(k)||['pk_dexlist','pk_itemlist','pk_abilist'].indexOf(k)>=0;}
 function hudCacheDb(){if(hudCacheDbP)return hudCacheDbP;hudCacheDbP=new Promise(function(res,rej){try{var idb=WIN.indexedDB||window.indexedDB;if(!idb)throw new Error('IndexedDB 不可用');var rq=idb.open(HUD_CACHE_DB,1),done=false,tm=WIN.setTimeout(function(){if(done)return;done=true;hudCacheDbP=null;rej(new Error('HUD cache IndexedDB 打开超时'));},5000);rq.onupgradeneeded=function(){if(!rq.result.objectStoreNames.contains(HUD_CACHE_STORE))rq.result.createObjectStore(HUD_CACHE_STORE,{keyPath:'k'});};rq.onblocked=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudCacheDbP=null;rej(new Error('HUD cache IndexedDB 被阻塞'));};rq.onsuccess=function(){if(done){try{rq.result.close();}catch(e){}return;}done=true;WIN.clearTimeout(tm);var db=rq.result;db.onversionchange=function(){try{db.close();}catch(e){}hudCacheDbP=null;};res(db);};rq.onerror=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudCacheDbP=null;rej(rq.error||new Error('HUD cache IndexedDB 打开失败'));};}catch(e){hudCacheDbP=null;rej(e);}});return hudCacheDbP;}
@@ -191,7 +191,7 @@ function hudCacheDeletePrefixes(prefixes){
 var hudCacheInitPromise=null;
 function hudCacheInit(){
   if(hudCacheInitPromise)return hudCacheInitPromise;
-  /* 先迁移旧 localStorage，保证本次会话同步可读；确认 IDB 保存后才删旧副本。 */
+  
   try{
     var legacy=[];
     for(var i=0;i<localStorage.length;i++){
@@ -217,7 +217,7 @@ function hudCacheInit(){
 hudCacheInitPromise=hudCacheInit();
 hudScope.cleanup(function(){try{var q=hudCacheDbP;if(q&&typeof q.then==='function')q.then(function(db){try{db.close();}catch(e){}}).catch(function(){});}catch(e){}hudCacheDbP=null;});
 
-/* 与 Phone Suite 共用 pk_diy_assets_v1，DIY 本地图不再常驻 localStorage DataURL。 */
+
 var HUD_DIY_ASSET_DB='pk_diy_assets_v1',HUD_DIY_ASSET_STORE='assets',HUD_DIY_SCHEME='pkidb://',hudDiyAssetDbP=null,hudDiyBlobByRef=Object.create(null),hudDiyRefByBlob=Object.create(null),hudDiyResolvePending=Object.create(null),hudVisualRefreshTimer=0;
 function hudDiyAssetDb(){if(hudDiyAssetDbP)return hudDiyAssetDbP;hudDiyAssetDbP=new Promise(function(res,rej){try{var idb=WIN.indexedDB||window.indexedDB;if(!idb)throw new Error('IndexedDB 不可用');var rq=idb.open(HUD_DIY_ASSET_DB,1),done=false,tm=WIN.setTimeout(function(){if(done)return;done=true;hudDiyAssetDbP=null;rej(new Error('DIY 图片库打开超时'));},6000);rq.onupgradeneeded=function(){if(!rq.result.objectStoreNames.contains(HUD_DIY_ASSET_STORE)){var st=rq.result.createObjectStore(HUD_DIY_ASSET_STORE,{keyPath:'id'});try{st.createIndex('created_at','created_at',{unique:false});}catch(e){}}};rq.onblocked=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudDiyAssetDbP=null;rej(new Error('DIY 图片库被阻塞'));};rq.onsuccess=function(){if(done){try{rq.result.close();}catch(e){}return;}done=true;WIN.clearTimeout(tm);var db=rq.result;db.onversionchange=function(){try{db.close();}catch(e){}hudDiyAssetDbP=null;};res(db);};rq.onerror=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudDiyAssetDbP=null;rej(rq.error||new Error('DIY 图片库打开失败'));};}catch(e){hudDiyAssetDbP=null;rej(e);}});return hudDiyAssetDbP;}
 function hudBlobHash(blob){try{var c=WIN.crypto||crypto;if(!c||!c.subtle)return Promise.resolve('asset_'+Date.now()+'_'+Math.random().toString(36).slice(2));return blob.arrayBuffer().then(function(ab){return c.subtle.digest('SHA-256',ab);}).then(function(d){return 'sha256_'+Array.prototype.slice.call(new Uint8Array(d),0,16).map(function(x){return x.toString(16).padStart(2,'0');}).join('');});}catch(e){return Promise.resolve('asset_'+Date.now()+'_'+Math.random().toString(36).slice(2));}}
@@ -227,10 +227,7 @@ function hudDiyAssetGet(ref){var id=String(ref||'').indexOf(HUD_DIY_SCHEME)===0?
 function hudScheduleVisualRefresh(){if(hudVisualRefreshTimer)return;hudVisualRefreshTimer=hudScope.setTimeout(function(){hudVisualRefreshTimer=0;try{pkmHudRenderCurrent();}catch(e){}try{if(overlay)hudResolvePkidbImages(overlay);}catch(e){}try{if(pageOverlay)hudResolvePkidbImages(pageOverlay);}catch(e){}},80);}
 function hudDiyAssetResolve(ref){ref=String(ref||'');if(ref.indexOf(HUD_DIY_SCHEME)!==0)return Promise.resolve(ref);if(hudDiyBlobByRef[ref])return Promise.resolve(hudDiyBlobByRef[ref]);if(hudDiyResolvePending[ref])return hudDiyResolvePending[ref];hudDiyResolvePending[ref]=hudDiyAssetGet(ref).then(function(rec){if(!rec||!rec.blob)return '';var u=URL.createObjectURL(rec.blob);hudDiyBlobByRef[ref]=u;hudDiyRefByBlob[u]=ref;hudScheduleVisualRefresh();return u;}).catch(function(e){hudDiagError('DIY asset resolve',e);return '';}).finally(function(){delete hudDiyResolvePending[ref];});return hudDiyResolvePending[ref];}
 function hudDiyAssetResolveSync(ref){ref=String(ref||'');if(ref.indexOf(HUD_DIY_SCHEME)!==0)return ref;if(hudDiyBlobByRef[ref])return hudDiyBlobByRef[ref];hudDiyAssetResolve(ref);return '';}
-/* v1.8.10：Phone Suite / 创意工坊 DIY 图片持久化正式桥。
- * HUD 内部的 blob: URL 只属于当前运行时 realm，不能作为交换/云仓/DIY 包的永久数据。
- * canonicalizeImageRef() 先把 HUD 自己生成的 blob: O(1) 还原为 pkidb://；
- * persistImageValue() 仅在确有必要时把 data:/blob: 转存到共用 pk_diy_assets_v1。 */
+
 function hudDiyAssetCanonicalRef(value){
   var v=String(value||'').trim();
   if(!v)return '';
@@ -252,8 +249,7 @@ async function hudDiyAssetPersistValue(value){
       var knownRec=await hudDiyAssetGet(known);
       if(knownRec&&knownRec.blob)return known;
     }
-    /* blob URL 必须在创建它的 realm 读取。优先当前 HUD iframe，再尝试 WIN；
-       Phone Suite 自己也会跨同源窗口枚举，这里保持小而确定的兜底。 */
+    
     var wins=[];
     try{wins.push(window);}catch(e){}
     try{if(WIN&&wins.indexOf(WIN)<0)wins.push(WIN);}catch(e){}
@@ -271,7 +267,7 @@ async function hudDiyAssetPersistValue(value){
     }
     throw last||new Error('HUD blob 已失效');
   }
-  /* https: 等远程地址保持原值，交给 Phone Suite 自己决定是否需要持久化。 */
+  
   return v;
 }
 function hudDiyAssetToDataUrl(ref){ref=String(ref||'');if(/^data:image\//i.test(ref))return Promise.resolve(ref);if(ref.indexOf(HUD_DIY_SCHEME)!==0)return Promise.resolve(ref);return hudDiyAssetGet(ref).then(function(rec){if(!rec||!rec.blob)throw new Error('本地 DIY 图片引用已丢失');return new Promise(function(res,rej){var rd=new FileReader();rd.onload=function(){res(String(rd.result||''));};rd.onerror=function(){rej(new Error('DIY 图片读取失败'));};rd.readAsDataURL(rec.blob);});});}
@@ -648,7 +644,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@keyframes nbDmaxEdge{0%,100%{opacity:.7;filter:brightness(.95)}50%{opacity:1;filter:brightness(1.25)}}'+
 '@keyframes nbShinySweep{0%,68%{transform:translateX(-48%);opacity:0}76%{opacity:.85}90%,100%{transform:translateX(48%);opacity:0}}'+
 '@media(prefers-reduced-motion:reduce){.nb-cell.is-legendary .nb-aura,.nearby-grid .nearby-cell.is-legendary .nb-aura,.nb-cell.is-dynamax .nb-edge,.nearby-grid .nearby-cell.is-dynamax .nb-edge,.nb-cell.is-shiny::after,.nearby-grid .nearby-cell.is-shiny::after{animation:none!important}}'+
-'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--frame);border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more-btn{display:block;width:100%;margin-top:6px;padding:5px 10px;font-family:inherit;font-size:.74rem;font-weight:800;color:#7cc4f8;background:rgba(43,74,111,.45);border:1px dashed rgba(124,196,248,.5);border-radius:4px;cursor:pointer}'+
+'.fold-box{border:1px solid var(--frame);border-radius:6px;margin-bottom:10px;background:rgba(25,40,65,.35);overflow:hidden}'+'.fold-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;font-size:.82rem;font-weight:800;cursor:pointer;background:rgba(43,74,111,.5)}'+'.fold-head:hover{background:rgba(170,204,255,.14)}'+'.fold-arrow{font-size:.8rem;opacity:.8}'+'.fold-inner{padding:8px 12px 10px}'+'.bt-scene{font-size:.78rem;line-height:1.5;color:#dce9ff;padding:6px 10px;margin-bottom:8px;border-left:3px solid var(--frame);background:rgba(43,74,111,.3);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}'+'.bt-card{position:relative;min-width:0;padding:7px 9px;border:1px solid var(--frame);border-left:4px solid var(--bt-accent,var(--frame));border-radius:6px;background:linear-gradient(160deg,rgba(43,74,111,.55),rgba(15,22,38,.75));box-shadow:0 2px 6px rgba(0,0,0,.45)}'+'.bt-card.self{border-left-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.18)}'+'.bt-card.ally{border-left-color:#7cc4f8}'+'.bt-card.foe{border-left-color:#f05060;background:linear-gradient(160deg,rgba(120,40,48,.5),rgba(20,14,20,.75))}'+'.bt-card.neu{border-left-color:#8ba0b8}'+'.bt-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px}'+'.bt-pk{font-weight:800;font-size:.85rem;color:var(--text);text-shadow:1px 1px 0 #000;word-break:break-all}'+'.bt-lv{font-size:.72rem;color:var(--dim);flex-shrink:0}'+'.bt-tr{font-size:.68rem;color:var(--dim);margin-top:1px}'+'.bt-hp{display:flex;align-items:center;gap:5px;margin:4px 0 3px}'+'.bt-hp .hp-bar{flex:1}'+'.bt-hpn{font-size:.66rem;color:var(--text);flex-shrink:0}'+'.bt-line{font-size:.7rem;line-height:1.45;color:#dce9ff;margin-top:2px;word-break:break-word}'+'.bt-k{color:var(--dim);margin-right:4px}'+'.st-up{color:#4ade80}'+'.st-dn{color:#f87171}'+'.ailment.bad{background:#c03028;color:#fff}'+'.bt-side{border:1px dashed rgba(170,204,255,.35);border-radius:6px;margin-bottom:8px;overflow:hidden}'+'.bt-side-h{padding:4px 10px;font-size:.76rem;font-weight:800;background:rgba(43,74,111,.5)}'+'.bt-side-b{padding:5px 10px;font-size:.74rem;line-height:1.5;color:#dce9ff;word-break:break-word}'+'.bt-types{display:inline-flex;flex-wrap:wrap;gap:3px;margin-left:6px}'+'.bt-tactic{font-size:.74rem;line-height:1.5;color:#ffe9a8;padding:4px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.2);border-radius:0 6px 6px 0;word-break:break-word}'+'.bt-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;padding-top:6px;font-size:.7rem;color:var(--dim);border-top:1px dashed rgba(170,204,255,.25)}'+'.detail-modal.one .modal-body{padding-bottom:14px}'+'.dt-sep{height:1px;background:rgba(170,204,255,.28);margin:10px 0}'+'.dt-more-btn{display:block;width:100%;margin-top:6px;padding:5px 10px;font-family:inherit;font-size:.74rem;font-weight:800;color:#7cc4f8;background:rgba(43,74,111,.45);border:1px dashed rgba(124,196,248,.5);border-radius:4px;cursor:pointer}'+
 '.dt-more-btn:hover{background:rgba(124,196,248,.18)}'+
 '.dt-move-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}'+
 '.dt-move-cell{display:flex;align-items:center;gap:6px;min-width:0;padding:7px 8px;border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.4);cursor:pointer;transition:filter .12s}'+
@@ -750,8 +746,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@media(hover:none){.page-overlay.popout.map-focus{backdrop-filter:blur(9px) saturate(.76) brightness(.68)!important;-webkit-backdrop-filter:blur(9px) saturate(.76) brightness(.68)!important}}'+
 '@media(prefers-reduced-motion:reduce){#pkm-hud-win,#pkm-hud-mask,.card-frame,.nearby-card,.nb-cell,.hp-fill,.exp-fill{transition:none!important}.map-pin,.fab-update-dot,.map-island-label.hl{animation:none!important}}';
 
-/* 每次进聊天（脚本重新执行）都像第一次一样完整重建 HUD：
- * 先清掉上一轮留下的悬浮球/遮罩/窗口/样式，再从头加载缓存数据重新渲染。 */
+
 try{
   var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
   for(var _di=0;_di<_deadIds.length;_di++){
@@ -780,7 +775,7 @@ var st=document.createElement('style');
 st.type='text/css';
 st.textContent=css;
 (document.head||document.body).appendChild(st);
-/* Tauri/安卓 WebView + 鸿蒙(TavernNext/ArkWeb) 适配：仅在这些环境下去掉图片请求 Referer（浏览器用户不受影响） */
+
 try{
   var _ua2=(navigator.userAgent||'');
   var _isTauri=!!(WIN.__TAURI_INTERNALS__||WIN.__TAURI__)||/^tauri:/.test(WIN.location.protocol)||/tauri\.localhost/.test(WIN.location.hostname)||/Tauri/i.test(_ua2);
@@ -904,7 +899,7 @@ function loadStatData(){
 }
 
 var stat_data=loadStatData();
-/* v1.8.0：永久ID位置索引 + 增量 revision。getStateRevision 不再每次 stringify 全队伍/盒子。 */
+
 var hudLocationIndex=new Map(),hudLocationIndexDirty=true,hudStateRevCounter=1,hudStateFingerprint='';
 function hudRebuildLocationIndex(){
   var idx=new Map();
@@ -920,13 +915,9 @@ function hudExternalStateChanged(){
 function hudEnsureLocationIndex(){if(hudLocationIndexDirty)hudRebuildLocationIndex();return hudLocationIndex;}
 try{hudExternalStateChanged();hudRebuildLocationIndex();}catch(e){}
 
-/* ===== Workshop / 外部工具实时状态桥 =====
- * HUD 的盒子/队伍操作先修改内存 stat_data，再写回同一条 MVU 数据，
- * 让外部 Workshop 在 AI 回复前就能读到最新队伍；同时公开只读实时接口。
- */
+
 var __pkmHudPersistQueue=Promise.resolve();
-/* v1.7.5：所有 HUD → MVU 写入带 epoch。外部权威资产事务会提升 epoch，
- * 尚未开始的旧乐观快照写入会自动作废；权威写入排在已有队列之后，确保最终状态不会被旧快照“复活”。 */
+
 var __pkmHudPersistEpoch=0;
 function pkmHudClone(v){try{if(typeof WIN.structuredClone==='function')return WIN.structuredClone(v);}catch(e){}try{return JSON.parse(JSON.stringify(v));}catch(e2){return v;}}
 function pkmHudMvuTarget(){
@@ -962,7 +953,7 @@ function pkmHudPersistStatData(opt){
   var epoch=(opt.epoch==null?__pkmHudPersistEpoch:Number(opt.epoch)||0);
   var snap=pkmHudClone(stat_data);
   __pkmHudPersistQueue=__pkmHudPersistQueue.catch(function(){return false;}).then(function(){
-    /* 旧的普通乐观写入若在权威资产事务之后才轮到执行，直接跳过。 */
+    
     if(!opt.force&&epoch!==__pkmHudPersistEpoch)return false;
     var t=pkmHudMvuTarget();
     if(!t||!t.mv||typeof t.mv.replaceMvuData!=='function')return false;
@@ -1050,7 +1041,7 @@ var diyData=diyLoad();
 hudBuildDiyIndex();
 diyPreloadImages();
 hudScope.setTimeout(function(){hudMigrateInlineDiyAssets();},120);
-/* 供外部脚本（如创意工坊）直接抓取当前内存 DIY 数据，无需分享码 */
+
 try{WIN.__pkmDiyData=function(){return diyData;};}catch(e){}
 try{if(window!==WIN)window.__pkmDiyData=function(){return diyData;};}catch(e){}
 var diyDelStep=0,diyDelType='move',diyDelName='';
@@ -1082,7 +1073,7 @@ function diySave(opt){
   diyPreloadImages();
   if(!opt.skipAssetMigration)hudScope.setTimeout(hudMigrateInlineDiyAssets,20);
 }
-/* Phone Suite / 创意工坊通过 localStorage fallback 写入后，HUD 立即刷新内存与 DIY 页面。 */
+
 try{hudScope.listen(WIN,'pkworkshop:diy-imported',function(){
   try{diySyncFromStorage(true);hudBuildDiyIndex();diyPreloadImages();pkmHudRenderCurrent();}catch(e){hudDiagError('Workshop DIY sync event',e);}
 });}catch(e){}
@@ -1093,8 +1084,7 @@ function hudMigrateInlineDiyAssets(){
   if(!jobs.length)return Promise.resolve(false);
   return Promise.all(jobs).then(function(){if(changed){diySave({skipAssetMigration:true});hudDiagEvent('DIY','DataURL 图片已迁入 IndexedDB');}return changed;}).catch(function(e){hudDiagError('DIY asset migrate',e);return false;});
 }
-/* 每次自创/编辑保存后：把 DIY 精灵/道具图片预加载进浏览器缓存，
- * 并原地刷新主页队伍卡片，让队伍界面马上显示自创精灵图片。 */
+
 function diyPreloadImages(){
   try{
     var seen={};
@@ -1124,8 +1114,8 @@ function diyRefreshTeam(){
     pkImgFix(document);resolvePkmImgs(document);resolveItemImgs(document);hudResolvePkidbImages(document);resizeFrame();
   }catch(e){hudDiagError('DIY team refresh',e);}
 }
-/* v1.12.0 · Phase C：HUD 写回 MVU 前调用 Phone Suite Identity Guard；只恢复可由 Registry 唯一证明的旧ID，不自动猜测。 */
-/* v1.6.3 / Bridge API v2：精灵资产锁与云仓引用识别 */
+
+
 var PKM_ASSET_LOCKS_KEY='pk_pokemon_asset_locks_v1';
 function hudPhoneIdentityCore(){try{return (WIN.__PokemonPhoneSuite&&WIN.__PokemonPhoneSuite.pokemonIdentity)||(window.__PokemonPhoneSuite&&window.__PokemonPhoneSuite.pokemonIdentity)||null;}catch(e){return null;}}
 function hudPokemonId(p){try{var c=hudPhoneIdentityCore();if(c&&typeof c.readId==='function')return String(c.readId(p)||'');}catch(e){}p=p&&typeof p==='object'?p:{};return String(p.精灵ID||p.pokemonId||p.pokemon_id||p.培育实例ID||p.nurseryInstanceId||p.instanceId||'').trim();}
@@ -1156,9 +1146,7 @@ function hudRecordAssetMutation(p,opt){
 function hudFindPokemonLocations(id){id=String(id||'');if(!id)return [];var a=hudEnsureLocationIndex().get(id)||[];return a.map(function(x){return pkmHudClone(x);});}
 function hudStateRevision(){return 'r'+String(hudStateRevCounter)+':'+String(hudStateFingerprint||hudComputeStateFingerprint()||'0');}
 
-/* v1.7.7（融合脚本2 v1.7.6）：给 Phone Suite / 云仓 / 交换提供与 HUD 显示逻辑一致的 DIY 解析。
- * 对外优先返回 localStorage 中 canonical pk_diy（包括 pkidb:// 持久图片引用），
- * 避免把运行时 blob: URL 写进云仓/交换恢复事务。 */
+
 function hudDiyCanonicalData(){
   try{
     var raw=localStorage.getItem('pk_diy')||'';
@@ -1177,9 +1165,7 @@ function hudResolveDiyPokemonInfo(input){
   return {isDiy:true,name:name,rootKey:String(hit.rootKey||''),stageIndex:Number(hit.stageIndex),stageName:String(stage.name||name),image:img,root:pkmHudClone(root),stage:pkmHudClone(stage)};
 }
 
-/* 创意工坊优先使用这个 API 获取“HUD 此刻真正显示的队伍/盒子”，
- * 而不是等待下一次 AI 回复后才更新的旧 MVU 快照。
- */
+
 (function(){
   var api={
     version:'2.10.0',
@@ -1211,7 +1197,7 @@ function hudResolveDiyPokemonInfo(input){
     installDiyBundle:function(bundle,opt){
       opt=opt&&typeof opt==='object'?opt:{};
       bundle=bundle&&typeof bundle==='object'?bundle:{};
-      /* 兼容工坊/交换可能外包一层 diy 或 bundle，同时只接受四个正式 bucket。 */
+      
       if(bundle.diy&&typeof bundle.diy==='object')bundle=bundle.diy;
       else if(bundle.bundle&&typeof bundle.bundle==='object')bundle=bundle.bundle;
       try{diySyncFromStorage(false);}catch(e){}
@@ -1233,8 +1219,7 @@ function hudResolveDiyPokemonInfo(input){
       });
       diySave();
       try{pkmHudRenderCurrent();}catch(e){}
-      /* 世界书采用“新条目创建 / 同名条目更新”而不是无条件 create，避免工坊重复导入制造重复条目。
-         错开命令发送，兼容 SillyTavern 连续 slash command 被吞的环境。 */
+      
       if(worldbookQueue.length){
         worldbookQueue.forEach(function(row,idx){
           hudScope.setTimeout(function(){
@@ -1277,7 +1262,7 @@ function diyStatsText(st){
   if(typeof st==='string')return st;
   return 'HP '+(st.hp||'-')+' · 攻击 '+(st.atk||'-')+' · 防御 '+(st.def||'-')+' · 特攻 '+(st.spa||'-')+' · 特防 '+(st.spd||'-')+' · 速度 '+(st.spe||'-');
 }
-/* ===== DIY 精灵：本地图片/GIF 上传 + AI 识图（外观描述） ===== */
+
 function diyVisionDefaults(){return {provider:'openai',baseUrl:'',apiKey:'',model:'',proxyBase:'',proxyToken:'',maxTokens:'2048',rememberSecrets:false};}
 var DIY_VISION_CFG_KEY='pk_vision_cfg',DIY_VISION_SESSION_SECRET='pk_vision_secret_session_v2',DIY_VISION_SAVED_SECRET='pk_vision_secret_saved_v2';
 function diyVisionDefaultBase(provider){
@@ -1291,7 +1276,7 @@ function diyVisionDefaultPrompt(){
 function diyVisionCfg(){
   var d=diyVisionDefaults(),c=null;
   try{c=JSON.parse(localStorage.getItem(DIY_VISION_CFG_KEY)||'null');if(c&&typeof c==='object'){['provider','baseUrl','model','proxyBase','maxTokens','rememberSecrets'].forEach(function(k){if(c[k]!=null)d[k]=c[k];});}}catch(e){}
-  /* 兼容旧版把秘密直接放 localStorage：首次读取即迁移到 sessionStorage。 */
+  
   try{if(c&&(c.apiKey||c.proxyToken)){sessionStorage.setItem(DIY_VISION_SESSION_SECRET,JSON.stringify({apiKey:String(c.apiKey||''),proxyToken:String(c.proxyToken||'')}));var clean=Object.assign({},c);delete clean.apiKey;delete clean.proxyToken;localStorage.setItem(DIY_VISION_CFG_KEY,JSON.stringify(clean));}}catch(e){}
   var sec=null;
   try{sec=JSON.parse((d.rememberSecrets?localStorage.getItem(DIY_VISION_SAVED_SECRET):sessionStorage.getItem(DIY_VISION_SESSION_SECRET))||'null');}catch(e){}
@@ -1897,7 +1882,7 @@ if(!book)return;
     sendMessage(cmd);
   }catch(e){}
 }
-/* ===== 随机模式（HUD 开关 → 写入/关闭世界书条目） ===== */
+
 var RANDOM_MODE_TITLE='[随机模式] 随机宝可梦';
 var RANDOM_MODE_POSITION=1;
 var RANDOM_MODE_ORDER=860;
@@ -2062,7 +2047,7 @@ var raw=diyDecode(c);
   var tabs=document.querySelectorAll('[data-diy-tab]');
   for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-diy-tab')===t);}
   var inp=document.getElementById('diy-import-code');if(inp)inp.value='';
-  /* 分开写世界书：先写精灵，再把捆绑的特性各自单独写一条（错开执行，避免连续发送被吞） */
+  
   diyWriteLorebook(t,n);
   var abiDelay=600;
   for(var k=0;k<bundledAbiNames.length;k++){
@@ -2679,7 +2664,7 @@ function setCachedSprite(name,shiny,url){
   pkmSpriteCache[k]=css;
   try{lsSet('pk_sprite_'+k,css);}catch(e){}
 }
-/* 图标(英文文件名)的精灵图 URL 缓存，避免点详情先闪 ? */
+
 var pkmIconCache={};
 function cachedIconCss(icon,shiny){
   var k=(shiny?'is:':'in:')+String(icon||'').trim().toLowerCase();
@@ -2698,7 +2683,7 @@ function setCachedIcon(icon,shiny,url){
 function pkImgSmart(species,icon,shiny){
   var d=diyPokemonSprite(species);if(d)return {img:d};
   if(diyHas('pokemon',species))return null;
-  /* 通讯交换/外部导入的精灵可能直接携带 http/data/pkidb 图片。 */
+  
   var rawIcon=String(icon||'').trim();
   if(rawIcon.indexOf(HUD_DIY_SCHEME)===0){var ru=hudDiyAssetResolveSync(rawIcon);if(ru)return {img:ru};hudDiyAssetResolve(rawIcon);return null;}
   if(/^(?:https?:\/\/|data:image\/)/i.test(rawIcon)){return {img:rawIcon};}
@@ -2711,7 +2696,7 @@ function pkImgSmart(species,icon,shiny){
   var c2=cachedSpriteCss(species,shiny);if(c2)return {bg:c2};
   return {bg:pkImg(species,shiny)};
 }
-/* 统一生成精灵图片元素：DIY/直链图用 <img>（确定能显示），百科图用背景图。 */
+
 function pkImgHTML(species,icon,shiny,cls){
   cls=cls||'';
   var r=pkImgSmart(species,icon,shiny);
@@ -2731,7 +2716,7 @@ function diyPokemonImageRef(name){
   try{diySyncFromStorage(false);}catch(e){}
   var hit=hudDiyLookup(name);
   if(hit){var root=hit.root||{},stage=hit.stage||root,img=String(stage.img||root.img||'').trim();if(!img&&Array.isArray(root.chain)){for(var i=0;i<root.chain.length;i++){if(root.chain[i]&&root.chain[i].img){img=String(root.chain[i].img);break;}}}if(img)return img;}
-  /* 仅保留旧版模糊兜底，用于名称轻微偏差；找到后仍返回 canonical 引用。 */
+  
   var p=diyData.pokemon||{},bn=baseName(String(name).trim());
   for(var k in p){var o=p[k];if(!o)continue;var bk=baseName(String(k));if(bk&&bn&&bk.length>=2&&bn.length>=2&&(bn.indexOf(bk)>=0||bk.indexOf(bn)>=0)){var img2=o.img||'';if(!img2&&o.chain&&o.chain.length)img2=o.chain[0].img||'';if(img2)return String(img2);}}
   return '';
@@ -2823,7 +2808,7 @@ var PA_POKE_MIRRORS=[
   'https://raw.gitmirror.com/PokeAPI/sprites/master/sprites/pokemon/',
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'
 ];
-/* pokeos HOME 图（128px 压缩代理，按全国图鉴号；动图缺失回退静态 PNG） */
+
 var PKM_POKEOS_W=128;
 try{var _pw=parseInt(localStorage.getItem('pk_pokeos_w'),10);if(_pw>=32&&_pw<=512)PKM_POKEOS_W=_pw;}catch(e){}
 var PKM_POKEOS_S3='s3.pokeos.com/pokeos-uploads/assets/pokemon/home/';
@@ -2844,7 +2829,7 @@ function pkmPokeosUrl(dex,shiny){
   if(!n||n<=0)return '';
   return pkWrapPokeos('animated/'+(shiny?'shiny/':'')+n+'.gif',true);
 }
-/* 形态识别：返回 {base:基础名, form:形态后缀(或 'gmax'/空)} */
+
 function pkmFormParse(name){
   var t=String(name||'').trim(),form='';
   if(/^(超极巨化|超极巨)/.test(t)){form='-gmax';t=t.replace(/^(超极巨化|超极巨)/,'');}
@@ -2872,27 +2857,27 @@ function pkmFormParse(name){
   var base=baseName(t);if(!base)base=t;
   return {base:base,form:form};
 }
-/* pokeos 形态动图 URL（form 为 '-xxx' 后缀或空） */
+
 function pkmPokeosFormUrl(dex,form,shiny){
   var n=parseInt(dex,10);if(!n||n<=0)return '';
   if(form&&form.charAt(0)!=='-')return '';
   return pkWrapPokeos('animated/'+(shiny?'shiny/':'')+n+(form||'')+'.gif',true);
 }
-/* pokeos 静态 PNG（动图缺失时兜底） */
+
 function pkmPokeosPngUrl(dex,form,shiny){
   var n=parseInt(dex,10);if(!n||n<=0)return '';
   if(form&&form.charAt(0)!=='-')return '';
   return pkWrapPokeos('render/'+(shiny?'shiny/':'')+n+(form||'')+'.png',false);
 }
-/* 超极巨化走 Showdown 动图 */
+
 function pkmGmaxUrl(slug,shiny){
   return 'https://play.pokemonshowdown.com/sprites/'+(shiny?'ani-shiny/':'ani/')+slug+'-gmax.gif';
 }
-/* 英文名(Showdown基础名)→全国图鉴号（与“图标”命名一致） */
+
 var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleon":5,"charizard":6,"squirtle":7,"wartortle":8,"blastoise":9,"caterpie":10,"metapod":11,"butterfree":12,"weedle":13,"kakuna":14,"beedrill":15,"pidgey":16,"pidgeotto":17,"pidgeot":18,"rattata":19,"raticate":20,"spearow":21,"fearow":22,"ekans":23,"arbok":24,"pikachu":25,"raichu":26,"sandshrew":27,"sandslash":28,"nidoranf":29,"nidorina":30,"nidoqueen":31,"nidoranm":32,"nidorino":33,"nidoking":34,"clefairy":35,"clefable":36,"vulpix":37,"ninetales":38,"jigglypuff":39,"wigglytuff":40,"zubat":41,"golbat":42,"oddish":43,"gloom":44,"vileplume":45,"paras":46,"parasect":47,"venonat":48,"venomoth":49,"diglett":50,"dugtrio":51,"meowth":52,"persian":53,"psyduck":54,"golduck":55,"mankey":56,"primeape":57,"growlithe":58,"arcanine":59,"poliwag":60,"poliwhirl":61,"poliwrath":62,"abra":63,"kadabra":64,"alakazam":65,"machop":66,"machoke":67,"machamp":68,"bellsprout":69,"weepinbell":70,"victreebel":71,"tentacool":72,"tentacruel":73,"geodude":74,"graveler":75,"golem":76,"ponyta":77,"rapidash":78,"slowpoke":79,"slowbro":80,"magnemite":81,"magneton":82,"farfetchd":83,"doduo":84,"dodrio":85,"seel":86,"dewgong":87,"grimer":88,"muk":89,"shellder":90,"cloyster":91,"gastly":92,"haunter":93,"gengar":94,"onix":95,"drowzee":96,"hypno":97,"krabby":98,"kingler":99,"voltorb":100,"electrode":101,"exeggcute":102,"exeggutor":103,"cubone":104,"marowak":105,"hitmonlee":106,"hitmonchan":107,"lickitung":108,"koffing":109,"weezing":110,"rhyhorn":111,"rhydon":112,"chansey":113,"tangela":114,"kangaskhan":115,"horsea":116,"seadra":117,"goldeen":118,"seaking":119,"staryu":120,"starmie":121,"mrmime":122,"scyther":123,"jynx":124,"electabuzz":125,"magmar":126,"pinsir":127,"tauros":128,"magikarp":129,"gyarados":130,"lapras":131,"ditto":132,"eevee":133,"vaporeon":134,"jolteon":135,"flareon":136,"porygon":137,"omanyte":138,"omastar":139,"kabuto":140,"kabutops":141,"aerodactyl":142,"snorlax":143,"articuno":144,"zapdos":145,"moltres":146,"dratini":147,"dragonair":148,"dragonite":149,"mewtwo":150,"mew":151,"chikorita":152,"bayleef":153,"meganium":154,"cyndaquil":155,"quilava":156,"typhlosion":157,"totodile":158,"croconaw":159,"feraligatr":160,"sentret":161,"furret":162,"hoothoot":163,"noctowl":164,"ledyba":165,"ledian":166,"spinarak":167,"ariados":168,"crobat":169,"chinchou":170,"lanturn":171,"pichu":172,"cleffa":173,"igglybuff":174,"togepi":175,"togetic":176,"natu":177,"xatu":178,"mareep":179,"flaaffy":180,"ampharos":181,"bellossom":182,"marill":183,"azumarill":184,"sudowoodo":185,"politoed":186,"hoppip":187,"skiploom":188,"jumpluff":189,"aipom":190,"sunkern":191,"sunflora":192,"yanma":193,"wooper":194,"quagsire":195,"espeon":196,"umbreon":197,"murkrow":198,"slowking":199,"misdreavus":200,"unown":201,"wobbuffet":202,"girafarig":203,"pineco":204,"forretress":205,"dunsparce":206,"gligar":207,"steelix":208,"snubbull":209,"granbull":210,"qwilfish":211,"scizor":212,"shuckle":213,"heracross":214,"sneasel":215,"teddiursa":216,"ursaring":217,"slugma":218,"magcargo":219,"swinub":220,"piloswine":221,"corsola":222,"remoraid":223,"octillery":224,"delibird":225,"mantine":226,"skarmory":227,"houndour":228,"houndoom":229,"kingdra":230,"phanpy":231,"donphan":232,"porygon2":233,"stantler":234,"smeargle":235,"tyrogue":236,"hitmontop":237,"smoochum":238,"elekid":239,"magby":240,"miltank":241,"blissey":242,"raikou":243,"entei":244,"suicune":245,"larvitar":246,"pupitar":247,"tyranitar":248,"lugia":249,"hooh":250,"celebi":251,"treecko":252,"grovyle":253,"sceptile":254,"torchic":255,"combusken":256,"blaziken":257,"mudkip":258,"marshtomp":259,"swampert":260,"poochyena":261,"mightyena":262,"zigzagoon":263,"linoone":264,"wurmple":265,"silcoon":266,"beautifly":267,"cascoon":268,"dustox":269,"lotad":270,"lombre":271,"ludicolo":272,"seedot":273,"nuzleaf":274,"shiftry":275,"taillow":276,"swellow":277,"wingull":278,"pelipper":279,"ralts":280,"kirlia":281,"gardevoir":282,"surskit":283,"masquerain":284,"shroomish":285,"breloom":286,"slakoth":287,"vigoroth":288,"slaking":289,"nincada":290,"ninjask":291,"shedinja":292,"whismur":293,"loudred":294,"exploud":295,"makuhita":296,"hariyama":297,"azurill":298,"nosepass":299,"skitty":300,"delcatty":301,"sableye":302,"mawile":303,"aron":304,"lairon":305,"aggron":306,"meditite":307,"medicham":308,"electrike":309,"manectric":310,"plusle":311,"minun":312,"volbeat":313,"illumise":314,"roselia":315,"gulpin":316,"swalot":317,"carvanha":318,"sharpedo":319,"wailmer":320,"wailord":321,"numel":322,"camerupt":323,"torkoal":324,"spoink":325,"grumpig":326,"spinda":327,"trapinch":328,"vibrava":329,"flygon":330,"cacnea":331,"cacturne":332,"swablu":333,"altaria":334,"zangoose":335,"seviper":336,"lunatone":337,"solrock":338,"barboach":339,"whiscash":340,"corphish":341,"crawdaunt":342,"baltoy":343,"claydol":344,"lileep":345,"cradily":346,"anorith":347,"armaldo":348,"feebas":349,"milotic":350,"castform":351,"kecleon":352,"shuppet":353,"banette":354,"duskull":355,"dusclops":356,"tropius":357,"chimecho":358,"absol":359,"wynaut":360,"snorunt":361,"glalie":362,"spheal":363,"sealeo":364,"walrein":365,"clamperl":366,"huntail":367,"gorebyss":368,"relicanth":369,"luvdisc":370,"bagon":371,"shelgon":372,"salamence":373,"beldum":374,"metang":375,"metagross":376,"regirock":377,"regice":378,"registeel":379,"latias":380,"latios":381,"kyogre":382,"groudon":383,"rayquaza":384,"jirachi":385,"deoxys":386,"turtwig":387,"grotle":388,"torterra":389,"chimchar":390,"monferno":391,"infernape":392,"piplup":393,"prinplup":394,"empoleon":395,"starly":396,"staravia":397,"staraptor":398,"bidoof":399,"bibarel":400,"kricketot":401,"kricketune":402,"shinx":403,"luxio":404,"luxray":405,"budew":406,"roserade":407,"cranidos":408,"rampardos":409,"shieldon":410,"bastiodon":411,"burmy":412,"wormadam":413,"mothim":414,"combee":415,"vespiquen":416,"pachirisu":417,"buizel":418,"floatzel":419,"cherubi":420,"cherrim":421,"shellos":422,"gastrodon":423,"ambipom":424,"drifloon":425,"drifblim":426,"buneary":427,"lopunny":428,"mismagius":429,"honchkrow":430,"glameow":431,"purugly":432,"chingling":433,"stunky":434,"skuntank":435,"bronzor":436,"bronzong":437,"bonsly":438,"mimejr":439,"happiny":440,"chatot":441,"spiritomb":442,"gible":443,"gabite":444,"garchomp":445,"munchlax":446,"riolu":447,"lucario":448,"hippopotas":449,"hippowdon":450,"skorupi":451,"drapion":452,"croagunk":453,"toxicroak":454,"carnivine":455,"finneon":456,"lumineon":457,"mantyke":458,"snover":459,"abomasnow":460,"weavile":461,"magnezone":462,"lickilicky":463,"rhyperior":464,"tangrowth":465,"electivire":466,"magmortar":467,"togekiss":468,"yanmega":469,"leafeon":470,"glaceon":471,"gliscor":472,"mamoswine":473,"porygonz":474,"gallade":475,"probopass":476,"dusknoir":477,"froslass":478,"rotom":479,"uxie":480,"mesprit":481,"azelf":482,"dialga":483,"palkia":484,"heatran":485,"regigigas":486,"giratina":487,"cresselia":488,"phione":489,"manaphy":490,"darkrai":491,"shaymin":492,"arceus":493,"victini":494,"snivy":495,"servine":496,"serperior":497,"tepig":498,"pignite":499,"emboar":500,"oshawott":501,"dewott":502,"samurott":503,"patrat":504,"watchog":505,"lillipup":506,"herdier":507,"stoutland":508,"purrloin":509,"liepard":510,"pansage":511,"simisage":512,"pansear":513,"simisear":514,"panpour":515,"simipour":516,"munna":517,"musharna":518,"pidove":519,"tranquill":520,"unfezant":521,"blitzle":522,"zebstrika":523,"roggenrola":524,"boldore":525,"gigalith":526,"woobat":527,"swoobat":528,"drilbur":529,"excadrill":530,"audino":531,"timburr":532,"gurdurr":533,"conkeldurr":534,"tympole":535,"palpitoad":536,"seismitoad":537,"throh":538,"sawk":539,"sewaddle":540,"swadloon":541,"leavanny":542,"venipede":543,"whirlipede":544,"scolipede":545,"cottonee":546,"whimsicott":547,"petilil":548,"lilligant":549,"basculin":550,"sandile":551,"krokorok":552,"krookodile":553,"darumaka":554,"darmanitan":555,"maractus":556,"dwebble":557,"crustle":558,"scraggy":559,"scrafty":560,"sigilyph":561,"yamask":562,"cofagrigus":563,"tirtouga":564,"carracosta":565,"archen":566,"archeops":567,"trubbish":568,"garbodor":569,"zorua":570,"zoroark":571,"minccino":572,"cinccino":573,"gothita":574,"gothorita":575,"gothitelle":576,"solosis":577,"duosion":578,"reuniclus":579,"ducklett":580,"swanna":581,"vanillite":582,"vanillish":583,"vanilluxe":584,"deerling":585,"sawsbuck":586,"emolga":587,"karrablast":588,"escavalier":589,"foongus":590,"amoonguss":591,"frillish":592,"jellicent":593,"alomomola":594,"joltik":595,"galvantula":596,"ferroseed":597,"ferrothorn":598,"klink":599,"klang":600,"klinklang":601,"tynamo":602,"eelektrik":603,"eelektross":604,"elgyem":605,"beheeyem":606,"litwick":607,"lampent":608,"chandelure":609,"axew":610,"fraxure":611,"haxorus":612,"cubchoo":613,"beartic":614,"cryogonal":615,"shelmet":616,"accelgor":617,"stunfisk":618,"mienfoo":619,"mienshao":620,"druddigon":621,"golett":622,"golurk":623,"pawniard":624,"bisharp":625,"bouffalant":626,"rufflet":627,"braviary":628,"vullaby":629,"mandibuzz":630,"heatmor":631,"durant":632,"deino":633,"zweilous":634,"hydreigon":635,"larvesta":636,"volcarona":637,"cobalion":638,"terrakion":639,"virizion":640,"tornadus":641,"thundurus":642,"reshiram":643,"zekrom":644,"landorus":645,"kyurem":646,"keldeo":647,"meloetta":648,"genesect":649,"chespin":650,"quilladin":651,"chesnaught":652,"fennekin":653,"braixen":654,"delphox":655,"froakie":656,"frogadier":657,"greninja":658,"bunnelby":659,"diggersby":660,"fletchling":661,"fletchinder":662,"talonflame":663,"scatterbug":664,"spewpa":665,"vivillon":666,"litleo":667,"pyroar":668,"flabebe":669,"floette":670,"florges":671,"skiddo":672,"gogoat":673,"pancham":674,"pangoro":675,"furfrou":676,"espurr":677,"meowstic":678,"honedge":679,"doublade":680,"aegislash":681,"spritzee":682,"aromatisse":683,"swirlix":684,"slurpuff":685,"inkay":686,"malamar":687,"binacle":688,"barbaracle":689,"skrelp":690,"dragalge":691,"clauncher":692,"clawitzer":693,"helioptile":694,"heliolisk":695,"tyrunt":696,"tyrantrum":697,"amaura":698,"aurorus":699,"sylveon":700,"hawlucha":701,"dedenne":702,"carbink":703,"goomy":704,"sliggoo":705,"goodra":706,"klefki":707,"phantump":708,"trevenant":709,"pumpkaboo":710,"gourgeist":711,"bergmite":712,"avalugg":713,"noibat":714,"noivern":715,"xerneas":716,"yveltal":717,"zygarde":718,"diancie":719,"hoopa":720,"volcanion":721,"rowlet":722,"dartrix":723,"decidueye":724,"litten":725,"torracat":726,"incineroar":727,"popplio":728,"brionne":729,"primarina":730,"pikipek":731,"trumbeak":732,"toucannon":733,"yungoos":734,"gumshoos":735,"grubbin":736,"charjabug":737,"vikavolt":738,"crabrawler":739,"crabominable":740,"oricorio":741,"cutiefly":742,"ribombee":743,"rockruff":744,"lycanroc":745,"wishiwashi":746,"mareanie":747,"toxapex":748,"mudbray":749,"mudsdale":750,"dewpider":751,"araquanid":752,"fomantis":753,"lurantis":754,"morelull":755,"shiinotic":756,"salandit":757,"salazzle":758,"stufful":759,"bewear":760,"bounsweet":761,"steenee":762,"tsareena":763,"comfey":764,"oranguru":765,"passimian":766,"wimpod":767,"golisopod":768,"sandygast":769,"palossand":770,"pyukumuku":771,"typenull":772,"silvally":773,"minior":774,"komala":775,"turtonator":776,"togedemaru":777,"mimikyu":778,"bruxish":779,"drampa":780,"dhelmise":781,"jangmoo":782,"hakamoo":783,"kommoo":784,"tapukoko":785,"tapulele":786,"tapubulu":787,"tapufini":788,"cosmog":789,"cosmoem":790,"solgaleo":791,"lunala":792,"nihilego":793,"buzzwole":794,"pheromosa":795,"xurkitree":796,"celesteela":797,"kartana":798,"guzzlord":799,"necrozma":800,"magearna":801,"marshadow":802,"poipole":803,"naganadel":804,"stakataka":805,"blacephalon":806,"zeraora":807,"meltan":808,"melmetal":809,"grookey":810,"thwackey":811,"rillaboom":812,"scorbunny":813,"raboot":814,"cinderace":815,"sobble":816,"drizzile":817,"inteleon":818,"skwovet":819,"greedent":820,"rookidee":821,"corvisquire":822,"corviknight":823,"blipbug":824,"dottler":825,"orbeetle":826,"nickit":827,"thievul":828,"gossifleur":829,"eldegoss":830,"wooloo":831,"dubwool":832,"chewtle":833,"drednaw":834,"yamper":835,"boltund":836,"rolycoly":837,"carkol":838,"coalossal":839,"applin":840,"flapple":841,"appletun":842,"silicobra":843,"sandaconda":844,"cramorant":845,"arrokuda":846,"barraskewda":847,"toxel":848,"toxtricity":849,"sizzlipede":850,"centiskorch":851,"clobbopus":852,"grapploct":853,"sinistea":854,"polteageist":855,"hatenna":856,"hattrem":857,"hatterene":858,"impidimp":859,"morgrem":860,"grimmsnarl":861,"obstagoon":862,"perrserker":863,"cursola":864,"sirfetchd":865,"mrrime":866,"runerigus":867,"milcery":868,"alcremie":869,"falinks":870,"pincurchin":871,"snom":872,"frosmoth":873,"stonjourner":874,"eiscue":875,"indeedee":876,"morpeko":877,"cufant":878,"copperajah":879,"dracozolt":880,"arctozolt":881,"dracovish":882,"arctovish":883,"duraludon":884,"dreepy":885,"drakloak":886,"dragapult":887,"zacian":888,"zamazenta":889,"eternatus":890,"kubfu":891,"urshifu":892,"zarude":893,"regieleki":894,"regidrago":895,"glastrier":896,"spectrier":897,"calyrex":898,"wyrdeer":899,"kleavor":900,"ursaluna":901,"basculegion":902,"sneasler":903,"overqwil":904,"enamorus":905,"sprigatito":906,"floragato":907,"meowscarada":908,"fuecoco":909,"crocalor":910,"skeledirge":911,"quaxly":912,"quaxwell":913,"quaquaval":914,"lechonk":915,"oinkologne":916,"tarountula":917,"spidops":918,"nymble":919,"lokix":920,"pawmi":921,"pawmo":922,"pawmot":923,"tandemaus":924,"maushold":925,"fidough":926,"dachsbun":927,"smoliv":928,"dolliv":929,"arboliva":930,"squawkabilly":931,"nacli":932,"naclstack":933,"garganacl":934,"charcadet":935,"armarouge":936,"ceruledge":937,"tadbulb":938,"bellibolt":939,"wattrel":940,"kilowattrel":941,"maschiff":942,"mabosstiff":943,"shroodle":944,"grafaiai":945,"bramblin":946,"brambleghast":947,"toedscool":948,"toedscruel":949,"klawf":950,"capsakid":951,"scovillain":952,"rellor":953,"rabsca":954,"flittle":955,"espathra":956,"tinkatink":957,"tinkatuff":958,"tinkaton":959,"wiglett":960,"wugtrio":961,"bombirdier":962,"finizen":963,"palafin":964,"varoom":965,"revavroom":966,"cyclizar":967,"orthworm":968,"glimmet":969,"glimmora":970,"greavard":971,"houndstone":972,"flamigo":973,"cetoddle":974,"cetitan":975,"veluza":976,"dondozo":977,"tatsugiri":978,"annihilape":979,"clodsire":980,"farigiraf":981,"dudunsparce":982,"kingambit":983,"greattusk":984,"screamtail":985,"brutebonnet":986,"fluttermane":987,"slitherwing":988,"sandyshocks":989,"irontreads":990,"ironbundle":991,"ironhands":992,"ironjugulis":993,"ironmoth":994,"ironthorns":995,"frigibax":996,"arctibax":997,"baxcalibur":998,"gimmighoul":999,"gholdengo":1000,"wochien":1001,"chienpao":1002,"tinglu":1003,"chiyu":1004,"roaringmoon":1005,"ironvaliant":1006,"koraidon":1007,"miraidon":1008,"walkingwake":1009,"ironleaves":1010,"dipplin":1011,"poltchageist":1012,"sinistcha":1013,"okidogi":1014,"munkidori":1015,"fezandipiti":1016,"ogerpon":1017,"archaludon":1018,"hydrapple":1019,"gougingfire":1020,"ragingbolt":1021,"ironboulder":1022,"ironcrown":1023,"terapagos":1024,"pecharunt":1025};
-/* 图标(Showdown)后缀 → pokeos 后缀，未列出的直通 */
+
 var PKM_SUFFIX_FIX={'megax':'mega-x','megay':'mega-y','megaz':'mega-z','primal':'mega','dawnwings':'dawn','duskmane':'dusk','alola':'regional-a','galar':'regional-g','hisui':'regional-h','paldea':'regional-p','rapidstrike':'rapid-strike','singlestrike':'single-strike'};
-/* 皮卡丘 8 顶帽子：pokeos 命名是 {编号}-{帽子}-cap */
+
 var PKM_PIKA_CAP={'original':'original-cap','hoenn':'hoenn-cap','sinnoh':'sinnoh-cap','unova':'unova-cap','kalos':'kalos-cap','alola':'alola-cap','partner':'partner-cap','world':'world-cap'};
 function pkmIconParse(icon){
   var f=String(icon||'').trim().toLowerCase().replace(/\.gif$/,'');
@@ -2935,8 +2920,7 @@ function resolvePkmIconPokeos(el,icon,shiny){
   load(r.gif,function(){load(r.png,function(){fail();});});
 }
 
-/* v1.8.3：向 Phone Suite 暴露 HUD 当前精灵图库 URL 规则。
- * 只返回模板/构造后的公开 URL，不共享私有状态；调用方可独立选择图库来源。 */
+
 function hudSpriteProviders(){
   var sb=String(PKM_SPRITE_BASE||'https://play.pokemonshowdown.com/sprites/');
   var pm=(PA_POKE_MIRRORS&&PA_POKE_MIRRORS.length)?PA_POKE_MIRRORS.slice():[
@@ -3032,7 +3016,7 @@ function resolvePkmBgPokeos(el,slug,shiny,name){
     if(name){setCachedSprite(name,shiny,url);}
   }
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';}
-  /* v1.12.9：pokeos 动图优先，动图缺失回退同源静态 PNG；超极巨化走 Showdown 动图 */
+  
   var gifUrl='',pngUrl='';
   if(p.form){gifUrl=pkmPokeosFormUrl(dexNo,p.form,shiny);pngUrl=pkmPokeosPngUrl(dexNo,p.form,shiny);}
   else{gifUrl=pkmPokeosUrl(dexNo,shiny);pngUrl=pkmPokeosPngUrl(dexNo,'',shiny);}
@@ -3228,7 +3212,7 @@ function envStripHTML(){var e=stat_data.环境||{};if(!e.赛程)return '';return
 
 function nearbyLookup(str){var o={};String(str||'').split('|').forEach(function(x){x=String(x||'').trim();if(x)o[x]=1;});return o;}
 var NEARBY_TYPE_COLORS={一般:'#A8A878',火:'#F08030',水:'#6890F0',草:'#78C850',电:'#F8D030',冰:'#98D8D8',格斗:'#C03028',毒:'#A040A0',地面:'#E0C068',飞行:'#A890F0',超能力:'#F85888',虫:'#A8B820',岩石:'#B8A038',幽灵:'#705898',龙:'#7038F8',恶:'#705848',钢:'#B8B8D0',妖精:'#EE99AC'};
-/* 附近宝可梦的属性改由 52poke 图鉴抓取（数据缺失时异步补齐，抓到后填标签+更新配色）。 */
+
 var nearbyTypeCache={},nearbyTypePending={};
 function nearbyCleanType(v){
   var s=String(v==null?'':v).trim();
@@ -3321,7 +3305,7 @@ var activeBag='道具';
 function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0);var icon;if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var ov=itemImgOf(it.name);
 if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=(isTM||!itemClickEnabled)?'':' data-item="'+esc(it.name)+'" style="cursor:pointer"';return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
 function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return frame('背包','<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
-/* ===== 地图功能（坐标内置，用户直接看） ===== */
+
 var MAPS_DATA=[
   {
   name:'关都',
@@ -3720,7 +3704,7 @@ var MAPS_DATA=[
 
 ];
 var MAPS=pkmHudClone(MAPS_DATA);
-/* ===== 地图底图缓存（IndexedDB 持久化，避免每次打开地图都重新下载） ===== */
+
 var _mapImgBlobUrl={};
 var _MAP_IMG_TTL=30*24*60*60*1000;
 var _MAP_IMG_MAX_BYTES=30*1024*1024;
@@ -3845,8 +3829,7 @@ function mapAllSpots(map){
   }
   return out;
 }
-/* 中文数字 → 阿拉伯数字（一=1、二=2、十一=11、一百零一=101 …），
- * 用于把 AI 偶尔写成的「一号道路」归一到地图里的「1号道路」 */
+
 function cnNumToInt(s){
   s=String(s||'').trim();
   if(!s)return null;
@@ -4121,7 +4104,7 @@ function bindMapViewer(wrap){
   },{passive:false});
   wrap.addEventListener('dblclick',function(e){if(e)e.preventDefault();resetView();});
   var mapImgEl=wrap.querySelector('.map-img');
-  /* v1.8.1：按真实图片比例 + visualViewport 尺寸自适应；手机竖/横屏均完整居中，不裁剪。 */
+  
   function fitMap(reset){
     var vp=vpSize(),compact=Math.min(vp.w,vp.h)<=600;
     var page=wrap.closest('.page');
@@ -4179,7 +4162,7 @@ function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){ret
 function relHTML(){var rel=stat_data.人际关系||{};var entries=Object.entries(rel);if(!entries.length)return frame('人际关系','<div class="empty">暂无</div>');var html=entries.map(function(kv){var val=kv[1];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(kv[0])+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('');return frame('人际关系',html);}
 function rivalsHTML(){var r=stat_data.劲敌||{};var entries=Object.entries(r);if(!entries.length)return frameP('劲敌','<div class="empty">尚未遭遇劲敌</div>');var html=entries.map(function(kv){return '<div class="nearby-item" style="cursor:default"><div class="nearby-info"><div class="nearby-name">'+esc(kv[0])+'</div><div class="nearby-sub">'+esc(kv[1])+'</div></div></div>';}).join('');return frameP('劲敌',html);}
 function breedingHTML(){var b=stat_data.繁育||{};return frame('繁育',infoRow('蛋',esc(b.蛋||'无蛋'))+infoRow('剩余步数',num(b.剩余步数,0)+'步')+infoRow('存放',esc(b.存放||'-')));}
-function sideOf(k){if(k.indexOf('敌方')>=0)return 'foe';if(k.indexOf('友方')>=0)return 'ally';if(k.indexOf('中立')>=0)return 'neu';return 'self';}function btCard(k,v){var side=sideOf(k),segs=String(v||'').split(/[｜|]/),nm=String(k).replace(/[（(](我方|友方|中立|敌方)[)）]/,'').trim(),tr='',pk=nm,di=nm.indexOf('·');if(di>0){tr=nm.slice(0,di);pk=nm.slice(di+1);}var lv='',hpc=0,hpm=0,rest=[];for(var i=0;i<segs.length;i++){var s=segs[i].trim();if(!s)continue;if(i===0){var lm=s.match(/Lv\.?\s*(\d+)/i);if(lm)lv=lm[1];var hm=s.match(/(\d+)\s*\/\s*(\d+)/);if(hm){hpc=parseInt(hm[1],10);hpm=parseInt(hm[2],10);}continue;}if(s.indexOf('阶级')===0){var bd=s.replace(/^阶级[：:\s]*/,'').trim();if(bd&&bd!=='无')rest.push('<div class="bt-line"><span class="bt-k">阶级</span>'+esc(bd).replace(/([+\-])(\d)/g,function(a,g,n){return '<b class="'+(g==='-'?'st-dn':'st-up')+'">'+g+n+'</b>';})+'</div>');continue;}if(s.indexOf('状态')===0){var stx=s.replace(/^状态[：:\s]*/,'').trim();if(stx&&stx!=='无')rest.push('<div class="bt-line"><span class="bt-k">状态</span>'+stx.split(/[,，、\/]/).map(function(x){return statusTag(x.trim());}).join(' ')+'</div>');continue;}rest.push('<div class="bt-line">'+esc(s)+'</div>');}var pct=hpm>0?Math.max(0,Math.min(100,hpc/hpm*100)):0;var hc=pct>=50?'hp-high':pct>=20?'hp-mid':'hp-low';var fnt=(hpm>0&&hpc<=0)?'<span class="ailment fnt">圈圈眼</span>':'';return '<div class="bt-card '+side+'"><div class="bt-head"><span class="bt-pk">'+esc(pk)+fnt+'</span>'+(lv?'<span class="bt-lv">Lv.'+esc(lv)+'</span>':'')+'</div>'+(tr?'<div class="bt-tr">'+esc(tr)+'</div>':'')+(hpm>0?'<div class="bt-hp"><div class="hp-bar"><div class="hp-fill '+hc+'" style="width:'+pct+'%"></div></div><span class="bt-hpn">'+hpc+'/'+hpm+'</span></div>':'')+rest.join('')+'</div>';}function battleHTML(){var b=stat_data.战场||{},html='';function ln(v){return esc(String(v||'')).split(/[｜|]/).join('<br>');}var f=b.场上||{},fk=Object.keys(f),s=b.各方||{},sk=Object.keys(s);if(b.规则)html+='<div class="bt-rule">'+ln(b.规则)+'</div>';if(b.场景)html+='<div class="bt-scene">'+ln(b.场景)+'</div>';if(fk.length)html+='<div class="bt-grid">'+fk.map(function(k){return btCard(k,f[k]);}).join('')+'</div>';if(sk.length)html+=sk.map(function(k){return '<div class="bt-side"><div class="bt-side-h">📋 '+esc(k)+'</div><div class="bt-side-b">'+ln(s[k])+'</div></div>';}).join('');if(!html)return '<div class="bt-empty">当前没有正在进行的战斗</div>';return '<div class="info-frame battle-frame"><div class="info-inner"><div class="info-title">战场</div><div class="battle-list">'+html+'</div></div></div>';}
+function sideOf(k){if(k.indexOf('敌方')>=0)return 'foe';if(k.indexOf('友方')>=0)return 'ally';if(k.indexOf('中立')>=0)return 'neu';return 'self';}function btCard(k,v){var side=sideOf(k),segs=String(v||'').split(/[｜|]/),nm=String(k).replace(/[（(](我方|友方|中立|敌方)[)）]/,'').trim(),tr='',pk=nm,di=nm.indexOf('·');if(di>0){tr=nm.slice(0,di);pk=nm.slice(di+1);}var lv='',hpc=0,hpm=0,rest=[];for(var i=0;i<segs.length;i++){var s=segs[i].trim();if(!s)continue;if(i===0){var lm=s.match(/Lv\.?\s*(\d+)/i);if(lm)lv=lm[1];var hm=s.match(/(\d+)\s*\/\s*(\d+)/);if(hm){hpc=parseInt(hm[1],10);hpm=parseInt(hm[2],10);}continue;}if(s.indexOf('阶级')===0){var bd=s.replace(/^阶级[：:\s]*/,'').trim();if(bd&&bd!=='无')rest.push('<div class="bt-line"><span class="bt-k">阶级</span>'+esc(bd).replace(/([+\-])(\d)/g,function(a,g,n){return '<b class="'+(g==='-'?'st-dn':'st-up')+'">'+g+n+'</b>';})+'</div>');continue;}if(s.indexOf('状态')===0){var stx=s.replace(/^状态[：:\s]*/,'').trim();if(stx&&stx!=='无')rest.push('<div class="bt-line"><span class="bt-k">状态</span>'+stx.split(/[,，、\/]/).map(function(x){return statusTag(x.trim());}).join(' ')+'</div>');continue;}rest.push('<div class="bt-line">'+esc(s)+'</div>');}var pct=hpm>0?Math.max(0,Math.min(100,hpc/hpm*100)):0;var hc=pct>=50?'hp-high':pct>=20?'hp-mid':'hp-low';var fnt=(hpm>0&&hpc<=0)?'<span class="ailment fnt">圈圈眼</span>':'';return '<div class="bt-card '+side+'"><div class="bt-head"><span class="bt-pk">'+esc(pk)+fnt+'</span>'+(lv?'<span class="bt-lv">Lv.'+esc(lv)+'</span>':'')+'</div>'+(tr?'<div class="bt-tr">'+esc(tr)+'</div>':'')+(hpm>0?'<div class="bt-hp"><div class="hp-bar"><div class="hp-fill '+hc+'" style="width:'+pct+'%"></div></div><span class="bt-hpn">'+hpc+'/'+hpm+'</span></div>':'')+rest.join('')+'</div>';}function btNormType(t){t=String(t||'').trim();var m={'飞':'飞行','超':'超能力','地':'地面','岩':'岩石','幽':'幽灵','普':'一般'};return m[t]||t;}function btQueueName(seg){var s=String(seg||'').replace(/^队列\s*\d+\s*[.．、]\s*/,'').trim();var lv='';var lm=s.match(/Lv\.?\s*(\d+)/i);if(lm){lv=lm[1];s=s.slice(0,lm.index).trim();}var types=[];var m=s.match(/^(.*?)[（(]\s*([^（）()]*?)\s*[)）]\s*$/);if(m){s=m[1].trim();types=m[2].split(/[·、,，/]/).map(function(x){return btNormType(x.trim());}).filter(Boolean);}return{name:s,types:types,lv:lv};}function btQueueLine(s){s=String(s||'').trim();if(!s)return '';var m=s.match(/^(招式|技能)\s*[：:]\s*(.*)$/);if(m&&m[2])return '<div class="bt-line"><span class="bt-k">招式</span>'+esc(m[2])+'</div>';if(s.indexOf('·')>0){var ps=s.split('·').map(function(x){return x.trim();}).filter(Boolean);if(ps.length){var out='<span class="bt-k">特性</span>'+esc(ps[0]);if(ps[1])out+=' · <span class="bt-k">道具</span>'+esc(ps[1]);return '<div class="bt-line">'+out+'</div>';}}return '<div class="bt-line">'+esc(s)+'</div>';}function btQueueCard(q){var chips='';if(q.types&&q.types.length){chips='<span class="bt-types">'+q.types.map(function(t){return typeChipHTML(t);}).join('')+'</span>';}var accent=(q.types&&q.types.length)?typeColor(q.types[0]):'';var lines=(q.parts||[]).map(btQueueLine).filter(Boolean).join('');return '<div class="bt-card bt-q"'+(accent?' style="--bt-accent:'+esc(accent)+'"':'')+'><div class="bt-head"><span class="bt-pk">'+esc(q.name)+chips+'</span>'+(q.lv?'<span class="bt-lv">Lv.'+esc(q.lv)+'</span>':'')+'</div>'+lines+'</div>';}function btSideHTML(k,v){var segs=String(v||'').split(/[｜|]/).map(function(x){return x.trim();}).filter(Boolean);var tactic='',cards=[],meta=[],cur=null;for(var i=0;i<segs.length;i++){var s=segs[i];if(/^战术\s*[：:]/.test(s)){tactic=s.replace(/^战术\s*[：:]\s*/,'');continue;}if(/^队列\s*\d+\s*[.．、]/.test(s)){cur=btQueueName(s);cur.parts=[];cards.push(cur);continue;}if(/^(后备|已换下|已倒下|机制)/.test(s)){if(!/^(已换下|已倒下)\s*[：:]\s*无\s*$/.test(s))meta.push(s);continue;}if(cur)cur.parts.push(s);}var body='';if(tactic)body+='<div class="bt-tactic"><span class="bt-k">战术</span>'+esc(tactic)+'</div>';if(cards.length)body+='<div class="bt-grid">'+cards.map(btQueueCard).join('')+'</div>';if(meta.length)body+='<div class="bt-meta">'+meta.map(function(m){return '<span>'+esc(m)+'</span>';}).join('')+'</div>';return '<div class="bt-side"><div class="bt-side-h">📋 '+esc(k)+'</div><div class="bt-side-b">'+body+'</div></div>';}function battleHTML(){var b=stat_data.战场||{},html='';function ln(v){return esc(String(v||'')).split(/[｜|]/).join('<br>');}var f=b.场上||{},fk=Object.keys(f),s=b.各方||{},sk=Object.keys(s);if(b.规则)html+='<div class="bt-rule">'+ln(b.规则)+'</div>';if(b.场景)html+='<div class="bt-scene">'+ln(b.场景)+'</div>';if(fk.length)html+='<div class="bt-grid">'+fk.map(function(k){return btCard(k,f[k]);}).join('')+'</div>';if(sk.length)html+=sk.map(function(k){return btSideHTML(k,s[k]);}).join('');if(!html)return '<div class="bt-empty">当前没有正在进行的战斗</div>';return '<div class="info-frame battle-frame"><div class="info-inner"><div class="info-title">战场</div><div class="battle-list">'+html+'</div></div></div>';}
 
 function ivsHTML(s){if(!s)return '<span class="dim">-</span>';return '<div class="ivs">'+String(s).split(',').map(function(x){return '<span class="iv">'+esc(x.trim())+'</span>';}).join('')+'</div>';}
 function movesHTML(s){if(!s)return '<span class="dim">-</span>';return '<div class="moves">'+String(s).split(/[,，/、]/).map(function(x){var p=x.split(':');var name=p[0]||'',type=p[1]||'',cat=p[2]||'';var color=TYPE_COLORS[type]||'#888';return '<div class="move-cell" style="border-color:'+color+';background:'+color+'22;cursor:pointer" data-move="'+esc(name)+'" data-mvtype="'+esc(type)+'" data-mvcat="'+esc(cat)+'"><div class="move-name">'+esc(name)+'</div><div class="move-meta"><span class="move-type" style="background:'+color+'">'+esc(type)+'</span><span class="move-cat">'+esc(cat)+'</span></div></div>';}).join('')+'</div>';}
@@ -4516,8 +4499,7 @@ function regionFromLocation(loc){
   var s=t2s(String(loc||'').trim());
   if(!s)return '';
   if(LOC_REGION[s])return LOC_REGION[s];
-  /* 当前地点格式为 "地区-地点-场所"（如"关都-真新镇 - 大木研究所"），
-     优先直接取最前一段定地区，不再依赖地点名反推 */
+  
   var head=String(s).split(/[-－—|｜]/)[0];
   if(head){head=head.trim();}
   if(head&&head!==s){
@@ -5905,7 +5887,7 @@ var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
 return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
 }
-/* ===== 自动更新相关 ===== */
+
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
 var pkHasUpdate=false;
 function pkSetUpdateMsg(t){ try{ var m=document.getElementById('pk-update-msg'); if(m) m.textContent=t; }catch(e){} }
@@ -6113,7 +6095,7 @@ function pkDoUpdate(){
     pkClearHasUpdate();
     var updBtn=document.querySelector('[data-pk-do-update]');
     if(updBtn)updBtn.style.display='none';
-    /* 同时把角色卡里的脚本内容更新成最新版（重新导入/分享时就是新版） */
+    
     try{
       pkUpdateScript(pkLatestContent).then(function(res){
         if(res&&res.ok){
@@ -6189,11 +6171,7 @@ function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':ret
 function pageHTML(title,content){var mapCtl=(title==='地图')?'<button type="button" class="map-pad-toggle'+(mapManualControlsOpen?' on':'')+'" data-map-pad-toggle title="显示/隐藏地图方向与缩放按钮" aria-label="显示或隐藏地图方向与缩放按钮">🎮</button>':'';return '<div class="page"><div class="page-head">'+mapCtl+'<button class="page-close" data-page-close>✕</button></div><div class="page-body">'+content+'</div></div>';}
 
 var overlay,pageOverlay,cards,pageOverlayHost=null;
-/* v1.8.5：模态隔离与点击穿透保护。
- * - 子容器打开时让 HUD 后层 inert / pointer-events:none；
- * - 手势结束后的兼容 click 只吞“落到 HUD 之外”的，HUD 自身（悬浮球/窗口/遮罩/弹层）里的点击一律放行，
- *   避免打开/关闭后短时间内第一次点击被误吞（需点两次才打开）。
- */
+
 var hudGestureShieldUntil=0,hudGestureShieldOrigin=null,hudModalIsolationObserver=null;
 function hudArmGestureShield(origin,ms){
   hudGestureShieldOrigin=origin||null;
@@ -6235,7 +6213,7 @@ function hudSyncModalIsolation(){
         hudSetInert(ch,!keep);
       });
     }catch(_e2){}
-    /* 地图 popout 已移到 body，可以把原 HUD host 整体 inert；地图自己不在 host 里。 */
+    
     try{hudSetInert(host,mapBody);}catch(_e3){}
   }
   try{
@@ -6258,7 +6236,7 @@ var hudActionCard=null;
 var hudConfirmCb=null;
 var currentDetailCard=null;
 
-var CMDS=[['🏋️ 特训','洛托姆，帮我找个地方进行特训。','可指定方向：学会某个招式、赚钱、针对某项六维的专项特训'],['💨 快躲开','快躲开！（羁绊）使用XX攻击！','敌方招式必MISS，速度+1、闪避+1'],['⚡ 趁现在','趁现在！（羁绊）使用XX！','必先手、必暴击'],['🛡️ 坚持住','坚持住！（羁绊）使用XX！','清除异常状态，防御+1、特防+1，恢复30%最大HP'],['🔥 站起来','站起来！（羁绊）使用XX！','倒下的宝可梦复苏至HP1，攻击+1、特攻+1，本回合锁血'],['✨ 羁绊Mega','回应我的呼唤吧，Mega进化！（羁绊Mega，无需道具）然后使用XX！','搭档且亲密度≥200时，无需钥石与Mega石即可超进化'],['⚔️ 招式对抗','用XX对抗敌人的招式！（招式对抗）','无视先后手，两招正面相撞。不计算克制的攻防伤害相互抵消，僵持(差≤20%)双方受伤（差值+5），差>20%高方命中(用差值伤害)']];var cmdOpen=false;function cmdPanelHTML(){var rows=CMDS.map(function(c){return '<div class="cmd-row"><button class="cmd-btn" data-cmd="'+esc(c[1])+'" title="'+esc(c[2])+'">'+esc(c[0])+'</button><button class="cmd-tip" data-tip="'+esc(c[0])+'｜'+esc(c[2])+'" title="'+esc(c[2])+'">?</button></div>';}).join('');return '<details class="cmd-panel"'+(cmdOpen?' open':'')+'><summary>⌨️ 快捷指令 · 点击填入输入栏</summary><div class="cmd-note">羁绊每只每场限1次；亲密度≥200且未成为搭档时触发羁绊可觉醒搭档。把指令里的 XX 换成招式名再发送</div>'+rows+'</details>';}function bindCmdPanel(){/* v1.8.0：快捷指令由 HUD 根节点事件委托处理 */}function fillInput(text){try{var w=WIN;var ta=w.document.querySelector('#send_textarea');if(ta){var cur=String(ta.value||'').replace(/\s+$/,'');var val=cur?cur+'\n'+text:text;ta.value=val;ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus();try{var i=val.indexOf('XX',cur.length);if(i<0){ta.setSelectionRange(val.length,val.length);}else{ta.setSelectionRange(i,i+2);}}catch(e2){}return true;}}catch(e){}return false;}var hudPendingActions=[];
+var CMDS=[['🏋️ 特训','洛托姆，帮我找个地方进行特训。','可指定方向：学会某个招式、赚钱、针对某项六维的专项特训'],['💨 快躲开','快躲开！（羁绊）使用XX攻击！','敌方招式必MISS，速度+1、闪避+1'],['⚡ 趁现在','趁现在！（羁绊）使用XX！','必先手、必暴击'],['🛡️ 坚持住','坚持住！（羁绊）使用XX！','清除异常状态，防御+1、特防+1，恢复30%最大HP'],['🔥 站起来','站起来！（羁绊）使用XX！','倒下的宝可梦复苏至HP1，攻击+1、特攻+1，本回合锁血'],['✨ 羁绊Mega','回应我的呼唤吧，Mega进化！（羁绊Mega，无需道具）然后使用XX！','搭档且亲密度≥200时，无需钥石与Mega石即可超进化'],['⚔️ 招式对抗','用XX对抗敌人的招式！（招式对抗）','无视先后手，两招正面相撞。不计算克制的攻防伤害相互抵消，僵持(差≤20%)双方受伤（差值+5），差>20%高方命中(用差值伤害)']];var cmdOpen=false;function cmdPanelHTML(){var rows=CMDS.map(function(c){return '<div class="cmd-row"><button class="cmd-btn" data-cmd="'+esc(c[1])+'" title="'+esc(c[2])+'">'+esc(c[0])+'</button><button class="cmd-tip" data-tip="'+esc(c[0])+'｜'+esc(c[2])+'" title="'+esc(c[2])+'">?</button></div>';}).join('');return '<details class="cmd-panel"'+(cmdOpen?' open':'')+'><summary>⌨️ 快捷指令 · 点击填入输入栏</summary><div class="cmd-note">羁绊每只每场限1次；亲密度≥200且未成为搭档时触发羁绊可觉醒搭档。把指令里的 XX 换成招式名再发送</div>'+rows+'</details>';}function bindCmdPanel(){}function fillInput(text){try{var w=WIN;var ta=w.document.querySelector('#send_textarea');if(ta){var cur=String(ta.value||'').replace(/\s+$/,'');var val=cur?cur+'\n'+text:text;ta.value=val;ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus();try{var i=val.indexOf('XX',cur.length);if(i<0){ta.setSelectionRange(val.length,val.length);}else{ta.setSelectionRange(i,i+2);}}catch(e2){}return true;}}catch(e){}return false;}var hudPendingActions=[];
 var hudActionInjected=null;
 var hudCleanupBound=false;
 var hudCmdOpen=false;
@@ -6363,8 +6341,7 @@ function hudRefreshInjection(){
 
 function hudSend(text, undo, display){
   hudPendingActions.push({id:'hudc'+(++hudCmdSeq)+'_'+Date.now(), text:text, display:display||text, undo:undo||function(){}});
-  /* 本地 HUD 操作发生后立即把当前 stat_data 写回 MVU。
-     setExtensionPrompt 仍保留，用于让后续 AI 剧情继续遵守这些变化。 */
+  
   try{pkmHudPersistStatData();}catch(e){}
   if(!hudRefreshInjection()){
     hudMsg('当前环境无法静默注入，操作仅更新本地显示');
@@ -6384,7 +6361,7 @@ function hudRemoveAction(id){
   render(); resizeFrame();
 }
 
-function bindHudCmdBar(){/* v1.8.0：主页命令栏由根节点事件委托处理 */}
+function bindHudCmdBar(){}
 
 function bindPageInteractions(){
   pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);clearBack();overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);}});});
@@ -6454,7 +6431,7 @@ if(mvw&&mvw._mapApi){
   mapFrame.querySelectorAll('[data-map-pan]').forEach(function(btn){btn.addEventListener('click',function(e){
     e.preventDefault();e.stopPropagation();
     var dir=btn.getAttribute('data-map-pan'),sx=Math.max(28,Math.min(84,Math.round((mvw.clientWidth||320)*0.10))),sy=Math.max(24,Math.min(72,Math.round((mvw.clientHeight||240)*0.10)));
-    /* 方向键按“视角移动”解释：视角向左 => 地图内容向右；其余方向同理。 */
+    
     if(dir==='up')mvw._mapApi.panBy(0,sy);else if(dir==='down')mvw._mapApi.panBy(0,-sy);else if(dir==='left')mvw._mapApi.panBy(sx,0);else if(dir==='right')mvw._mapApi.panBy(-sx,0);
   });});
   mapFrame.querySelectorAll('[data-map-zoom]').forEach(function(btn){btn.addEventListener('click',function(e){
@@ -6569,7 +6546,7 @@ if(db){db.addEventListener('click',function(e){
 bindDevPanel();
 }
 
-function bindBadge(){/* v1.8.0：徽章入口由根节点事件委托处理 */}
+function bindBadge(){}
 function badgeClick(e){e.stopPropagation();var rs=parseBadges();if(rs.length>1){var cur=pickRegion(rs),i=0,k;for(k=0;k<rs.length;k++){if(rs[k].region===cur)i=k;}try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:rs[(i+1)%rs.length].region}));}catch(err){}var tf=document.querySelector('.trainer-frame');if(tf){tf.outerHTML=trainerHTML();hudResolvePkidbImages(document);}return;}openPage('badge');}
 
 function pageOverlayPopout(on){
@@ -6888,7 +6865,7 @@ function hudRefresh(){
   try{var at=document.querySelector('.tab-btn.active');if(at)activeTab=at.getAttribute('data-tab')||'1';}catch(e){}
   var btn=document.querySelector('[data-hud-refresh]');
   if(btn){btn.classList.add('spin');btn.disabled=true;}
-  // 有未完成的“下回合指令”（卸道具/移精灵等）时，保留本地乐观修改，只重绘，不重新读变量覆盖
+  
   try{if(!hudPendingActions.length){stat_data=loadStatData();hudExternalStateChanged();hudRebuildLocationIndex();}}catch(e){hudDiagError('manual refresh state',e);}
   try{diySyncFromStorage(false);}catch(e){}
   try{recordSeen();}catch(e){}
@@ -6909,7 +6886,7 @@ function hudRefresh(){
     },900);
   },80);
 }
-function bindHudRefresh(){/* v1.8.0：主页刷新由 HUD 根节点事件委托统一处理 */}
+function bindHudRefresh(){}
 function hudActiveTab(app){try{var b=app&&app.querySelector('.tab-btn.active');return b?String(b.getAttribute('data-tab')||'1'):'1';}catch(e){return '1';}}
 function refreshHudPanels(app){
   app=app||document.getElementById(winMode==='0'?'pkm-hud-inline':'pkm-hud-slot');if(!app)return false;
@@ -6927,7 +6904,7 @@ function refreshHudPanels(app){
 }
 function hudBindRootDelegation(app){
   if(!app||app._pkmDelegated)return;app._pkmDelegated=true;hudDiagInc('rootDelegation');
-  /* 内嵌模式下整个 HUD 容器 + 附近宝可梦彩带：手势在此截断，不再冒泡给酒馆后层（避免触发消息滑动/重新输出）。 */
+  
   var hudInlineGuard=(app&&app.id==='pkm-hud-inline');
   ['touchstart','touchmove','touchend','touchcancel','pointerdown','pointermove','pointerup','mousedown','mousemove','mouseup'].forEach(function(type){
     try{app.addEventListener(type,function(e){var t=e.target;if(t&&t.nodeType!==1)t=t.parentElement;if(!t)return;if(hudInlineGuard||(t.closest&&t.closest('.nb-grid'))){e.stopPropagation();}},{passive:true});}catch(_e){}
@@ -6974,7 +6951,7 @@ resolveNearbyTypes(app);
 overlay=document.createElement('div');overlay.className='overlay pkm-hud-overlay';hudEl.appendChild(overlay);
 pageOverlay=document.createElement('div');pageOverlay.className='page-overlay pkm-hud-page-overlay';hudEl.appendChild(pageOverlay);pageOverlayHost=hudEl;
 hudBindModalIsolation();
-/* 子层内部的 pointer/touch/mouse 手势到此为止，不再冒泡给 HUD/酒馆后层。 */
+
 ['pointerdown','pointerup','mousedown','mouseup','touchstart','touchend'].forEach(function(type){
   try{pageOverlay.addEventListener(type,function(e){e.stopPropagation();},{passive:true});}catch(_e){}
   try{overlay.addEventListener(type,function(e){e.stopPropagation();},{passive:true});}catch(_e2){}
@@ -7081,8 +7058,7 @@ function vpSize(){
   }catch(e){}
   return {w:w,h:h,ox:ox,oy:oy};
 }
-/* 地图 popout 在手机浏览器上 vh 可能大于实际可见高度，导致页面整体偏高、顶部返回键被裁掉。
- * 这里按 visualViewport 实际可见高度给 .page/.page-body 设 px 上限。 */
+
 function hudSyncMapPopoutHeight(){
   try{
     if(!pageOverlay||!pageOverlay.classList.contains('popout'))return;
@@ -7098,8 +7074,7 @@ function hudSyncMapPopoutHeight(){
   }catch(e){}
 }
 var VP_Y=0.6;
-/* 测量 .hud 的“自然高度”：先临时去掉 max-height，再读 scrollHeight，
- * 避免上一次打开的 max-height 影响本次测量，保证每次打开高度一致。 */
+
 function hudMeasureNaturalH(){
   try{
     var hud=document.querySelector('.hud');
@@ -7161,7 +7136,7 @@ btn.style.top=(vp.oy+vp.h-140-size)+'px';
 document.body.appendChild(btn);
 applyFabUpdateBadge();
 
-  /* 恢复上次拖动的位置 */
+  
   var saved=null;
   try{ saved=JSON.parse(localStorage.getItem('pkm_fab_pos')); }catch(e){}
   if(saved && saved.l!==undefined && saved.t!==undefined){
@@ -7169,7 +7144,7 @@ applyFabUpdateBadge();
     btn.style.top=saved.t+'px';
   }
 
-  /* 自动修正酒馆页面的 transform 偏移 */
+  
   function fixPos(wantX,wantY){
     try{
       var r=btn.getBoundingClientRect();
@@ -7211,7 +7186,7 @@ try{
     win.style.top=(wantY+(wantY-r.y))+'px';
   }catch(e){}
 }
-/* 阻止悬浮窗内滚动触发浏览器下拉刷新 */
+
 var touchY=0;
 win.addEventListener('touchstart', function(e){ if(e.touches&&e.touches[0]) touchY=e.touches[0].clientY; }, {passive:true});
 win.addEventListener('touchmove', function(e){
@@ -7246,8 +7221,7 @@ try{render();}catch(e){fail('HUD 渲染失败：'+e.message);}
     centerWin();
     resizeFrame();
   }, 30);
-  /* 打开动画(0.18s)结束后只再校正一次窗高（不再重定位），
-     避免 transform 归位后二次 centerWin 造成窗口自左往右的位移。 */
+  
   hudScope.setTimeout(function(){
     resizeFrame();
   }, 230);
@@ -7273,11 +7247,7 @@ function closeHud(){
 }
   function toggleHud(){ if(win.classList.contains('open'))closeHud(); else open(); }
 
-  /* 拖动：手机触摸 + 桌面鼠标（长按弹地图按钮）。
-   * 轻点只在 click 里统一 toggleHud，touchend/mouseup 不再直接切换，
-   * 避免移动端 touchend 后浏览器补发的兼容 mousedown/mouseup 造成“开→立即关”（要点两次）。
-   * 兼容鼠标事件用 fabSuppressMouseUntil 窗口屏蔽；轻点时悬浮球保持可见直到 click，
-   * 因此兼容 click 仍落在悬浮球上，不会穿透到下方重叠的按钮。 */
+  
 var drag=null;
 var longPressTimer=null,longPressFired=false;
 var fabSkipClick=false;
@@ -7345,17 +7315,17 @@ function endDrag(e){
   drag=null;
   hudScope.clearTimeout(longPressTimer);longPressTimer=null;
   if(wasMove){
-    /* 拖动结束：吞掉随后的 click，避免误开 HUD */
+    
     fabSkipClick=true;
     try{ localStorage.setItem('pkm_fab_pos', JSON.stringify({l:parseFloat(btn.style.left), t:parseFloat(btn.style.top)})); }catch(err){}
     hudArmGestureShield(btn,750);
     if(e && e.cancelable){ e.preventDefault(); }
   }else if(fired){
-    /* 长按已弹出地图按钮：吞掉随后的 click，并清除手势盾以免地图按钮点不动 */
+    
     fabSkipClick=true;
     hudDisarmGestureShield();
   }else{
-    /* 轻点：交给 click 统一触发 toggleHud，这里只做好手势盾与地图按钮隐藏 */
+    
     fabSkipClick=false;
     hudArmGestureShield(btn,900);
     hideMapFab();
@@ -7374,8 +7344,7 @@ function endDrag(e){
   btn.addEventListener('mousedown', function(e){ e.stopPropagation();if(Date.now()<fabSuppressMouseUntil){if(e.cancelable)e.preventDefault();return;}startDrag(e.clientX,e.clientY); e.preventDefault(); });
   hudScope.listen(document,'mousemove', function(e){ if(Date.now()<fabSuppressMouseUntil)return; if(drag) moveDrag(e.clientX,e.clientY); });
   hudScope.listen(document,'mouseup', function(e){ if(Date.now()<fabSuppressMouseUntil)return; endDrag(e); });
-  /* 轻点时悬浮球在 click 之前保持可见，兼容 click 会命中悬浮球并在此被消费；
-     若点击仍落到 HUD 之外的其它按钮，则由 hudGhostClickGuard 短时吞掉。 */
+  
   btn.addEventListener('click', function(e){
     if(e.cancelable)e.preventDefault();e.stopPropagation();try{e.stopImmediatePropagation();}catch(_e){}
     if(fabSkipClick){fabSkipClick=false;return;}
@@ -7387,7 +7356,7 @@ function endDrag(e){
   mask.addEventListener('click', function(e){if(e.cancelable)e.preventDefault();e.stopPropagation();hudArmGestureShield(mask,700);closeHud();});
   close.addEventListener('click', function(e){ if(e.cancelable)e.preventDefault();e.stopPropagation();hudArmGestureShield(close,700);closeHud(); });
 
-  /* 旋转屏幕/键盘弹出时重新定位 */
+  
   try{
     var _repos=function(){
   try{
@@ -7432,7 +7401,7 @@ function renderStatusBar(force){
     var anchoredOk=!!(inline&&inline.isConnected&&last===pkmInlineAnchorMes);
 
     if(!anchoredOk){
-      /* 首次/新消息：需要重建并移动锚点（低频，直接执行） */
+      
       pkmLastRenderedSnap=pkmStateSnapshot(stat_data);
       document.querySelectorAll('#pkm-hud-inline').forEach(function(el){el.remove();});
       if(pageOverlay&&pageOverlay.parentElement===document.body){try{pageOverlay.remove();}catch(e){}}
@@ -7447,7 +7416,7 @@ function renderStatusBar(force){
       return;
     }
 
-    /* 锚点没变：就地刷新内容，不移除 #pkm-hud-inline，避免流式生成时闪屏 */
+    
     var snap=pkmStateSnapshot(stat_data);
     if(!force && snap===pkmLastRenderedSnap)return;
     pkmLastRenderedSnap=snap;
@@ -7519,7 +7488,7 @@ function pkmAutoSchedule(){
 }
 function pkmStartAutoUpdate(){
   pkmAutoSnap=pkmStateSnapshot(stat_data);
-  /* eventSource 可用时作为主同步通道；仅保留低频安全校验，不再监听整个 document.body。 */
+  
   var hasEvents=pkmEventSourceActive||pkBindAutoRefresh();
   if(!hasEvents){
     try{
@@ -7591,7 +7560,7 @@ try{if(boot&&typeof boot.coreReady==='function')boot.coreReady();}catch(e){}
   try{Promise.race([Promise.resolve(hudCacheInitPromise),new Promise(function(res){hudScope.setTimeout(res,250);})]).then(finish,finish);}catch(e){finish();}
 })();
 }
-/* ===== 启动器：优先运行本地 IndexedDB 里的更高版本 ===== */
+
 var PK_BOOT_DELEGATED=null;
 try{PK_BOOT_DELEGATED=WIN.__PK_HUD_DELEGATED_BOOT__||null;}catch(e){}
 if(PK_BOOT_DELEGATED){
