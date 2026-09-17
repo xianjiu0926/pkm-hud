@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.1.3';
+var PK_VER='2.1.4';
 /*PK_NOTICE_BEGIN
 v2.0.6：
 ① 战场「各方」六只宝可梦卡片化：每只一张卡，按属性自动配色（属性色框＋属性标签），特性/道具/招式分行展示，战术与后备信息更清晰。
@@ -6039,7 +6039,9 @@ function pkTauriUpdateScript(newContent){
     function done(ok,msg){resolve({ok:ok,msg:msg+(diag.length?'（诊断:'+diag.slice(-4).join(';')+'）':'')});}
     function modifySave(target,hit){
       hit.scripts[hit.idx].content=newContent;
-      pkTauriInvoke('update_character',target).then(function(){done(true,'TT 角色卡脚本已更新');}).catch(function(e){done(false,'TT update_character 失败:'+(e&&e.message||e));});
+      var tdata=(target&&target.data)||{};
+      diag.push('target='+pkTauriDesc(target)+' data='+pkTauriDesc(tdata)+' ext='+pkTauriDesc(target&&(target.extensions||tdata.extensions)));
+      pkTauriInvoke('update_character',{dto:target}).then(function(){done(true,'TT 角色卡脚本已更新');}).catch(function(e){done(false,'TT update_character 失败:'+(e&&e.message||e));});
     }
     function processList(arr){
       var j,hit;
