@@ -3,10 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.9.0';
+var PK_VER='1.9.1';
 /*PK_NOTICE_BEGIN
-@狮子酱
-v1.9.0 小手机 DIY 资产桥融合版：以 v1.8.9 为主干，完整保留流式生成防闪屏、手机 visualViewport 窗高修正、地图弹层与悬浮球触摸兼容；补回 v1.8.5 面向 Phone Suite/创意工坊的 DIY 图片 canonical/persist 正式桥，允许把 HUD 运行时 blob: 图片还原为 pkidb:// 持久引用，并在必要时由 HUD 所在 realm 安全转存 IndexedDB，避免跨 iframe/手机 WebView 导入、交换、云仓恢复时出现“临时 blob 图片已失效”。同时恢复 HUD Bridge 2.6.0 的能力声明与接口，保留永久精灵ID、资产锁、MVU 权威写回等现有兼容逻辑。
+v1.9.1 内嵌模式状态栏加高：内容区默认 480→500px（窄屏 380→400px）、底部菜单栏按钮加高，新增「设置→界面模式→调整内嵌模式高度」调节器（320~900px）与 --pkm-inline-h 变量，缓解内层滚动吞手势、必须滚到顶/底才能翻页的问题。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -604,9 +603,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '#pkm-hud-close:hover{background:rgba(150,60,60,.9)}'+
 '#pkm-hud-inline{position:relative;display:block;margin:8px 0 4px;max-width:100%}'+
 '#pkm-hud-inline .hud{max-width:600px;margin:0 auto;border-radius:8px}'+
-'#pkm-hud-inline .hud-inner{height:480px}'+
-'@media(max-width:430px){#pkm-hud-inline .hud-inner{height:380px}}'+
+'#pkm-hud-inline{--pkm-inline-h:500px}'+
+'#pkm-hud-inline .hud-inner{height:var(--pkm-inline-h,500px)}'+
+'@media(max-width:430px){#pkm-hud-inline{--pkm-inline-h:400px}}'+
 '#pkm-hud-inline .tab-panel{overscroll-behavior:auto;-webkit-overscroll-behavior:auto}'+
+'#pkm-hud-inline .tab-btn{padding:10px 0;min-height:44px;font-size:.8rem;touch-action:manipulation}'+
 '.map-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}'+
 '.map-tab{flex:0 0 auto;padding:2px 12px;font-family:inherit;font-size:.72rem;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer}'+
 '.map-tab.active{background:rgba(43,74,111,.8);color:#fff}'+
@@ -5234,6 +5235,12 @@ function iconSizeListHTML(){
 }
 var fabSize=54;
 try{var _fs=parseInt(localStorage.getItem('pk_fabsize'),10);if(_fs>=40&&_fs<=100)fabSize=_fs;}catch(e){}
+var inlineH=500;
+try{var _ih=parseInt(localStorage.getItem('pk_inline_h'),10);if(_ih>=320&&_ih<=900)inlineH=_ih;}catch(e){}
+function applyInlineH(el){
+  el=el||document.getElementById('pkm-hud-inline');
+  if(el){try{el.style.setProperty('--pkm-inline-h',inlineH+'px');}catch(e){}}
+}
 var FAB_IMG_DEFAULT='https://img.baibai.cv/f/n5n3fp/1788810124723.png';
 var fabImg='';
 try{fabImg=localStorage.getItem('pk_fabimg')||'';}catch(e){fabImg='';}
@@ -5291,6 +5298,39 @@ function fabReset(){
   applyFabSize();
   overlay.classList.remove('open');
   hudMsg('悬浮球大小已恢复默认 54px');
+}
+function openInlineH(){
+  clearBack();
+  overlay.innerHTML='<div class="modal" style="max-width:420px"><div class="modal-head"><div class="modal-name">内嵌模式高度</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    '<div style="display:flex;align-items:center;justify-content:center;padding:10px 0"><span style="font-size:1rem;font-weight:800;color:var(--text)">内嵌内容区高度：<span id="inline-h-val2">'+inlineH+'</span> px</span></div>'+
+    '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0"><button class="btn-small" data-inline-h-minus>－</button><input type="number" id="inline-h-num" value="'+inlineH+'" min="320" max="900" step="10" style="width:90px;box-sizing:border-box;padding:6px 8px;font-family:inherit;font-size:.9rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none;text-align:center"><button class="btn-small" data-inline-h-plus>＋</button></div>'+
+    '<div class="dim" style="font-size:.72rem;text-align:center;margin-bottom:4px">范围 320 ~ 900 px（默认 500；手机窄屏默认 400，手动设置后所有宽度都用此值）</div>'+
+    '<div class="action-btns" style="margin-top:12px"><button class="act-btn" data-inline-h-apply>✔ 应用</button><button class="act-btn" data-inline-h-reset>↺ 恢复默认</button></div>'+
+    '</div></div>';
+  overlay.classList.add('open');
+}
+function inlineHStep(d){
+  inlineH=Math.max(320,Math.min(900,inlineH+d));
+  var el=document.getElementById('inline-h-num');
+  if(el)el.value=inlineH;
+  var v=document.getElementById('inline-h-val2');
+  if(v)v.textContent=inlineH;
+}
+function inlineHApply(){
+  var el=document.getElementById('inline-h-num');
+  var v=el?parseInt(el.value,10):NaN;
+  if(!isNaN(v))inlineH=Math.max(320,Math.min(900,v));
+  applyInlineH();
+  try{localStorage.setItem('pk_inline_h',String(inlineH));}catch(e){}
+  overlay.classList.remove('open');
+  hudMsg('内嵌模式高度已应用：'+inlineH+'px');
+}
+function inlineHReset(){
+  inlineH=500;
+  applyInlineH();
+  try{localStorage.setItem('pk_inline_h',String(inlineH));}catch(e){}
+  overlay.classList.remove('open');
+  hudMsg('内嵌模式高度已恢复默认 500px');
 }
 function applyFabImg(){
   var btn=document.getElementById('pkm-hud-btn');
@@ -5456,7 +5496,7 @@ function settingsHTML(){
   var radios=opts.map(function(o){return '<label class="set-opt"><input type="radio" name="pk-clear" value="'+o[0]+'"'+(clearTarget===o[0]?' checked':'')+' data-clear="'+o[0]+'">'+o[1]+'</label>';}).join('');
   var itemChk=itemClickEnabled?' checked':'';
 var winChk=(winMode==='1')?' checked':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label><label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button><button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button></div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
 }
 /* ===== 自动更新相关 ===== */
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -6091,6 +6131,8 @@ var iso=pageOverlay.querySelector('[data-isz-open]');
 if(iso){iso.addEventListener('click',function(e){e.stopPropagation();openIconSize();});}
 var fbo=pageOverlay.querySelector('[data-fab-open]');
 if(fbo){fbo.addEventListener('click',function(e){e.stopPropagation();openFabSize();});}
+var iho=pageOverlay.querySelector('[data-inline-h-open]');
+if(iho){iho.addEventListener('click',function(e){e.stopPropagation();openInlineH();});}
 var fio=pageOverlay.querySelector('[data-fab-img-open]');
 if(fio){fio.addEventListener('click',function(e){e.stopPropagation();openFabImg();});}
 var pku=pageOverlay.querySelector('[data-pk-check-update]');
@@ -6500,6 +6542,7 @@ function render(){
   var inline=(winMode==='0');
   var app=inline?document.getElementById('pkm-hud-inline'):document.getElementById('pkm-hud-slot');
   if(!app){app=document.createElement('div');app.id=inline?'pkm-hud-inline':'pkm-hud-slot';if(inline){document.body.appendChild(app);}else{var win=document.getElementById('pkm-hud-win');if(win)win.appendChild(app);else document.body.appendChild(app);}}
+  if(inline)applyInlineH(app);
   if(app._pkmOptimizedReady&&app.querySelector('.hud')){refreshHudPanels(app);resizeFrame();return;}
   app.innerHTML='<div class="hud"><div class="hud-inner" id="hud-inner">'+
   '<div class="tab-panel active" id="tab-1">'+hudCmdBarHTML()+trainerHTML()+teamHTML()+quickHTML()+nearbyHTML()+'<div id="home-fold">'+homeFoldHTML()+'</div></div>'+
@@ -6587,6 +6630,10 @@ var fp=e.target.closest('[data-fab-plus]');if(fp){e.stopPropagation();fabStep(1)
 var fm=e.target.closest('[data-fab-minus]');if(fm){e.stopPropagation();fabStep(-1);return;}
 var fa=e.target.closest('[data-fab-apply]');if(fa){e.stopPropagation();fabApply();return;}
 var fr=e.target.closest('[data-fab-reset]');if(fr){e.stopPropagation();fabReset();return;}
+var ihp=e.target.closest('[data-inline-h-plus]');if(ihp){e.stopPropagation();inlineHStep(10);return;}
+var ihm=e.target.closest('[data-inline-h-minus]');if(ihm){e.stopPropagation();inlineHStep(-10);return;}
+var iha=e.target.closest('[data-inline-h-apply]');if(iha){e.stopPropagation();inlineHApply();return;}
+var ihr=e.target.closest('[data-inline-h-reset]');if(ihr){e.stopPropagation();inlineHReset();return;}
 var fia=e.target.closest('[data-fab-img-apply]');if(fia){e.stopPropagation();fabImgApply();return;}
 var fip=e.target.closest('[data-fab-img-preview]');if(fip){e.stopPropagation();var fiuv=document.getElementById('fab-img-url');if(fiuv)fabImgPreview(fiuv.value);return;}
 var fir=e.target.closest('[data-fab-img-reset]');if(fir){e.stopPropagation();fabImgReset();return;}
