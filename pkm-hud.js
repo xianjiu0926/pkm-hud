@@ -3,9 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.0.5';
+var PK_VER='2.0.6';
 /*PK_NOTICE_BEGIN
-优化
+v2.0.6：
+① 战场「各方」六只宝可梦卡片化：每只一张卡，按属性自动配色（属性色框＋属性标签），特性/道具/招式分行展示，战术与后备信息更清晰。
+② 代码瘦身：清理历史版本注释，脚本体积更小、加载更快。
+③ 设置→脚本更新 新增「🔧 修复」：点击即强制重新下载并安装最新脚本，更新异常时一键修复。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5885,7 +5888,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -6116,6 +6119,49 @@ function pkDoUpdate(){
     var sc=document.querySelector('[data-pk-show-content]');
     if(sc)sc.style.display='block';
   });
+}
+
+function pkRepair(){
+  pkSetUpdateMsg('正在重新下载最新脚本...');
+  try{
+    hudFetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+      .then(function(txt){
+        var m=txt.match(/PK_VER='([^']+)'/);
+        var ver=m?m[1]:null;
+        if(!ver){ pkSetUpdateMsg('❌ 远程脚本里没有 PK_VER，请确认上传的是同一个脚本'); return; }
+        pkLatestContent=txt;
+        pkLatestVer=ver;
+        var nm=txt.match(/\*PK_NOTICE_BEGIN([\s\S]*?)PK_NOTICE_END\*/);
+        pkLatestNotice=nm?nm[1].replace(/^\s+|\s+$/g,''):'';
+        pkSetUpdateMsg('正在安装 v'+ver+' ...');
+        pkInstallRecord(ver,txt).then(function(){
+          pkClearHasUpdate();
+          var updBtn=document.querySelector('[data-pk-do-update]');
+          if(updBtn)updBtn.style.display='none';
+          try{
+            pkUpdateScript(txt).then(function(res){
+              if(res&&res.ok){
+                pkSetUpdateMsg('✅ 已重新安装 v'+ver+'，角色卡脚本内容也已更新，刷新页面生效。');
+              }else{
+                pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
+                var sc=document.querySelector('[data-pk-show-content]');
+                if(sc)sc.style.display='block';
+              }
+            });
+          }catch(e){
+            pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败。可点「复制新版内容」手动粘贴。');
+            var sc=document.querySelector('[data-pk-show-content]');
+            if(sc)sc.style.display='block';
+          }
+        }).catch(function(err){
+          pkSetUpdateMsg('❌ 安装失败：'+(err&&err.message?err.message:err)+'。请点「复制新版内容」手动更新。');
+          var sc=document.querySelector('[data-pk-show-content]');
+          if(sc)sc.style.display='block';
+        });
+      })
+      .catch(function(){ pkSetUpdateMsg('❌ 下载失败：网络问题或 PK_UPDATE_URL 地址不对'); });
+  }catch(e){ pkSetUpdateMsg('❌ 修复失败：'+e.message); }
 }
 
 function recordOwnedOnly(){
@@ -6528,6 +6574,8 @@ var pkd=pageOverlay.querySelector('[data-pk-do-update]');
 if(pkd){pkd.addEventListener('click',function(e){e.stopPropagation();pkDoUpdate();});}
 var psc=pageOverlay.querySelector('[data-pk-show-content]');
 if(psc){psc.addEventListener('click',function(e){e.stopPropagation();openUpdateContent();});}
+var pkr=pageOverlay.querySelector('[data-pk-repair]');
+if(pkr){pkr.addEventListener('click',function(e){e.stopPropagation();pkRepair();});}
 var db=pageOverlay.querySelector('[data-dev-unlock]');
 if(db){db.addEventListener('click',function(e){
   e.stopPropagation();
