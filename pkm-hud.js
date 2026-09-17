@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.1.0';
+var PK_VER='2.1.2';
 /*PK_NOTICE_BEGIN
 v2.0.6：
 ① 战场「各方」六只宝可梦卡片化：每只一张卡，按属性自动配色（属性色框＋属性标签），特性/道具/招式分行展示，战术与后备信息更清晰。
@@ -5994,7 +5994,6 @@ function pkCheckUpdate(){
 function pkUpdateScript(newContent){
   return new Promise(function(resolve){
     try{
-      if(PK_IS_TAURI){ resolve({ok:false, msg:'当前为 Tauri/移动端（TT）环境，不支持自动写回角色卡脚本，请用「复制新版内容」手动粘贴'}); return; }
       var ST = WIN.SillyTavern;
       var ctx = ST && ST.getContext ? ST.getContext() : null;
       if(!ctx || !ctx.characterId){ resolve({ok:false, msg:'❌ 读不到酒馆上下文'}); return; }
