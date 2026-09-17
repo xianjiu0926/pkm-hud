@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.9.3';
+var PK_VER='1.9.4';
 /*PK_NOTICE_BEGIN
-优化
+现在ai变量写一号道路，地图也会匹配1号道路
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3511,7 +3511,31 @@ function mapAllSpots(map){
   }
   return out;
 }
-function normLoc(s){return t2s(String(s||'').trim());}
+/* 中文数字 → 阿拉伯数字（一=1、二=2、十一=11、一百零一=101 …），
+ * 用于把 AI 偶尔写成的「一号道路」归一到地图里的「1号道路」 */
+function cnNumToInt(s){
+  s=String(s||'').trim();
+  if(!s)return null;
+  if(/^\d+$/.test(s))return parseInt(s,10);
+  if(!/^[零〇一二两三四五六七八九十百千万]+$/.test(s))return null;
+  var m={零:0,〇:0,一:1,二:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+  var u={十:10,百:100,千:1000,万:10000};
+  var total=0,section=0,number=0;
+  for(var i=0;i<s.length;i++){
+    var c=s[i];
+    if(m[c]!==undefined){number=m[c];}
+    else if(u[c]!==undefined){
+      if(u[c]===10000){section=(section+number)*10000;total+=section;section=0;number=0;}
+      else{if(number===0)number=1;section+=number*u[c];number=0;}
+    }
+  }
+  return total+section+number;
+}
+function cnNumNormalize(s){
+  s=String(s||'');
+  return s.replace(/[零〇一二两三四五六七八九十百千万]+/g,function(x){var v=cnNumToInt(x);return (v===null)?x:String(v);});
+}
+function normLoc(s){return cnNumNormalize(t2s(String(s||'').trim()));}
 function findSpot(map,loc){
   if(!map||!loc)return null;
   var l=normLoc(loc);
