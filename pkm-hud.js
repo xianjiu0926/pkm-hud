@@ -3,9 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='1.8.9';
+var PK_VER='1.9.0';
 /*PK_NOTICE_BEGIN
-v1.8.9 流式生成防闪屏：修复 AI 流式生成时状态栏（回复下方的 HUD）一直闪烁的问题。原 renderStatusBar 每次刷新都会移除并重建 #pkm-hud-inline；现改为锚点（最后一条消息）不变时就地刷新内容，并做数据快照去重，只在出现新消息时才移动节点，流式过程中不再反复闪屏。
+@狮子酱
+v1.9.0 小手机 DIY 资产桥融合版：以 v1.8.9 为主干，完整保留流式生成防闪屏、手机 visualViewport 窗高修正、地图弹层与悬浮球触摸兼容；补回 v1.8.5 面向 Phone Suite/创意工坊的 DIY 图片 canonical/persist 正式桥，允许把 HUD 运行时 blob: 图片还原为 pkidb:// 持久引用，并在必要时由 HUD 所在 realm 安全转存 IndexedDB，避免跨 iframe/手机 WebView 导入、交换、云仓恢复时出现“临时 blob 图片已失效”。同时恢复 HUD Bridge 2.6.0 的能力声明与接口，保留永久精灵ID、资产锁、MVU 权威写回等现有兼容逻辑。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -227,6 +228,53 @@ function hudDiyAssetGet(ref){var id=String(ref||'').indexOf(HUD_DIY_SCHEME)===0?
 function hudScheduleVisualRefresh(){if(hudVisualRefreshTimer)return;hudVisualRefreshTimer=hudScope.setTimeout(function(){hudVisualRefreshTimer=0;try{pkmHudRenderCurrent();}catch(e){}try{if(overlay)hudResolvePkidbImages(overlay);}catch(e){}try{if(pageOverlay)hudResolvePkidbImages(pageOverlay);}catch(e){}},80);}
 function hudDiyAssetResolve(ref){ref=String(ref||'');if(ref.indexOf(HUD_DIY_SCHEME)!==0)return Promise.resolve(ref);if(hudDiyBlobByRef[ref])return Promise.resolve(hudDiyBlobByRef[ref]);if(hudDiyResolvePending[ref])return hudDiyResolvePending[ref];hudDiyResolvePending[ref]=hudDiyAssetGet(ref).then(function(rec){if(!rec||!rec.blob)return '';var u=URL.createObjectURL(rec.blob);hudDiyBlobByRef[ref]=u;hudDiyRefByBlob[u]=ref;hudScheduleVisualRefresh();return u;}).catch(function(e){hudDiagError('DIY asset resolve',e);return '';}).finally(function(){delete hudDiyResolvePending[ref];});return hudDiyResolvePending[ref];}
 function hudDiyAssetResolveSync(ref){ref=String(ref||'');if(ref.indexOf(HUD_DIY_SCHEME)!==0)return ref;if(hudDiyBlobByRef[ref])return hudDiyBlobByRef[ref];hudDiyAssetResolve(ref);return '';}
+/* v1.8.10：Phone Suite / 创意工坊 DIY 图片持久化正式桥。
+ * HUD 内部的 blob: URL 只属于当前运行时 realm，不能作为交换/云仓/DIY 包的永久数据。
+ * canonicalizeImageRef() 先把 HUD 自己生成的 blob: O(1) 还原为 pkidb://；
+ * persistImageValue() 仅在确有必要时把 data:/blob: 转存到共用 pk_diy_assets_v1。 */
+function hudDiyAssetCanonicalRef(value){
+  var v=String(value||'').trim();
+  if(!v)return '';
+  if(v.indexOf(HUD_DIY_SCHEME)===0)return v;
+  if(/^blob:/i.test(v)&&hudDiyRefByBlob[v])return String(hudDiyRefByBlob[v]||'');
+  return v;
+}
+async function hudDiyAssetPersistValue(value){
+  var v=hudDiyAssetCanonicalRef(value);if(!v)return '';
+  if(v.indexOf(HUD_DIY_SCHEME)===0){
+    var rec=await hudDiyAssetGet(v);
+    if(!rec||!rec.blob)throw new Error('HUD 本地图片引用已丢失');
+    return v;
+  }
+  if(/^data:image\//i.test(v))return await hudDiyAssetStoreBlob(hudDataUrlBlob(v));
+  if(/^blob:/i.test(v)){
+    var known=hudDiyRefByBlob[v];
+    if(known){
+      var knownRec=await hudDiyAssetGet(known);
+      if(knownRec&&knownRec.blob)return known;
+    }
+    /* blob URL 必须在创建它的 realm 读取。优先当前 HUD iframe，再尝试 WIN；
+       Phone Suite 自己也会跨同源窗口枚举，这里保持小而确定的兜底。 */
+    var wins=[];
+    try{wins.push(window);}catch(e){}
+    try{if(WIN&&wins.indexOf(WIN)<0)wins.push(WIN);}catch(e){}
+    var last=null;
+    for(var i=0;i<wins.length;i++){
+      var w=wins[i];
+      try{
+        if(!w||typeof w.fetch!=='function')continue;
+        var r=await w.fetch(v,{credentials:'omit',referrerPolicy:'no-referrer'});
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        var b=await r.blob();
+        if(!/^image\//i.test(String(b.type||'')))throw new Error('blob 不是图片');
+        return await hudDiyAssetStoreBlob(b);
+      }catch(e){last=e;}
+    }
+    throw last||new Error('HUD blob 已失效');
+  }
+  /* https: 等远程地址保持原值，交给 Phone Suite 自己决定是否需要持久化。 */
+  return v;
+}
 function hudDiyAssetToDataUrl(ref){ref=String(ref||'');if(/^data:image\//i.test(ref))return Promise.resolve(ref);if(ref.indexOf(HUD_DIY_SCHEME)!==0)return Promise.resolve(ref);return hudDiyAssetGet(ref).then(function(rec){if(!rec||!rec.blob)throw new Error('本地 DIY 图片引用已丢失');return new Promise(function(res,rej){var rd=new FileReader();rd.onload=function(){res(String(rd.result||''));};rd.onerror=function(){rej(new Error('DIY 图片读取失败'));};rd.readAsDataURL(rec.blob);});});}
 function hudDiyImgAttrs(ref){ref=String(ref||'').trim();if(ref.indexOf(HUD_DIY_SCHEME)===0){var u=hudDiyAssetResolveSync(ref);return (u?'src="'+esc(u)+'" ':'src="" ')+'data-pkidb="'+esc(ref)+'"';}return 'src="'+esc(ref)+'"';}
 function hudResolvePkidbImages(root){try{var list=(root||document).querySelectorAll('img[data-pkidb]');for(var i=0;i<list.length;i++)(function(el){var ref=el.getAttribute('data-pkidb');hudDiyAssetResolve(ref).then(function(u){if(u&&el&&el.isConnected)el.src=u;});})(list[i]);}catch(e){hudDiagError('DIY hydrate DOM',e);}}
@@ -1061,8 +1109,8 @@ function hudResolveDiyPokemonInfo(input){
  */
 (function(){
   var api={
-    version:'2.5.0',
-    capabilities:{pokemonIdentity:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true},
+    version:'2.6.0',
+    capabilities:{pokemonIdentity:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true},
     getStatData:function(){return pkmHudClone(stat_data);},
     getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
     getBoxes:function(){return pkmHudClone((stat_data&&stat_data.盒子)||{});},
@@ -1077,6 +1125,8 @@ function hudResolveDiyPokemonInfo(input){
     getDiyData:function(){try{diySyncFromStorage(false);}catch(e){}return pkmHudClone(diyData||{});},
     getDiyDataCanonical:function(){return pkmHudClone(hudDiyCanonicalData());},
     getDiyPokemonInfo:function(input){return pkmHudClone(hudResolveDiyPokemonInfo(input));},
+    canonicalizeImageRef:function(value){return hudDiyAssetCanonicalRef(value);},
+    persistImageValue:function(value){return hudDiyAssetPersistValue(value);},
     getSpriteProviders:function(){return pkmHudClone(hudSpriteProviders());},
     buildPokemonSpriteUrls:function(opt){return pkmHudClone(hudBuildPokemonSpriteUrls(opt||{}));},
     reloadDiy:function(){try{diySyncFromStorage(true);pkmHudRenderCurrent();return true;}catch(e){return false;}},
