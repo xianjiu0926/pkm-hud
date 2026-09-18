@@ -3,12 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.1.5';
+var PK_VER='2.1.8';
 /*PK_NOTICE_BEGIN
-v2.0.6：
-① 战场「各方」六只宝可梦卡片化：每只一张卡，按属性自动配色（属性色框＋属性标签），特性/道具/招式分行展示，战术与后备信息更清晰。
-② 代码瘦身：清理历史版本注释，脚本体积更小、加载更快。
-③ 设置→脚本更新 新增「🔧 修复」：点击即强制重新下载并安装最新脚本，更新异常时一键修复。
+优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6377,7 +6374,7 @@ var hudActionCard=null;
 var hudConfirmCb=null;
 var currentDetailCard=null;
 
-var CMDS=[['🏋️ 特训','洛托姆，帮我找个地方进行特训。','可指定方向：学会某个招式、赚钱、针对某项六维的专项特训'],['💨 快躲开','快躲开！（羁绊）使用XX攻击！','敌方招式必MISS，速度+1、闪避+1'],['⚡ 趁现在','趁现在！（羁绊）使用XX！','必先手、必暴击'],['🛡️ 坚持住','坚持住！（羁绊）使用XX！','清除异常状态，防御+1、特防+1，恢复30%最大HP'],['🔥 站起来','站起来！（羁绊）使用XX！','倒下的宝可梦复苏至HP1，攻击+1、特攻+1，本回合锁血'],['✨ 羁绊Mega','回应我的呼唤吧，Mega进化！（羁绊Mega，无需道具）然后使用XX！','搭档且亲密度≥200时，无需钥石与Mega石即可超进化'],['⚔️ 招式对抗','用XX对抗敌人的招式！（招式对抗）','无视先后手，两招正面相撞。不计算克制的攻防伤害相互抵消，僵持(差≤20%)双方受伤（差值+5），差>20%高方命中(用差值伤害)']];var cmdOpen=false;function cmdPanelHTML(){var rows=CMDS.map(function(c){return '<div class="cmd-row"><button class="cmd-btn" data-cmd="'+esc(c[1])+'" title="'+esc(c[2])+'">'+esc(c[0])+'</button><button class="cmd-tip" data-tip="'+esc(c[0])+'｜'+esc(c[2])+'" title="'+esc(c[2])+'">?</button></div>';}).join('');return '<details class="cmd-panel"'+(cmdOpen?' open':'')+'><summary>⌨️ 快捷指令 · 点击填入输入栏</summary><div class="cmd-note">羁绊每只每场限1次；亲密度≥200且未成为搭档时触发羁绊可觉醒搭档。把指令里的 XX 换成招式名再发送</div>'+rows+'</details>';}function bindCmdPanel(){}function fillInput(text){try{var w=WIN;var ta=w.document.querySelector('#send_textarea');if(ta){var cur=String(ta.value||'').replace(/\s+$/,'');var val=cur?cur+'\n'+text:text;ta.value=val;ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus();try{var i=val.indexOf('XX',cur.length);if(i<0){ta.setSelectionRange(val.length,val.length);}else{ta.setSelectionRange(i,i+2);}}catch(e2){}return true;}}catch(e){}return false;}var hudPendingActions=[];
+var CMDS=[['🏋️ 特训','洛托姆，帮我找个地方进行特训。','可指定方向：学会某个招式、赚钱、针对某项六维的专项特训'],['💨 快躲开','快躲开！（羁绊）使用XX攻击！','敌方招式必MISS，速度+1、闪避+1'],['⚡ 趁现在','趁现在！（羁绊）使用XX！','必先手、必暴击'],['🛡️ 坚持住','坚持住！（羁绊）使用XX！','清除异常状态，防御+1、特防+1，恢复30%最大HP'],['🔥 站起来','站起来！（羁绊）使用XX！','倒下的宝可梦复苏至HP1，攻击+1、特攻+1，本回合锁血'],['✨ 羁绊Mega','回应我的呼唤吧，Mega进化！（羁绊Mega，无需道具）然后使用XX！','搭档且亲密度≥200时，无需钥石与Mega石即可超进化'],['⚔️ 招式对抗','用XX对抗敌人的招式！（招式对抗）','无视先后手，两招正面相撞。不计算克制的攻防伤害相互抵消，僵持(差≤20%)双方受伤（差值+5），差>20%高方命中(用差值伤害)']];var cmdOpen=false;function cmdPanelHTML(){var rows=CMDS.map(function(c){return '<div class="cmd-row"><button class="cmd-btn" data-cmd="'+esc(c[1])+'" title="'+esc(c[2])+'">'+esc(c[0])+'</button><button class="cmd-tip" data-tip="'+esc(c[0])+'｜'+esc(c[2])+'" title="'+esc(c[2])+'">?</button></div>';}).join('');return '<details class="cmd-panel"'+(cmdOpen?' open':'')+'><summary>⌨️ 快捷指令 · 点击填入输入栏</summary><div class="cmd-note">羁绊每只每场限1次；亲密度≥200且未成为搭档时触发羁绊可觉醒搭档。把指令里的 XX 换成招式名再发送</div>'+rows+'</details>';}function bindCmdPanel(){}var pkHudIntentFocus=false;function fillInput(text){try{var w=WIN;var ta=w.document.querySelector('#send_textarea');if(ta){var cur=String(ta.value||'').replace(/\s+$/,'');var val=cur?cur+'\n'+text:text;ta.value=val;ta.dispatchEvent(new Event('input',{bubbles:true}));pkHudIntentFocus=true;ta.focus();hudScope.setTimeout(function(){pkHudIntentFocus=false;},80);try{var i=val.indexOf('XX',cur.length);if(i<0){ta.setSelectionRange(val.length,val.length);}else{ta.setSelectionRange(i,i+2);}}catch(e2){}return true;}}catch(e){}return false;}var hudPendingActions=[];
 var hudActionInjected=null;
 var hudCleanupBound=false;
 var hudCmdOpen=false;
@@ -7394,6 +7391,8 @@ function closeHud(){
 var drag=null;
 var longPressTimer=null,longPressFired=false;
 var fabSkipClick=false;
+var fabTouchActive=false;
+var fabTouchId=0;
 var fabSuppressMouseUntil=0;
 var mapFab=document.createElement('button');
 mapFab.id='pkm-hud-mapfab';
@@ -7451,38 +7450,68 @@ function moveDrag(cx,cy){
     btn.style.top=(drag.t+dy)+'px';
   }
 }
+function fabToggleHud(){
+  hudArmGestureShield(btn,900);
+  hideMapFab();
+  toggleHud();
+}
 function endDrag(e){
   if(!drag)return;
   var wasMove=drag.moved;
   var fired=longPressFired;
   drag=null;
   hudScope.clearTimeout(longPressTimer);longPressTimer=null;
+  fabSuppressMouseUntil=Date.now()+1500;
   if(wasMove){
-    
     fabSkipClick=true;
     try{ localStorage.setItem('pkm_fab_pos', JSON.stringify({l:parseFloat(btn.style.left), t:parseFloat(btn.style.top)})); }catch(err){}
     hudArmGestureShield(btn,750);
     if(e && e.cancelable){ e.preventDefault(); }
   }else if(fired){
-    
     fabSkipClick=true;
     hudDisarmGestureShield();
   }else{
-    
     fabSkipClick=false;
     hudArmGestureShield(btn,900);
     hideMapFab();
   }
 }
 
-  btn.addEventListener('touchstart', function(e){ e.stopPropagation();var t=e.touches[0]; startDrag(t.clientX,t.clientY); }, {passive:true});
-  btn.addEventListener('touchmove', function(e){
-    e.stopPropagation();if(!drag)return;
-    var t=e.touches[0]; moveDrag(t.clientX,t.clientY);
-    if(drag && drag.moved && e.cancelable){ e.preventDefault(); }
+  btn.addEventListener('touchstart', function(e){
+    e.stopPropagation();
+    fabTouchActive=true;
+    fabTouchId=e.touches[0].identifier;
+    startDrag(e.touches[0].clientX, e.touches[0].clientY);
+  }, {passive:true});
+
+  function hudFabTouch(e, arr){
+    for(var i=0;i<arr.length;i++){ if(arr[i].identifier===fabTouchId) return arr[i]; }
+    return null;
+  }
+
+  hudScope.listen(document.body,'touchmove', function(e){
+    if(!fabTouchActive || !drag)return;
+    var t=hudFabTouch(e, e.changedTouches)||hudFabTouch(e, e.touches);
+    if(!t)return;
+    if(e.cancelable){ e.preventDefault(); }
+    moveDrag(t.clientX, t.clientY);
   }, {passive:false});
-  btn.addEventListener('touchend', function(e){ e.stopPropagation();fabSuppressMouseUntil=Date.now()+750;endDrag(e); });
-  btn.addEventListener('touchcancel', function(e){try{e.stopPropagation();}catch(_e){}fabSuppressMouseUntil=Date.now()+750;drag=null;hudScope.clearTimeout(longPressTimer);longPressTimer=null;hideMapFab(); });
+
+  hudScope.listen(document.body,'touchend', function(e){
+    if(!fabTouchActive)return;
+    if(!hudFabTouch(e, e.changedTouches))return;
+    fabSuppressMouseUntil=Date.now()+750;
+    fabTouchActive=false;
+    endDrag(e);
+  });
+
+  hudScope.listen(document.body,'touchcancel', function(e){
+    if(!fabTouchActive)return;
+    if(!hudFabTouch(e, e.changedTouches))return;
+    fabSuppressMouseUntil=Date.now()+750;
+    fabTouchActive=false;
+    drag=null;hudScope.clearTimeout(longPressTimer);longPressTimer=null;hideMapFab();
+  });
 
   btn.addEventListener('mousedown', function(e){ e.stopPropagation();if(Date.now()<fabSuppressMouseUntil){if(e.cancelable)e.preventDefault();return;}startDrag(e.clientX,e.clientY); e.preventDefault(); });
   hudScope.listen(document,'mousemove', function(e){ if(Date.now()<fabSuppressMouseUntil)return; if(drag) moveDrag(e.clientX,e.clientY); });
@@ -7491,10 +7520,27 @@ function endDrag(e){
   btn.addEventListener('click', function(e){
     if(e.cancelable)e.preventDefault();e.stopPropagation();try{e.stopImmediatePropagation();}catch(_e){}
     if(fabSkipClick){fabSkipClick=false;return;}
-    hudArmGestureShield(btn,900);
-    hideMapFab();
-    toggleHud();
+    fabToggleHud();
   });
+
+  function hudFabIsHudTarget(t){
+    try{ if(t && t.nodeType!==1) t=t.parentElement; }catch(_e){}
+    return !!(t && t.closest && t.closest('#pkm-hud-btn,#pkm-hud-mapfab,#pkm-hud-win,#pkm-hud-inline,#pkm-hud-mask,#pkm-hud-close,.pkm-hud-overlay,.pkm-hud-page-overlay'));
+  }
+  function hudFabGuardActive(){
+    return (drag!==null) || (Date.now()<fabSuppressMouseUntil);
+  }
+  hudScope.listen(document,'mousedown',function(e){
+    if(!hudFabGuardActive())return;
+    if(hudFabIsHudTarget(e.target))return;
+    if(e.cancelable)e.preventDefault();
+  },true);
+  hudScope.listen(document,'focusin',function(e){
+    if(pkHudIntentFocus)return;
+    if(!hudFabGuardActive())return;
+    if(hudFabIsHudTarget(e.target))return;
+    try{ var ft=e.target; if(ft && typeof ft.blur==='function') ft.blur(); }catch(_e2){}
+  },true);
 
   mask.addEventListener('click', function(e){if(e.cancelable)e.preventDefault();e.stopPropagation();hudArmGestureShield(mask,700);closeHud();});
   close.addEventListener('click', function(e){ if(e.cancelable)e.preventDefault();e.stopPropagation();hudArmGestureShield(close,700);closeHud(); });
@@ -7504,9 +7550,12 @@ function endDrag(e){
     var _repos=function(){
   try{
     var vp3=vpSize();
-    btn.style.left=(vp3.w-size-edge)+'px';
-    btn.style.top=(vp3.oy+vp3.h-140-size)+'px';
-    if(btn.style.display!=='none'){ fixPos(vp3.w-size-edge, vp3.oy+vp3.h-140-size); }
+    var _l=parseFloat(btn.style.left), _t=parseFloat(btn.style.top);
+    if(isNaN(_l)) _l=vp3.w-size-edge;
+    if(isNaN(_t)) _t=vp3.oy+vp3.h-140-size;
+    var _maxL=Math.max(0, vp3.w-size), _maxT=Math.max(0, vp3.h-size);
+    btn.style.left=Math.max(0, Math.min(_l, _maxL))+'px';
+    btn.style.top=Math.max(0, Math.min(_t, _maxT))+'px';
     if(win.classList.contains('open')){ centerWin(); }
   }catch(e){}
 };
