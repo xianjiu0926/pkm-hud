@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.1.8';
+var PK_VER='2.1.9';
 /*PK_NOTICE_BEGIN
-优化
+修复diy道具队伍栏不出图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3198,9 +3198,13 @@ function cardHTML(c){
   var isGmax=/极巨|極巨|gmax|dynamax/i.test(c.name+' '+c.species);
   var isGigantamax=/超极巨|超極巨|gmax|gigantamax/i.test(c.name+' '+c.species);
   var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);
+var diyIt=itName?diyGet('item',itName):null;
+var diyImg=(diyIt&&diyIt.img)?String(diyIt.img).trim():'';
+var diyImgOk=diyImg&&(diyImg.indexOf(HUD_DIY_SCHEME)===0||/^data:image\//i.test(diyImg)||/^https?:\/\//i.test(diyImg));
 var ov=itemImgOf(itName);
 var itemImg;
 if(!itName){itemImg='';}
+else if(diyImgOk){itemImg='<img class="item-badge" '+hudDiyImgAttrs(diyImg)+' onerror="itemImgErr(this)">';}
 else if(ov!==undefined){itemImg=ov?'<img class="item-badge" src="'+esc(ov)+'" onerror="itemImgErr(this)">':'<span class="item-badge">?</span>';}
 else{itemImg='<span class="item-badge item-wiki" data-item="'+esc(itName)+'" data-cls="item-badge">?</span>';}
   return '<div class="card-frame" data-slot="'+c.slot+'">'+(isGmax?'<svg class="card-bg-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="7,1.5 98.5,1.5 98.5,74 93,98.5 1.5,98.5 1.5,26" fill="#D70645" fill-opacity="0.65" stroke="#7d95b5" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>':svgFrame)+'<div class="card-inner"><div class="pk-top"><div class="pk-side">'+img+'</div><div class="pk-info"><div class="name-row"><span class="pk-left"><span class="pk-name">'+esc(c.name)+'</span></span><span class="gender-side">'+(ail||'')+fnt+(isMega?'<img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/YNBKTy/1788349081288.png" onerror="this.remove()">':'')+(isGigantamax?'<img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/GKpwto/1788410257587.png" onerror="this.remove()">':'')+'<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></span></div><div class="bar-row"><span class="hp-label">HP</span><div class="bar-stack"><div class="hp-bar"><div class="hp-fill '+hpCls+'" style="width:'+pct+'%"></div></div><div class="exp-bar"><div class="exp-fill" style="width:'+expPct+'%"></div></div></div></div></div></div><div class="bottom-row"><span class="pk-lv-wrap"><span class="pk-level">Lv.'+c.level+'</span>'+itemImg+'</span><span class="hp-num">'+c.hpCur+'/'+c.hpMax+'</span></div></div></div>';
@@ -5312,6 +5316,12 @@ function fetchItemSprite(name,cb){
   if(!name){cb&&cb('');return;}
   if(itemSpriteCache[name]){cb&&cb(itemSpriteCache[name]);return;}
   var _c=lsGet('pk_itemimg_'+name,'');if(_c){itemSpriteCache[name]=_c;cb&&cb(_c);return;}
+  var _diy=diyGet('item',name);
+  if(_diy&&_diy.img){
+    var _ref=String(_diy.img).trim();
+    if(_ref.indexOf(HUD_DIY_SCHEME)===0){hudDiyAssetResolve(_ref).then(function(u){itemSpriteCache[name]=u;cb&&cb(u);});return;}
+    if(/^(?:https?:|data:image\/)/i.test(_ref)){itemSpriteCache[name]=_ref;cb&&cb(_ref);return;}
+  }
   var cands=itemCands(name);
   var ci=0;
   function _try(){
