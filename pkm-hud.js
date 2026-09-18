@@ -3,9 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.0';
+var PK_VER='2.2.1';
 /*PK_NOTICE_BEGIN
 优化
+- 宝可梦详情中的技能、特性、性格、持有物、全部技能等子信息改为叠加显示，关闭后详情仍在，不再被覆盖关闭
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -744,7 +745,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '@media(max-width:600px){.page-overlay.popout{padding:max(6px,env(safe-area-inset-top)) 4px max(6px,env(safe-area-inset-bottom));align-items:center;align-items:safe center;justify-content:center}.page-overlay.popout .page{box-sizing:border-box;width:96vw;max-width:96vw;max-height:90vh;max-height:90dvh}.page-overlay.popout .page-head{min-height:44px;padding:5px 6px}.page-overlay.popout .page-body{padding:10px 8px 12px;max-height:calc(90vh - 44px);max-height:calc(90dvh - 44px);overflow:auto;overflow-x:hidden}.map-page{margin:-10px -8px 0;gap:6px}.map-toolbar{padding:0 8px;gap:4px;min-width:0}.map-toolbar .map-tabs{flex-wrap:nowrap;overflow-x:auto;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.map-toolbar .map-tabs::-webkit-scrollbar{display:none}.map-tab{padding:4px 10px;min-height:30px}.map-controls{padding:2px 8px;overflow-x:auto}.map-zoom-hint{padding:4px 8px;font-size:.62rem;line-height:1.45;letter-spacing:.4px}.map-pad-toggle,.page-close{width:36px;height:36px;font-size:17px}.map-manual-controls{min-height:82px;padding:6px 9px 8px}.map-dpad{grid-template-columns:38px 38px 38px;grid-template-rows:24px 30px 24px}.map-dpad .map-manual-btn{width:36px;height:28px;font-size:17px}.map-zoom-pad{gap:6px}.map-zoom-pad .map-manual-btn{width:42px;height:42px;font-size:23px}}'+
 '@media(hover:none){.card-frame:hover,.nearby-card:hover,.nb-cell:hover{transform:none!important;filter:none!important}.page-overlay,.overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}'+
 '@media(hover:none){.page-overlay.popout.map-focus{backdrop-filter:blur(9px) saturate(.76) brightness(.68)!important;-webkit-backdrop-filter:blur(9px) saturate(.76) brightness(.68)!important}}'+
-'@media(prefers-reduced-motion:reduce){#pkm-hud-win,#pkm-hud-mask,.card-frame,.nearby-card,.nb-cell,.hp-fill,.exp-fill{transition:none!important}.map-pin,.fab-update-dot,.map-island-label.hl{animation:none!important}}';
+'@media(prefers-reduced-motion:reduce){#pkm-hud-win,#pkm-hud-mask,.card-frame,.nearby-card,.nb-cell,.hp-fill,.exp-fill{transition:none!important}.map-pin,.fab-update-dot,.map-island-label.hl{animation:none!important}}'+'.pkm-hud-sub{z-index:1100;background:rgba(6,10,20,.32);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}';
 
 
 try{
@@ -4400,9 +4401,8 @@ function showMoveInfo(name,type,cat){
     if(d&&d.eff)out+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.eff).replace(/\n/g,'<br>')+'</span></div>';
     return out;
   }
-  pushBack();
-  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body" id="move-body">'+rows(null)+(name?'<div class="empty">技能数据加载中...</div>':'')+'</div></div>';
-  overlay.classList.add('open');
+  subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body" id="move-body">'+rows(null)+(name?'<div class="empty">技能数据加载中...</div>':'')+'</div></div>';
+  subOverlay.classList.add('open');
   if(!name)return;
   fetchMove(name,function(d){
     var b=document.querySelector('#move-body');
@@ -5157,9 +5157,8 @@ if(wt){done(parseAbi(wt,html));}
   parsePage(t2s(abiKey(name))+'（特性）',searchThen);
 }
 function showAbilityInfo(name){
-  pushBack();
-  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body" id="abi-body"><div class="empty">特性数据加载中...</div></div></div>';
-  overlay.classList.add('open');
+  subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body" id="abi-body"><div class="empty">特性数据加载中...</div></div></div>';
+  subOverlay.classList.add('open');
   fetchAbility(name,function(d){
     var b=document.getElementById('abi-body');
     if(!b)return;
@@ -5302,9 +5301,12 @@ function fetchItem(name,cb){
   });
 }
 function showItemInfo(name,back){
-  if(back){pushBack();}else{clearBack();}
-  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body" id="item-body"><div class="empty">道具数据加载中...</div></div></div>';
-  overlay.classList.add('open');
+  var toSub=!!(back&&subOverlay);
+  var target=toSub?subOverlay:overlay;
+  var closeAttr=toSub?'data-sub-close':'data-move-back';
+  if(!toSub){if(back){pushBack();}else{clearBack();}}
+  target.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" '+closeAttr+'>✕</button></div><div class="modal-body" id="item-body"><div class="empty">道具数据加载中...</div></div></div>';
+  target.classList.add('open');
   fetchItem(name,function(d){
     var b=document.getElementById('item-body');
     if(!b)return;
@@ -5470,9 +5472,8 @@ function moveGridHTML(s){
 }
 function showAllMoves(s){
   var arr=movesArr(s);
-  pushBack();
-  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">全部技能（'+arr.length+'）</div><button class="close" data-move-back>✕</button></div><div class="modal-body"><div class="dt-move-grid">'+arr.map(moveGridItemHTML).join('')+'</div></div></div>';
-  overlay.classList.add('open');
+  subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">全部技能（'+arr.length+'）</div><button class="close" data-sub-close>✕</button></div><div class="modal-body"><div class="dt-move-grid">'+arr.map(moveGridItemHTML).join('')+'</div></div></div>';
+  subOverlay.classList.add('open');
 }
 function resolveMoveTypes(scope){var els=(scope||document).querySelectorAll('.dt-move-cell[data-move]');for(var i=0;i<els.length;i++){(function(el){var name=el.getAttribute('data-move');if(!name)return;fetchMove(name,function(d){if(d&&d.type){var lb=typeLabel(d.type);var cl=typeColor(d.type);if(!lb)return;el.setAttribute('data-mvtype',d.type);var sp=el.querySelector('.move-type');if(!sp){sp=document.createElement('span');sp.className='move-type';el.insertBefore(sp,el.firstChild);}sp.style.background=cl;sp.textContent=lb;}});})(els[i]);}}
 function toggleDtPage(){var p1=document.querySelector('.dt-page[data-dt-page="1"]');var p2=document.querySelector('.dt-page[data-dt-page="2"]');var btn=document.querySelector('[data-dt-next]');if(!p1||!p2||!btn)return;if(p1.classList.contains('active')){p1.classList.remove('active');p2.classList.add('active');btn.classList.remove('right');btn.classList.add('left');btn.textContent='◀';}else{p2.classList.remove('active');p1.classList.add('active');btn.classList.remove('left');btn.classList.add('right');btn.textContent='▶';}}
@@ -5487,9 +5488,8 @@ function natureEffectText(n){
   return (e.up?'+'+e.up:'')+' '+(e.down?'-'+e.down:'');
 }
 function showNatureInfo(name){
-  pushBack();
-  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-move-back>✕</button></div><div class="modal-body"><div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div></div></div>';
-  overlay.classList.add('open');
+  subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body"><div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div></div></div>';
+  subOverlay.classList.add('open');
 }
 function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
 var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
@@ -6318,7 +6318,7 @@ function confirmClearModal(){
 function pageContent(key){switch(key){case 'bag':return bagHTML();case 'box':return boxHTML();case 'rel':return relHTML();case 'rivals':return rivalsHTML();case 'breeding':return breedingHTML();case 'pokedex':return pokedexHTML();case 'badge':return badgePageHTML();case 'diy':return diyHTML();case 'map':return mapHTML();case 'settings':return settingsHTML();case 'typechart':return typeChartHTML();default:return '<div class="empty">暂无</div>';}}
 function pageHTML(title,content){var mapCtl=(title==='地图')?'<button type="button" class="map-pad-toggle'+(mapManualControlsOpen?' on':'')+'" data-map-pad-toggle title="显示/隐藏地图方向与缩放按钮" aria-label="显示或隐藏地图方向与缩放按钮">🎮</button>':'';return '<div class="page"><div class="page-head">'+mapCtl+'<button class="page-close" data-page-close>✕</button></div><div class="page-body">'+content+'</div></div>';}
 
-var overlay,pageOverlay,cards,pageOverlayHost=null;
+var overlay,subOverlay,pageOverlay,cards,pageOverlayHost=null;
 
 var hudGestureShieldUntil=0,hudGestureShieldOrigin=null,hudModalIsolationObserver=null;
 function hudArmGestureShield(origin,ms){
@@ -6351,13 +6351,19 @@ function hudSetInert(el,on){
 function hudSyncModalIsolation(){
   var host=pageOverlayHost;
   var pageOpen=!!(pageOverlay&&pageOverlay.classList.contains('open'));
-  var modalOpen=!!(overlay&&overlay.classList.contains('open'));
+  var overlayOpen=!!(overlay&&overlay.classList.contains('open'));
+  var subOpen=!!(subOverlay&&subOverlay.classList.contains('open'));
+  var modalOpen=overlayOpen||subOpen;
   var mapBody=!!(pageOpen&&pageOverlay&&pageOverlay.classList.contains('map-focus')&&pageOverlay.parentElement===document.body);
   if(host){
     try{host.classList.toggle('modal-child-open',modalOpen);host.classList.toggle('page-child-open',pageOpen&&!modalOpen&&pageOverlay&&pageOverlay.parentElement===host);}catch(_e){}
     try{
       Array.prototype.forEach.call(host.children,function(ch){
-        var keep=modalOpen?(ch===overlay):(pageOpen&&pageOverlay&&pageOverlay.parentElement===host?(ch===pageOverlay):true);
+        var keep;
+        if(subOpen){keep=(ch===overlay||ch===subOverlay);}
+        else if(overlayOpen){keep=(ch===overlay);}
+        else if(pageOpen&&pageOverlay&&pageOverlay.parentElement===host){keep=(ch===pageOverlay);}
+        else{keep=true;}
         hudSetInert(ch,!keep);
       });
     }catch(_e2){}
@@ -6374,6 +6380,7 @@ function hudBindModalIsolation(){
   try{
     hudModalIsolationObserver=hudScope.observe(new MutationObserver(function(){hudSyncModalIsolation();}));
     if(overlay)hudModalIsolationObserver.observe(overlay,{attributes:true,attributeFilter:['class']});
+    if(subOverlay)hudModalIsolationObserver.observe(subOverlay,{attributes:true,attributeFilter:['class']});
     if(pageOverlay)hudModalIsolationObserver.observe(pageOverlay,{attributes:true,attributeFilter:['class']});
   }catch(_e2){hudModalIsolationObserver=null;}
   hudSyncModalIsolation();
@@ -7099,12 +7106,14 @@ resolveItemImgs(app);
 resolveNearbyTypes(app);
   var hudEl=app.querySelector('.hud')||document.querySelector('.hud');
 overlay=document.createElement('div');overlay.className='overlay pkm-hud-overlay';hudEl.appendChild(overlay);
+subOverlay=document.createElement('div');subOverlay.className='overlay pkm-hud-overlay pkm-hud-sub';hudEl.appendChild(subOverlay);
 pageOverlay=document.createElement('div');pageOverlay.className='page-overlay pkm-hud-page-overlay';hudEl.appendChild(pageOverlay);pageOverlayHost=hudEl;
 hudBindModalIsolation();
 
 ['pointerdown','pointerup','mousedown','mouseup','touchstart','touchend'].forEach(function(type){
   try{pageOverlay.addEventListener(type,function(e){e.stopPropagation();},{passive:true});}catch(_e){}
   try{overlay.addEventListener(type,function(e){e.stopPropagation();},{passive:true});}catch(_e2){}
+  try{subOverlay.addEventListener(type,function(e){e.stopPropagation();},{passive:true});}catch(_e3){}
 });
   cards=buildCards();
 for(var i=0;i<cards.length;i++){preloadMoves(cards[i].skills);}
@@ -7196,6 +7205,15 @@ var pdu=e.target.closest('[data-notice-update]');if(pdu){e.stopPropagation();ove
 var pkc=e.target.closest('[data-pk-copy-content]');if(pkc){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc.textContent=ok?'✔ 已复制':'复制失败';});}else{pkc.textContent='无内容';}return;}
 var pkc2=e.target.closest('[data-pk-copy-content-close]');if(pkc2){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc2.textContent=ok?'✔ 已复制':'复制失败';hudScope.setTimeout(function(){overlay.classList.remove('open');clearBack();},400);});}else{pkc2.textContent='无内容';}return;}
     var btn=e.target.closest('[data-action]');if(btn){var action=btn.getAttribute('data-action');var key=btn.getAttribute('data-key');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p)sendAction(p,action);}
+  });
+  subOverlay.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(e.target.closest('[data-sub-close]')){if(e.cancelable)e.preventDefault();subOverlay.classList.remove('open');subOverlay.innerHTML='';return;}
+    if(e.target===subOverlay){if(e.cancelable)e.preventDefault();subOverlay.classList.remove('open');subOverlay.innerHTML='';return;}
+    var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
+    var ab=e.target.closest('[data-ability]');if(ab){e.stopPropagation();showAbilityInfo(ab.getAttribute('data-ability'));return;}
+    var nt=e.target.closest('[data-nature]');if(nt){e.stopPropagation();showNatureInfo(nt.getAttribute('data-nature'));return;}
+    var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true);return;}
   });
 }
 
