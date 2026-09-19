@@ -3,9 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.2';
+var PK_VER='2.2.3';
 /*PK_NOTICE_BEGIN
-diy精灵现在也可以打包技能和道具了
+优化
+- DIY 精灵进化链取消 5 页上限，可自由增加进化阶段
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -2300,7 +2301,6 @@ function diyEvoSyncNext(){
   }
 }
 function diyEvoAddPage(){
-  if(diyEvoCount>=5){diyMsg('进化链最多 5 页');return;}
   var vals={};
   for(var p=0;p<diyEvoCount;p++){
     var ids=['name','abi','img'];
