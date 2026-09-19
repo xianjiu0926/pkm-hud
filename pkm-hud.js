@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.6';
+var PK_VER='2.2.7';
 /*PK_NOTICE_BEGIN
-过滤宿主 EmbeddedRuntimeManager 清理噪音
-- 忽略宿主框架的「EmbeddedRuntimeManager.invalidate ... slot not found」报错，不再写入最近错误
+DIY 精灵技能文案改为「Lv.X 可习得」格式
+- 填入世界书与「一键复制」里的专属技能，统一显示为「【形态名】Lv.X 可习得 技能名」
+- 未填等级时仍只显示技能名，不显示「可习得」
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -1793,7 +1794,7 @@ function diyLoreText(type,obj){
   }
   var types=(obj.types&&obj.types.length)?obj.types:(obj.type?[obj.type]:[]);
   var p='精灵：'+obj.name+'\n属性：'+(types.length?types.join('/'):'-')+'\n特性：'+(obj.ability||'-');
-  if(obj.moves&&obj.moves.length)p+='\n专属技能：'+diyMovesText(obj);
+  if(obj.moves&&obj.moves.length)p+='\n专属技能：'+diyMovesTextLore(obj);
   if(obj.item)p+='\n相关道具：'+obj.item;
   if(obj.stats)p+='\n种族值：'+diyStatsText(obj.stats);
   if(obj.desc)p+='\n外观描述：'+obj.desc;
@@ -2250,6 +2251,16 @@ function diyMovesText(obj){
   if(!obj||!Array.isArray(obj.moves)||!obj.moves.length)return '';
   return obj.moves.map(diyMoveText).join('、');
 }
+function diyMoveTextLore(m){
+  var s='';
+  if(m&&m.form)s+='【'+m.form+'】';
+  if(m&&m.level)s+='Lv.'+m.level+' 可习得 ';
+  return s+(m?m.move:'');
+}
+function diyMovesTextLore(obj){
+  if(!obj||!Array.isArray(obj.moves)||!obj.moves.length)return '';
+  return obj.moves.map(diyMoveTextLore).join('、');
+}
 function diyPkmItemHTML(){
   var diy=Object.keys(diyData.item||{}).sort();
   var opts='<option value="">无</option>';
@@ -2618,7 +2629,7 @@ function diyCopy(type,name){
 }else{
   var types=(obj.types&&obj.types.length)?obj.types:(obj.type?[obj.type]:[]);
   txt='精灵：'+name+'\n属性：'+(types.length?types.join('/'):'-')+'\n特性：'+(obj.ability||'-');
-  if(obj.moves&&obj.moves.length)txt+='\n专属技能：'+diyMovesText(obj);
+  if(obj.moves&&obj.moves.length)txt+='\n专属技能：'+diyMovesTextLore(obj);
   if(obj.item)txt+='\n相关道具：'+obj.item;
   if(obj.stats)txt+='\n种族值：'+diyStatsText(obj.stats);
   if(obj.desc)txt+='\n外观描述：'+obj.desc;
