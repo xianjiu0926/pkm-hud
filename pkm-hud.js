@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.5';
+var PK_VER='2.2.6';
 /*PK_NOTICE_BEGIN
-DIY 精灵配图改为精确匹配
-移除按名字「包含」自动配图的兜底，现仅按精确名
+过滤宿主 EmbeddedRuntimeManager 清理噪音
+- 忽略宿主框架的「EmbeddedRuntimeManager.invalidate ... slot not found」报错，不再写入最近错误
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7957,7 +7957,7 @@ function showErr(msg){
     a.appendChild(d2);
   }catch(e2){}
 }
-hudScope.listen(WIN,'error',function(e){var m=String(e.message||'未知错误');if(m.indexOf('ResizeObserver')>=0)return;hudDiagError('window.error',new Error(m));showErr(m);});
+hudScope.listen(WIN,'error',function(e){var m=String(e.message||'未知错误');if(m.indexOf('ResizeObserver')>=0||m.indexOf('EmbeddedRuntimeManager')>=0||m.indexOf('slot not found')>=0)return;hudDiagError('window.error',new Error(m));showErr(m);});
 hudScope.listen(WIN,'unhandledrejection',function(e){var m=String((e.reason&&e.reason.message)||e.reason||'未处理的Promise错误');hudDiagError('unhandledrejection',new Error(m));showErr(m);});
 try{pkReadUpdateCache();}catch(e){}
 try{ensureHud();}catch(e){}
