@@ -3,12 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.4';
+var PK_VER='2.2.5';
 /*PK_NOTICE_BEGIN
-随机模式放出
-- 设置新增「娱乐模式」入口，点击弹出面板
-- 面板内含随机宝可梦模式：可开启/关闭、修改规则并确认更新世界书
-- 支持一键「变回原内容」
+DIY 精灵配图改为精确匹配
+移除按名字「包含」自动配图的兜底，现仅按精确名
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -2907,9 +2905,6 @@ function diyPokemonImageRef(name){
   try{diySyncFromStorage(false);}catch(e){}
   var hit=hudDiyLookup(name);
   if(hit){var root=hit.root||{},stage=hit.stage||root,img=String(stage.img||root.img||'').trim();if(!img&&Array.isArray(root.chain)){for(var i=0;i<root.chain.length;i++){if(root.chain[i]&&root.chain[i].img){img=String(root.chain[i].img);break;}}}if(img)return img;}
-  
-  var p=diyData.pokemon||{},bn=baseName(String(name).trim());
-  for(var k in p){var o=p[k];if(!o)continue;var bk=baseName(String(k));if(bk&&bn&&bk.length>=2&&bn.length>=2&&(bn.indexOf(bk)>=0||bk.indexOf(bn)>=0)){var img2=o.img||'';if(!img2&&o.chain&&o.chain.length)img2=o.chain[0].img||'';if(img2)return String(img2);}}
   return '';
 }
 function diyPokemonSprite(name){
