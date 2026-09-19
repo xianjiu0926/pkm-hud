@@ -3,10 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.1';
+var PK_VER='2.2.2';
 /*PK_NOTICE_BEGIN
-优化
-- 宝可梦详情中的技能、特性、性格、持有物、全部技能等子信息改为叠加显示，关闭后详情仍在，不再被覆盖关闭
+diy精灵现在也可以打包技能和道具了
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -1602,7 +1601,7 @@ function diyVisionExtract(j){
 }
 var TYPE_LIST=['一般','格斗','飞行','毒','地面','岩石','虫','幽灵','钢','火','水','草','电','超能力','冰','龙','恶','妖精'];
 var CN_NUM=['','一','二','三','四','五','六','七','八','九','十'];
-var diyTypeCount=2;var diyEvoCount=1;var diyEvoTypeCounts=[];var diyEvoBranchCounts=[];var diyEvoAbiCats=[];var diyEvoDescShow=[];var diyEvoDescCache=[];
+var diyTypeCount=2;var diyEvoCount=1;var diyEvoTypeCounts=[];var diyEvoBranchCounts=[];var diyEvoAbiCats=[];var diyEvoDescShow=[];var diyEvoDescCache=[];var diyMoveCount=1;var diyMoveRows=[];
 function diyTypeSelectHTML(i){
   var opts='<option value="">无</option>'+TYPE_LIST.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('');
   return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="font-size:.78rem;color:var(--dim);flex-shrink:0;min-width:44px">属性'+(CN_NUM[i]||i)+'</span><select id="diy-type-'+i+'" style="flex:1;min-width:0;box-sizing:border-box;padding:6px 8px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none">'+opts+'</select></div>';
@@ -1793,6 +1792,8 @@ function diyLoreText(type,obj){
   }
   var types=(obj.types&&obj.types.length)?obj.types:(obj.type?[obj.type]:[]);
   var p='精灵：'+obj.name+'\n属性：'+(types.length?types.join('/'):'-')+'\n特性：'+(obj.ability||'-');
+  if(obj.moves&&obj.moves.length)p+='\n专属技能：'+diyMovesText(obj);
+  if(obj.item)p+='\n相关道具：'+obj.item;
   if(obj.stats)p+='\n种族值：'+diyStatsText(obj.stats);
   if(obj.desc)p+='\n外观描述：'+obj.desc;
 if(obj.chain&&obj.chain.length>1)p+='\n进化链：'+diyChainText(obj);
@@ -1974,7 +1975,7 @@ function randomModeOff(){
 function diyFormHTML(type){
   diyTypeCount=2;
   diyAbilityCat='';
-  if(type==='pokemon'){diyEvoCount=1;diyEvoTypeCounts=[];diyEvoBranchCounts=[];diyEvoAbiCats=[];diyEvoDescShow=[];diyEvoDescCache=[];}
+  if(type==='pokemon'){diyEvoCount=1;diyEvoTypeCounts=[];diyEvoBranchCounts=[];diyEvoAbiCats=[];diyEvoDescShow=[];diyEvoDescCache=[];diyMoveCount=1;diyMoveRows=[];}
   var btns=diyBtnsHTML();
   if(type==='move'){
     return '<div class="set-title" style="margin-left:8px">新增技能</div>'+diyInput('diy-name','技能名称（必填）')+diyInput('diy-type','属性，如 电')+diyInput('diy-cat','分类，如 物理')+diyInput('diy-power','威力，如 80')+diyInput('diy-acc','命中，如 100')+diyArea('diy-desc','描述')+diyArea('diy-eff','详细效果')+btns;
@@ -2005,12 +2006,18 @@ function diyShare(type,name){
   if(!obj){diyMsg('未找到该自创内容');return;}
   var payload={v:2,t:type,n:name,d:obj};
   if(type==='pokemon'){
-    var extras={};
-    function pick(a){if(a&&!extras[a]){var ab=diyGet('ability',a);if(ab)extras[a]=ab;}}
-    pick(obj.ability);
-    if(obj.chain&&obj.chain.length){for(var i=0;i<obj.chain.length;i++){pick(obj.chain[i]&&obj.chain[i].ability);}}
-    var eks=Object.keys(extras);
-    if(eks.length){payload.x={ability:extras};}
+    var extras={ability:{},move:{},item:{}};
+    function pick(kind,a){if(a&&!extras[kind][a]){var o=diyGet(kind,a);if(o)extras[kind][a]=o;}}
+    function scanAbi(st){if(!st)return;pick('ability',st.ability);}
+    scanAbi(obj);
+    if(obj.chain&&obj.chain.length){for(var i=0;i<obj.chain.length;i++){scanAbi(obj.chain[i]);}}
+    pick('item',obj.item);
+    if(Array.isArray(obj.moves)){for(var m=0;m<obj.moves.length;m++){pick('move',obj.moves[m]&&obj.moves[m].move);}}
+    var x={};
+    if(Object.keys(extras.ability).length)x.ability=extras.ability;
+    if(Object.keys(extras.move).length)x.move=extras.move;
+    if(Object.keys(extras.item).length)x.item=extras.item;
+    if(Object.keys(x).length)payload.x=x;
   }
   var code=diyLabel(type)+':'+name+'|'+diyEncode(JSON.stringify(payload));
   if(!code){diyMsg('生成分享码失败');return;}
@@ -2034,15 +2041,17 @@ var raw=diyDecode(c);
   var t=o.t,n=String(o.n);
   diyData[t]=diyData[t]||{};
   diyData[t][n]=o.d;
-  var bundledAbiNames=[];
-  if(o.x&&o.x.ability&&typeof o.x.ability==='object'){
-    diyData.ability=diyData.ability||{};
-    var aks=Object.keys(o.x.ability);
-    for(var ai=0;ai<aks.length;ai++){
-      var an=aks[ai],av=o.x.ability[an];
-      if(av&&typeof av==='object'){bundledAbiNames.push(an);if(!diyData.ability[an]){diyData.ability[an]=av;}}
+  var bundledNames=[];
+  ['ability','move','item'].forEach(function(kind){
+    if(o.x&&o.x[kind]&&typeof o.x[kind]==='object'){
+      diyData[kind]=diyData[kind]||{};
+      var ks=Object.keys(o.x[kind]);
+      for(var i2=0;i2<ks.length;i2++){
+        var n2=ks[i2],v2=o.x[kind][n2];
+        if(v2&&typeof v2==='object'){bundledNames.push({type:kind,name:n2});if(!diyData[kind][n2]){diyData[kind][n2]=v2;}}
+      }
     }
-  }
+  });
   diySave();
   diyType=t;
   var f=document.getElementById('diy-form');if(f)f.innerHTML=diyFormHTML(diyType);
@@ -2052,10 +2061,10 @@ var raw=diyDecode(c);
   var inp=document.getElementById('diy-import-code');if(inp)inp.value='';
   
   diyWriteLorebook(t,n);
-  var abiDelay=600;
-  for(var k=0;k<bundledAbiNames.length;k++){
-    (function(abName,d){hudScope.setTimeout(function(){diyWriteLorebook('ability',abName,'',true);},d);})(bundledAbiNames[k],abiDelay);
-    abiDelay+=600;
+  var bundledDelay=600;
+  for(var k=0;k<bundledNames.length;k++){
+    (function(row,d){hudScope.setTimeout(function(){diyWriteLorebook(row.type,row.name,'',true);},d);})(bundledNames[k],bundledDelay);
+    bundledDelay+=600;
   }
   diyRefreshTeam();
 }
@@ -2108,6 +2117,92 @@ function diyEvoAbiHTML(p){
   var cat=diyEvoAbiCats[p]||'';
   var sel='<option value="">选择特性类型</option><option value="orig"'+(cat==='orig'?' selected':'')+'>原有特性</option><option value="diy"'+(cat==='diy'?' selected':'')+'>DIY特性</option>';
   return '<select id="evo-abi-cat-'+p+'" style="'+DIY_INPUT_STYLE+'">'+sel+'</select><div id="evo-abi-wrap-'+p+'">'+diyEvoAbiWrapHTML(p)+'</div>';
+}
+function diyStageFallbackLabel(p){return '形态'+(p+1);}
+function diyMoveSelOpts(sel){
+  var diy=Object.keys(diyData.move||{}).sort();
+  var opts='<option value="">无</option>';
+  for(var k=0;k<diy.length;k++){var n=diy[k];opts+='<option value="'+esc(n)+'"'+(n===sel?' selected':'')+'>'+esc(n)+'</option>';}
+  return opts;
+}
+function diyMoveFormOptions(sel){
+  var h='';
+  for(var p=0;p<diyEvoCount;p++){
+    h+='<option value="'+p+'"'+(String(p)===String(sel)?' selected':'')+'>'+esc(diyStageFallbackLabel(p))+'</option>';
+  }
+  return h;
+}
+function diyMoveFormLabelOptions(sel){
+  var h='';
+  for(var p=0;p<diyEvoCount;p++){
+    var nm=diyVal('evo-name-'+p);
+    var label=nm||diyStageFallbackLabel(p);
+    h+='<option value="'+p+'"'+(String(p)===String(sel)?' selected':'')+'>'+esc(label)+'</option>';
+  }
+  return h;
+}
+function diyMoveRowHTML(i){
+  var r=diyMoveRows[i]||{};
+  var st='box-sizing:border-box;padding:6px 8px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none';
+  var form='<select id="diy-move-form-'+i+'" style="flex:1 1 0;min-width:0;'+st+'">'+diyMoveFormOptions(r.form)+'</select>';
+  var lv='<input type="text" id="diy-move-level-'+i+'" placeholder="等级" value="'+esc(r.level||'')+'" style="flex:0 0 auto;width:52px;'+st+'">';
+  var sel='<select id="diy-move-'+i+'" style="flex:1 1 0;min-width:0;'+st+'">'+diyMoveSelOpts(r.move)+'</select>';
+  return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+form+lv+sel+'<button class="btn-small" data-diy-move-del="'+i+'" style="background:rgba(43,74,111,.7);flex:0 0 auto">✕</button></div>';
+}
+function diyMovesHTML(){
+  if(!diyMoveCount)return '<div class="dim" style="font-size:.72rem;margin-bottom:6px">暂无专属技能（点下方＋添加）</div>';
+  var h='';
+  for(var i=0;i<diyMoveCount;i++){h+=diyMoveRowHTML(i);}
+  return h;
+}
+function diyMoveCapture(){
+  diyMoveRows=[];
+  for(var i=0;i<diyMoveCount;i++){
+    diyMoveRows[i]={form:diyVal('diy-move-form-'+i),level:diyVal('diy-move-level-'+i),move:diyVal('diy-move-'+i)};
+  }
+}
+function diyMoveAdd(){
+  diyMoveCapture();
+  diyMoveRows.push({form:'0',level:'',move:''});
+  diyMoveCount=diyMoveRows.length;
+  var c=document.getElementById('diy-moves');
+  if(c){c.innerHTML=diyMovesHTML();diyMoveFormRefresh();}
+}
+function diyMoveDel(i){
+  i=parseInt(i,10);
+  diyMoveCapture();
+  if(i>=0&&i<diyMoveRows.length)diyMoveRows.splice(i,1);
+  diyMoveCount=diyMoveRows.length;
+  var c=document.getElementById('diy-moves');
+  if(c){c.innerHTML=diyMovesHTML();diyMoveFormRefresh();}
+}
+function diyMoveFormRefresh(){
+  for(var i=0;i<diyMoveCount;i++){
+    var sel=document.getElementById('diy-move-form-'+i);
+    if(!sel)continue;
+    var cur=sel.value;
+    sel.innerHTML=diyMoveFormLabelOptions(cur);
+  }
+}
+function diyMoveFormLabel(p,names){
+  var nm=(names&&names[p])||'';
+  return nm||diyStageFallbackLabel(p);
+}
+function diyMoveText(m){
+  var s='';
+  if(m&&m.form)s+='【'+m.form+'】';
+  if(m&&m.level)s+='Lv.'+m.level+' ';
+  return s+(m?m.move:'');
+}
+function diyMovesText(obj){
+  if(!obj||!Array.isArray(obj.moves)||!obj.moves.length)return '';
+  return obj.moves.map(diyMoveText).join('、');
+}
+function diyPkmItemHTML(){
+  var diy=Object.keys(diyData.item||{}).sort();
+  var opts='<option value="">无</option>';
+  for(var k=0;k<diy.length;k++){var n=diy[k];opts+='<option value="'+esc(n)+'">'+esc(n)+'</option>';}
+  return '<select id="diy-pkm-item" style="'+DIY_INPUT_STYLE+'">'+opts+'</select>';
 }
 function diyEvoFilterAbility(p){
   var q=(document.getElementById('evo-abi-search-'+p)||{}).value||'';
@@ -2221,12 +2316,16 @@ function diyEvoAddPage(){
     }
     if(diyEvoDescShow[p]){var de=document.getElementById('evo-desc-'+p);if(de)diyEvoDescCache[p]=de.value;}
   }
+  var pitemVal=diyVal('diy-pkm-item');
+  diyMoveCapture();
   diyEvoCount++;
   var f=document.getElementById('diy-form');
   if(f){f.innerHTML=diyPkmFormHTML()+diyBtnsHTML();}
   for(var id in vals){var el=document.getElementById(id);if(el)el.value=vals[id];}
+  var itSel=document.getElementById('diy-pkm-item');if(itSel)itSel.value=pitemVal;
   for(var q=0;q<diyEvoCount;q++){if(diyEvoDescShow[q])diyEvoDescAutosize(q);}
   diyEvoSyncNext();
+  diyMoveFormRefresh();
   diyEvoLoadAbi();
 }
 function diyBtnsHTML(){
@@ -2252,6 +2351,10 @@ function diyPkmFormHTML(){
     h+='<div class="set-title" style="margin-left:0;font-size:.78rem">进化分支</div><div id="evo-branches-'+p+'">'+diyEvoBranchesHTML(p)+'</div><button class="btn-small" data-diy-evo-addbranch="'+p+'" style="background:rgba(43,74,111,.7);margin-bottom:6px">＋ 进化分支</button>';
     h+='</div></div>';
   }
+  h+='<div class="fold-box" style="margin-bottom:8px"><div class="fold-head" style="cursor:default">专属技能与相关道具（整只精灵通用）</div><div class="fold-inner">';
+  h+='<div class="set-title" style="margin-left:0;font-size:.78rem">专属技能（填写等级并选择DIY技能，点＋可添加多个）</div><div id="diy-moves">'+diyMovesHTML()+'</div><button class="btn-small" data-diy-move-add style="background:rgba(43,74,111,.7);margin-bottom:6px">＋ 添加技能</button>';
+  h+='<div class="set-title" style="margin-left:0;font-size:.78rem">相关道具（选已DIY的道具，可不选）</div><div style="margin-bottom:6px">'+diyPkmItemHTML()+'</div>';
+  h+='</div></div>';
   return h;
 }
 function diyListHTML(type){
@@ -2292,8 +2395,22 @@ for(var b=0;b<bn;b++){var cond=diyVal('evo-cond-'+p+'-'+b),to=diyVal('evo-to-'+p
 if(evs.length)st.evos=evs;
       chain.push(st);
     }
+    var stageNames=[];
+    for(var sp=0;sp<diyEvoCount;sp++){stageNames.push(diyVal('evo-name-'+sp));}
+    var moves=[];
+    for(var m=0;m<diyMoveCount;m++){
+      var mv2=diyVal('diy-move-'+m);
+      if(mv2){
+        var fi=parseInt(diyVal('diy-move-form-'+m),10);
+        if(isNaN(fi)||fi<0)fi=0;
+        moves.push({form:diyMoveFormLabel(fi,stageNames),level:diyVal('diy-move-level-'+m),move:mv2});
+      }
+    }
+    var pitem=diyVal('diy-pkm-item');
     var base=chain[0]||{name:name,types:[],ability:'',stats:{},img:'',desc:''};
     obj={name:base.name,types:base.types,ability:base.ability,stats:base.stats,img:base.img,desc:base.desc,chain:chain};
+    if(moves.length)obj.moves=moves;
+    if(pitem)obj.item=pitem;
   }
   return obj;
 }
@@ -2342,6 +2459,8 @@ function diyView(type,name){
   var types=(obj.types&&obj.types.length)?obj.types:(obj.type?[obj.type]:[]);
   if(types.length)body+='<div class="row"><span class="k">属性</span><div class="types">'+types.map(function(t){return typeChipHTML(t);}).join('')+'</div></div>';
   body+=infoRow('特性',esc(obj.ability||'-'));
+  if(obj.moves&&obj.moves.length)body+=infoRow('专属技能',esc(diyMovesText(obj)));
+  if(obj.item)body+=infoRow('相关道具',esc(obj.item));
   if(obj.stats)body+='<div class="row block"><span class="k">种族值</span><span class="v">'+esc(diyStatsText(obj.stats))+'</span></div>';
   if(obj.desc)body+='<div class="row block"><span class="k">外观描述</span><span class="v">'+esc(obj.desc).replace(/\n/g,'<br>')+'</span></div>';
 if(obj.chain&&obj.chain.length>1){body+='<div class="row block"><span class="k">进化链</span><span class="v">'+obj.chain.map(function(st,i){return esc((i+1)+'. '+st.name+'（属性：'+(st.types&&st.types.length?st.types.join('/'):'-')+'，特性：'+(st.ability||'-')+'，种族值：'+diyStatsText(st.stats)+'）'+(st.desc?('　外观描述：'+st.desc):'')+(st.evos&&st.evos.length?('　进化分支：'+st.evos.map(function(e){return (e.cond||'?')+'→'+(e.to||'?');}).join('、')):''));}).join('<br>')+'</span></div>';}
@@ -2389,7 +2508,20 @@ function diyEdit(type,name){
       var abi=st.ability||'';
       diyEvoAbiCats[p]=abi?(diyData.ability&&diyData.ability[abi]?'diy':'orig'):'';
     }
+    var mvArr=Array.isArray(obj.moves)?obj.moves:[];
+    diyMoveRows=mvArr.map(function(m){
+      var formLabel=(m&&m.form)||'';
+      var fi=0;
+      for(var fp=0;fp<chain.length;fp++){
+        var fname=(chain[fp]&&chain[fp].name)||'';
+        var ffall=diyStageFallbackLabel(fp);
+        if(formLabel===fname||formLabel===ffall){fi=fp;break;}
+      }
+      return {form:String(fi),level:(m&&m.level)||'',move:(m&&m.move)||''};
+    });
+    diyMoveCount=diyMoveRows.length;
     f.innerHTML=diyPkmFormHTML()+diyBtnsHTML();
+    var itSel=document.getElementById('diy-pkm-item');if(itSel)itSel.value=obj.item||'';
     for(var q=0;q<chain.length;q++){
       var s=chain[q]||{};
       var nm=document.getElementById('evo-name-'+q);if(nm)nm.value=s.name||'';
@@ -2407,6 +2539,7 @@ function diyEdit(type,name){
       if(s.evos&&s.evos.length){for(var b=0;b<s.evos.length;b++){var ce=document.getElementById('evo-cond-'+q+'-'+b);if(ce)ce.value=s.evos[b].cond||'';var to=document.getElementById('evo-to-'+q+'-'+b);if(to)to.value=s.evos[b].to||'';}}
     }
     diyEvoSyncNext();
+    diyMoveFormRefresh();
   }else{
     f.innerHTML=diyFormHTML(type);
     var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v||'';};
@@ -2434,6 +2567,8 @@ function diyCopy(type,name){
 }else{
   var types=(obj.types&&obj.types.length)?obj.types:(obj.type?[obj.type]:[]);
   txt='精灵：'+name+'\n属性：'+(types.length?types.join('/'):'-')+'\n特性：'+(obj.ability||'-');
+  if(obj.moves&&obj.moves.length)txt+='\n专属技能：'+diyMovesText(obj);
+  if(obj.item)txt+='\n相关道具：'+obj.item;
   if(obj.stats)txt+='\n种族值：'+diyStatsText(obj.stats);
   if(obj.desc)txt+='\n外观描述：'+obj.desc;
 if(obj.chain&&obj.chain.length>1)txt+='\n进化链：'+diyChainText(obj);
@@ -6540,7 +6675,7 @@ if(wm){wm.addEventListener('change',function(){winMode=wm.checked?'1':'0';try{lo
   var cs=pageOverlay.querySelector('[data-clear-start]');
 if(cs){cs.addEventListener('click',function(e){e.stopPropagation();clearStep=0;confirmClearModal();});}
 pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(b){b.addEventListener('click',function(){diyType=b.getAttribute('data-diy-tab');pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(x){x.classList.toggle('active',x===b);});var f=pageOverlay.querySelector('#diy-form');if(f)f.innerHTML=diyFormHTML(diyType);var l=pageOverlay.querySelector('#diy-list');if(l)l.innerHTML=diyListHTML(diyType);});});
-var df=pageOverlay.querySelector('#diy-form');if(df){df.addEventListener('click',function(e){if(e.target.closest('[data-diy-add]')){diyAdd(diyType);}else if(e.target.closest('[data-diy-clear]')){diyClearStart();}else if(e.target.closest('[data-diy-add-type]')){diyAddType();}else if(e.target.closest('[data-diy-evo-add]')){diyEvoAddPage();}else if(e.target.closest('[data-diy-evo-add-type]')){diyEvoAddType(e.target.closest('[data-diy-evo-add-type]').getAttribute('data-diy-evo-add-type'));}else if(e.target.closest('[data-diy-evo-addbranch]')){diyEvoAddBranch(e.target.closest('[data-diy-evo-addbranch]').getAttribute('data-diy-evo-addbranch'));}else if(e.target.closest('[data-diy-evo-delbranch]')){var db=e.target.closest('[data-diy-evo-delbranch]').getAttribute('data-diy-evo-delbranch').split('|');diyEvoDelBranch(db[0],db[1]);}else if(e.target.closest('[data-diy-evo-adddesc]')){diyEvoToggleDesc(e.target.closest('[data-diy-evo-adddesc]').getAttribute('data-diy-evo-adddesc'));}else if(e.target.closest('[data-diy-evo-upload]')){diyEvoUpload(e.target.closest('[data-diy-evo-upload]').getAttribute('data-diy-evo-upload'));}else if(e.target.closest('[data-diy-evo-vision]')){diyEvoVision(e.target.closest('[data-diy-evo-vision]').getAttribute('data-diy-evo-vision'));}else if(e.target.closest('[data-diy-item-upload]')){diyItemUpload();}});df.addEventListener('input',function(e){if(e.target&&e.target.id==='diy-ability-search'){diyFilterAbility();}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-search-')===0){diyEvoFilterAbility(parseInt(e.target.id.replace('evo-abi-search-',''),10));}if(e.target&&e.target.id&&e.target.id.indexOf('evo-name-')===0){diyEvoSyncNext();}if(e.target&&e.target.id&&e.target.id.indexOf('evo-desc-')===0){diyEvoDescAutosize(parseInt(e.target.id.replace('evo-desc-',''),10));}});df.addEventListener('change',function(e){if(e.target&&e.target.id==='diy-item-img-file'){diyItemFileChange(e.target);}if(e.target&&e.target.id&&e.target.id.indexOf('evo-img-file-')===0){diyEvoFileChange(e.target);}if(e.target&&e.target.id==='diy-ability-cat'){diyAbilityCat=e.target.value;var w=document.getElementById('diy-ability-wrap');if(w)w.innerHTML=diyAbilityWrapHTML();if(diyAbilityCat==='orig'){diyLoadAbiOptions();}}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-cat-')===0){var p=parseInt(e.target.id.replace('evo-abi-cat-',''),10);diyEvoAbiCats[p]=e.target.value;var w2=document.getElementById('evo-abi-wrap-'+p);if(w2)w2.innerHTML=diyEvoAbiWrapHTML(p);if(diyEvoAbiCats[p]==='orig'){diyEvoLoadAbiOptions(p);}}});diyLoadAbiOptions();}
+var df=pageOverlay.querySelector('#diy-form');if(df){df.addEventListener('click',function(e){if(e.target.closest('[data-diy-add]')){diyAdd(diyType);}else if(e.target.closest('[data-diy-clear]')){diyClearStart();}else if(e.target.closest('[data-diy-add-type]')){diyAddType();}else if(e.target.closest('[data-diy-evo-add]')){diyEvoAddPage();}else if(e.target.closest('[data-diy-evo-add-type]')){diyEvoAddType(e.target.closest('[data-diy-evo-add-type]').getAttribute('data-diy-evo-add-type'));}else if(e.target.closest('[data-diy-evo-addbranch]')){diyEvoAddBranch(e.target.closest('[data-diy-evo-addbranch]').getAttribute('data-diy-evo-addbranch'));}else if(e.target.closest('[data-diy-evo-delbranch]')){var db=e.target.closest('[data-diy-evo-delbranch]').getAttribute('data-diy-evo-delbranch').split('|');diyEvoDelBranch(db[0],db[1]);}else if(e.target.closest('[data-diy-evo-adddesc]')){diyEvoToggleDesc(e.target.closest('[data-diy-evo-adddesc]').getAttribute('data-diy-evo-adddesc'));}else if(e.target.closest('[data-diy-evo-upload]')){diyEvoUpload(e.target.closest('[data-diy-evo-upload]').getAttribute('data-diy-evo-upload'));}else if(e.target.closest('[data-diy-evo-vision]')){diyEvoVision(e.target.closest('[data-diy-evo-vision]').getAttribute('data-diy-evo-vision'));}else if(e.target.closest('[data-diy-move-add]')){diyMoveAdd();}else if(e.target.closest('[data-diy-move-del]')){diyMoveDel(e.target.closest('[data-diy-move-del]').getAttribute('data-diy-move-del'));}else if(e.target.closest('[data-diy-item-upload]')){diyItemUpload();}});df.addEventListener('input',function(e){if(e.target&&e.target.id==='diy-ability-search'){diyFilterAbility();}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-search-')===0){diyEvoFilterAbility(parseInt(e.target.id.replace('evo-abi-search-',''),10));}if(e.target&&e.target.id&&e.target.id.indexOf('evo-name-')===0){diyEvoSyncNext();diyMoveFormRefresh();}if(e.target&&e.target.id&&e.target.id.indexOf('evo-desc-')===0){diyEvoDescAutosize(parseInt(e.target.id.replace('evo-desc-',''),10));}});df.addEventListener('change',function(e){if(e.target&&e.target.id==='diy-item-img-file'){diyItemFileChange(e.target);}if(e.target&&e.target.id&&e.target.id.indexOf('evo-img-file-')===0){diyEvoFileChange(e.target);}if(e.target&&e.target.id==='diy-ability-cat'){diyAbilityCat=e.target.value;var w=document.getElementById('diy-ability-wrap');if(w)w.innerHTML=diyAbilityWrapHTML();if(diyAbilityCat==='orig'){diyLoadAbiOptions();}}if(e.target&&e.target.id&&e.target.id.indexOf('evo-abi-cat-')===0){var p=parseInt(e.target.id.replace('evo-abi-cat-',''),10);diyEvoAbiCats[p]=e.target.value;var w2=document.getElementById('evo-abi-wrap-'+p);if(w2)w2.innerHTML=diyEvoAbiWrapHTML(p);if(diyEvoAbiCats[p]==='orig'){diyEvoLoadAbiOptions(p);}}});diyLoadAbiOptions();}
 var dl=pageOverlay.querySelector('#diy-list');if(dl){dl.addEventListener('click',function(e){var del=e.target.closest('[data-diy-del]');if(del){diyDelStart(diyType,del.getAttribute('data-diy-del'));return;}var sh=e.target.closest('[data-diy-share]');if(sh){diyShare(diyType,sh.getAttribute('data-diy-share'));return;}var vw=e.target.closest('[data-diy-view]');if(vw){diyView(diyType,vw.getAttribute('data-diy-view'));}});}
 var dib=pageOverlay.querySelector('[data-diy-import]');if(dib){dib.addEventListener('click',function(e){e.stopPropagation();diyImport();});}
 var dii=pageOverlay.querySelector('#diy-import-code');if(dii){dii.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();diyImport();}});}
