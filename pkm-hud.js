@@ -3,10 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.3';
+var PK_VER='2.2.4';
 /*PK_NOTICE_BEGIN
-优化
-- DIY 精灵进化链取消 5 页上限，可自由增加进化阶段
+随机模式放出
+- 设置新增「娱乐模式」入口，点击弹出面板
+- 面板内含随机宝可梦模式：可开启/关闭、修改规则并确认更新世界书
+- 支持一键「变回原内容」
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -1907,6 +1909,8 @@ function randomModeSyncUI(){
   try{
     var chk=document.querySelector('input[data-toggle="randommode"]');
     if(chk)chk.checked=randomModeEnabled;
+    var ed=document.getElementById('random-mode-editor');
+    if(ed)ed.style.display=randomModeEnabled?'':'none';
   }catch(e){}
 }
 function randomModeBook(){
@@ -1948,10 +1952,15 @@ function randomModeMatchingUids(){
 function randomModeDisableCmd(book,uids){
   return uids.map(function(u){return '/setentryfield file="'+book+'" uid='+u+' field=disable true';}).join(' | ');
 }
+function randomModeMsg(msg){
+  var el=document.getElementById('entertain-msg');
+  if(el){el.textContent=msg;return;}
+  hudMsg(msg);
+}
 function randomModeOn(){
   var book=randomModeBook();
-  if(!book){randomModeSyncUI();hudMsg('请先在「DIY → 写入世界书」里选择世界书文件名');return;}
-  var one=randomModeContent().replace(/"/g,'＂').replace(/\|/g,'｜');
+  if(!book){randomModeSyncUI();randomModeMsg('请先在「DIY → 写入世界书」里选择世界书文件名');return;}
+  var one=randomModeContent().replace(/\"/g,'＂').replace(/\|/g,'｜');
   var title=randomModeTitleEsc();
   var pre='';
   var uids=randomModeMatchingUids();
@@ -1960,18 +1969,62 @@ function randomModeOn(){
   sendMessage(cmd);
   randomModeSetOn(true);
   randomModeSyncUI();
-  hudMsg('随机模式已开启：已写入世界书「'+diyLorebookValue()+'」（蓝灯常驻·高权重，顺序'+RANDOM_MODE_ORDER+'）');
+  randomModeMsg('随机模式已开启：已写入世界书「'+diyLorebookValue()+'」（蓝灯常驻·高权重，顺序'+RANDOM_MODE_ORDER+'）');
 }
 function randomModeOff(){
   var book=randomModeBook();
-  if(!book){randomModeSyncUI();hudMsg('请先在「DIY → 写入世界书」里选择世界书文件名');return;}
+  if(!book){randomModeSyncUI();randomModeMsg('请先在「DIY → 写入世界书」里选择世界书文件名');return;}
   var title=randomModeTitleEsc();
   var uids=randomModeMatchingUids();
   var cmd=uids.length?randomModeDisableCmd(book,uids):('/findentry file="'+book+'" field=comment "'+title+'" | /setentryfield file="'+book+'" uid={{pipe}} field=disable true');
   sendMessage(cmd);
   randomModeSetOn(false);
   randomModeSyncUI();
-  hudMsg('随机模式已关闭：已关闭世界书「'+diyLorebookValue()+'」对应条目');
+  randomModeMsg('随机模式已关闭：已关闭世界书「'+diyLorebookValue()+'」对应条目');
+}
+function randomModePushContent(content,msg){
+  var book=randomModeBook();
+  if(!book){randomModeMsg('请先在「DIY → 写入世界书」里选择世界书文件名');return;}
+  var one=content.replace(/\"/g,'＂').replace(/\|/g,'｜');
+  var title=randomModeTitleEsc();
+  var cmd='/findentry file="'+book+'" field=comment "'+title+'" | /setentryfield file="'+book+'" uid={{pipe}} field=content '+one;
+  sendMessage(cmd);
+  randomModeMsg(msg);
+}
+function randomModeApply(){
+  var ta=document.getElementById('random-mode-content');
+  var content=ta?ta.value:randomModeContent();
+  randomModeSaveContent(content);
+  randomModePushContent(content,'已更新世界书「'+diyLorebookValue()+'」中随机模式条目内容');
+}
+function randomModeRestore(){
+  var ta=document.getElementById('random-mode-content');
+  if(ta)ta.value=RANDOM_MODE_DEFAULT_CONTENT;
+  randomModeSaveContent(RANDOM_MODE_DEFAULT_CONTENT);
+  randomModePushContent(RANDOM_MODE_DEFAULT_CONTENT,'已恢复随机模式默认内容，并更新世界书「'+diyLorebookValue()+'」');
+}
+function randomModeHTML(){
+  var randChk=randomModeEnabled?' checked':'';
+  var randContent=esc(randomModeContent());
+  var editor='<div id="random-mode-editor"'+(randomModeEnabled?'':' style="display:none"')+'>'+
+    '<div class="set-opts"><textarea id="random-mode-content" style="'+DIY_INPUT_STYLE+'min-height:120px;resize:vertical">'+randContent+'</textarea></div>'+
+    '<div class="set-opts" style="flex-direction:row;flex-wrap:wrap"><button type="button" class="act-btn" data-random-apply style="flex:1;min-width:0">✅ 确认并更新世界书条目</button><button type="button" class="act-btn" data-random-restore style="flex:1;min-width:0">↺ 变回原内容</button></div>'+
+    '<div class="dim" style="font-size:.72rem;margin:4px 0 6px">写入目标为「DIY → 写入世界书」所选的世界书；条目常驻（蓝灯），权重已调高（插入位置1·顺序'+RANDOM_MODE_ORDER+'，高于机制与随机遭遇条目）。开启后可修改规则文本，点「确认」更新世界书对应条目；「变回原内容」一键恢复默认规则并更新。</div>'+
+    '</div>';
+  return '<div class="set-title" style="margin-top:0">随机模式</div>'+
+    '<div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="randommode"'+randChk+'>随机宝可梦模式（开启→写入世界书条目，关闭→关闭该条目）</label></div>'+
+    editor;
+}
+function entertainmentModeHTML(){
+  return '<div class="set-title">娱乐模式</div>'+
+    '<div class="set-opts"><button type="button" class="act-btn" data-entertain-open>🎮 娱乐模式</button></div>'+
+    '<div class="dim" style="font-size:.72rem;margin:4px 0 6px">点击弹出娱乐模式面板，内含随机宝可梦模式等玩法，后续可继续扩充。</div>';
+}
+function openEntertainmentMode(){
+  clearBack();
+  overlay.innerHTML='<div class="modal" style="max-width:560px"><div class="modal-head"><div class="modal-name">娱乐模式</div><button class="close" data-close>✕</button></div><div class="modal-body">'+randomModeHTML()+'<div id="entertain-msg" class="dim" style="font-size:.78rem;margin-top:8px;color:#ffe9a8;min-height:1em"></div><div class="action-btns" style="margin-top:10px"><button class="act-btn" data-close>完成</button></div></div></div>';
+  overlay.classList.add('open');
+  bindRandomMode(overlay);
 }
 function diyFormHTML(type){
   diyTypeCount=2;
@@ -5670,26 +5723,28 @@ function devPanelOn(){try{return localStorage.getItem('pk_dev_panel')==='1';}cat
 function setDevPanelOn(v){try{if(v)localStorage.setItem('pk_dev_panel','1');else localStorage.removeItem('pk_dev_panel');}catch(e){}}
 function devPanelHTML(errMsg){
   if(!devPanelOn()){
-    return '<div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(errMsg?esc(errMsg):'未解锁（输入密码后出现「全图鉴」与「随机模式」选项）')+'</div>';
+    return '<div id="dev-status" class="dim" style="font-size:.72rem;margin-top:6px">'+(errMsg?esc(errMsg):'未解锁（输入密码后出现「全图鉴」选项）')+'</div>';
   }
   var fullChk=devUnlocked()?' checked':'';
-  var randChk=randomModeEnabled?' checked':'';
-  var randContent=esc(randomModeContent());
   return '<div class="dim" style="font-size:.72rem;margin-top:6px">✨ 开发者选项已解锁</div>'+
     '<div class="set-title" style="margin-top:10px">全图鉴</div>'+
-    '<div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="devfull"'+fullChk+'>解锁全部图鉴（图鉴里可见全宝可梦）</label></div>'+
-    '<div class="set-title" style="margin-top:10px">随机模式</div>'+
-    '<div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="randommode"'+randChk+'>随机宝可梦模式（开启→写入世界书条目，关闭→关闭该条目）</label></div>'+
-    '<div class="set-opts"><textarea id="random-mode-content" style="'+DIY_INPUT_STYLE+'min-height:120px;resize:vertical">'+randContent+'</textarea></div>'+
-    '<div class="dim" style="font-size:.72rem;margin:4px 0 6px">写入目标为「DIY → 写入世界书」所选的世界书；条目常驻（蓝灯），权重已调高（插入位置1·顺序'+RANDOM_MODE_ORDER+'，高于机制与随机遭遇条目）。规则文本可自行修改。</div>';
+    '<div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="devfull"'+fullChk+'>解锁全部图鉴（图鉴里可见全宝可梦）</label></div>';
 }
 function bindDevPanel(){
   var df=pageOverlay.querySelector('input[data-toggle="devfull"]');
   if(df){df.addEventListener('change',function(){setDevUnlock(df.checked);});}
-  var rm=pageOverlay.querySelector('input[data-toggle="randommode"]');
+}
+function bindRandomMode(container){
+  container=container||pageOverlay;
+  var rm=container.querySelector('input[data-toggle="randommode"]');
   if(rm){rm.addEventListener('change',function(){if(rm.checked){if(randomModeEnabled)return;randomModeOn();}else{if(!randomModeEnabled)return;randomModeOff();}});}
-  var rmc=pageOverlay.querySelector('#random-mode-content');
+  var rmc=container.querySelector('#random-mode-content');
   if(rmc){rmc.addEventListener('input',function(){randomModeSaveContent(rmc.value);});}
+  var rap=container.querySelector('[data-random-apply]');
+  if(rap){rap.addEventListener('click',function(e){e.stopPropagation();randomModeApply();});}
+  var rr=container.querySelector('[data-random-restore]');
+  if(rr){rr.addEventListener('click',function(e){e.stopPropagation();randomModeRestore();});}
+  randomModeSyncUI();
 }
 var ICON_CFG=[
   {id:'q-box',label:'快捷·盒子',src:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png',def:22},
@@ -6032,7 +6087,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div><div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -6672,6 +6727,8 @@ var ic=pageOverlay.querySelector('input[data-toggle="itemclick"]');
 if(ic){ic.addEventListener('change',function(){itemClickEnabled=ic.checked;try{localStorage.setItem('pk_itemclick',itemClickEnabled?'1':'0');}catch(e){}});}
 var wm=pageOverlay.querySelector('input[data-toggle="winmode"]');
 if(wm){wm.addEventListener('change',function(){winMode=wm.checked?'1':'0';try{localStorage.setItem('pk_winmode',winMode);}catch(e){}});}
+var et=pageOverlay.querySelector('[data-entertain-open]');
+if(et){et.addEventListener('click',function(e){e.stopPropagation();openEntertainmentMode();});}
   var cs=pageOverlay.querySelector('[data-clear-start]');
 if(cs){cs.addEventListener('click',function(e){e.stopPropagation();clearStep=0;confirmClearModal();});}
 pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(b){b.addEventListener('click',function(){diyType=b.getAttribute('data-diy-tab');pageOverlay.querySelectorAll('[data-diy-tab]').forEach(function(x){x.classList.toggle('active',x===b);});var f=pageOverlay.querySelector('#diy-form');if(f)f.innerHTML=diyFormHTML(diyType);var l=pageOverlay.querySelector('#diy-list');if(l)l.innerHTML=diyListHTML(diyType);});});
