@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.7';
+var PK_VER='2.2.9';
 /*PK_NOTICE_BEGIN
-DIY 精灵技能文案改为「Lv.X 可习得」格式
-- 填入世界书与「一键复制」里的专属技能，统一显示为「【形态名】Lv.X 可习得 技能名」
-- 未填等级时仍只显示技能名，不显示「可习得」
+@狮子酱
+修复创意工坊导入 DIY 精灵后的本地图片识别与刷新同步
+-注意：需要重新在创意工坊下载diy
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -1078,15 +1078,25 @@ function diySave(opt){
   if(!opt.skipAssetMigration)hudScope.setTimeout(hudMigrateInlineDiyAssets,20);
 }
 
+function hudRefreshDiyVisuals(){
+  try{diySyncFromStorage(false);}catch(e){}
+  try{hudBuildDiyIndex();diyPreloadImages();}catch(e){}
+  try{pkmHudRenderCurrent();}catch(e){}
+  try{hudResolvePkidbImages(document);}catch(e){}
+  try{if(overlay)hudResolvePkidbImages(overlay);}catch(e){}
+  try{if(pageOverlay)hudResolvePkidbImages(pageOverlay);}catch(e){}
+}
 try{hudScope.listen(WIN,'pkworkshop:diy-imported',function(){
-  try{diySyncFromStorage(true);hudBuildDiyIndex();diyPreloadImages();pkmHudRenderCurrent();}catch(e){hudDiagError('Workshop DIY sync event',e);}
+  try{diySyncFromStorage(true);hudBuildDiyIndex();diyPreloadImages();Promise.resolve(hudMigrateInlineDiyAssets()).then(hudRefreshDiyVisuals,hudRefreshDiyVisuals);}catch(e){hudDiagError('Workshop DIY sync event',e);}
 });}catch(e){}
+try{hudScope.listen(WIN,'pkworkshop:diy-runtime-hydrated',function(){hudRefreshDiyVisuals();});}catch(e){}
+try{hudScope.listen(WIN,'storage',function(e){if(e&&e.key==='pk_diy'){try{diySyncFromStorage(true);}catch(_){}hudRefreshDiyVisuals();}});}catch(e){}
 function hudMigrateInlineDiyAssets(){
   var jobs=[],changed=false;
-  function one(obj,key){if(!obj||!obj[key])return;var v=String(obj[key]||'');if(/^data:image\//i.test(v))jobs.push(hudDiyAssetStoreBlob(hudDataUrlBlob(v)).then(function(ref){obj[key]=ref;changed=true;}));else if(v.indexOf(HUD_DIY_SCHEME)===0)hudDiyAssetResolve(v);}
+  function one(obj,key){if(!obj||!obj[key])return;var v=String(obj[key]||'');if(/^data:image\//i.test(v))jobs.push(hudDiyAssetStoreBlob(hudDataUrlBlob(v)).then(function(ref){obj[key]=ref;changed=true;}));else if(v.indexOf(HUD_DIY_SCHEME)===0)hudDiyAssetResolve(v);else if(/^blob:/i.test(v))jobs.push(hudDiyAssetPersistValue(v).then(function(ref){if(ref&&ref!==v){obj[key]=ref;changed=true;}}).catch(function(e){hudDiagError('DIY blob migrate',e);}));}
   try{Object.keys((diyData&&diyData.pokemon)||{}).forEach(function(k){var o=diyData.pokemon[k];one(o,'img');if(o&&Array.isArray(o.chain))o.chain.forEach(function(st){one(st,'img');});});Object.keys((diyData&&diyData.item)||{}).forEach(function(k){one(diyData.item[k],'img');});}catch(e){hudDiagError('DIY asset scan',e);}
   if(!jobs.length)return Promise.resolve(false);
-  return Promise.all(jobs).then(function(){if(changed){diySave({skipAssetMigration:true});hudDiagEvent('DIY','DataURL 图片已迁入 IndexedDB');}return changed;}).catch(function(e){hudDiagError('DIY asset migrate',e);return false;});
+  return Promise.all(jobs).then(function(){if(changed){diySave({skipAssetMigration:true});hudDiagEvent('DIY','内联图片（DataURL/blob）已迁入 IndexedDB');}return changed;}).catch(function(e){hudDiagError('DIY asset migrate',e);return false;});
 }
 
 function diyPreloadImages(){
@@ -1172,8 +1182,8 @@ function hudResolveDiyPokemonInfo(input){
 
 (function(){
   var api={
-    version:'2.10.0',
-    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true},
+    version:'2.10.1',
+    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true,diyAssetHydrationV2:true},
     getStatData:function(){return pkmHudClone(stat_data);},
     getNearbyDiagnostics:function(){try{return pkmHudClone(nearbyDiagnostics());}catch(e){return [];}},
     getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
@@ -1195,6 +1205,8 @@ function hudResolveDiyPokemonInfo(input){
     getDiyPokemonInfo:function(input){return pkmHudClone(hudResolveDiyPokemonInfo(input));},
     canonicalizeImageRef:function(value){return hudDiyAssetCanonicalRef(value);},
     persistImageValue:function(value){return hudDiyAssetPersistValue(value);},
+    resolveImageRef:function(value){return hudDiyAssetResolve(String(value||''));},
+    refreshDiyAssets:function(){return Promise.resolve(hudMigrateInlineDiyAssets()).then(function(){hudRefreshDiyVisuals();return true;},function(){hudRefreshDiyVisuals();return false;});},
     getSpriteProviders:function(){return pkmHudClone(hudSpriteProviders());},
     buildPokemonSpriteUrls:function(opt){return pkmHudClone(hudBuildPokemonSpriteUrls(opt||{}));},
     reloadDiy:function(){try{diySyncFromStorage(true);pkmHudRenderCurrent();return true;}catch(e){return false;}},
@@ -2881,11 +2893,14 @@ function setCachedIcon(icon,shiny,url){
   try{lsSet('pk_icon_'+k,css);}catch(e){}
 }
 function pkImgSmart(species,icon,shiny){
-  var d=diyPokemonSprite(species);if(d)return {img:d};
+  var diyRef=diyPokemonImageRef(species);
+  if(diyRef){
+    if(diyRef.indexOf(HUD_DIY_SCHEME)===0){var du=hudDiyAssetResolveSync(diyRef);if(du)return {img:du};return {imgRef:diyRef};}
+    return {img:diyRef};
+  }
   if(diyHas('pokemon',species))return null;
-  
   var rawIcon=String(icon||'').trim();
-  if(rawIcon.indexOf(HUD_DIY_SCHEME)===0){var ru=hudDiyAssetResolveSync(rawIcon);if(ru)return {img:ru};hudDiyAssetResolve(rawIcon);return null;}
+  if(rawIcon.indexOf(HUD_DIY_SCHEME)===0){var ru=hudDiyAssetResolveSync(rawIcon);if(ru)return {img:ru};return {imgRef:rawIcon};}
   if(/^(?:https?:\/\/|data:image\/)/i.test(rawIcon)){return {img:rawIcon};}
   if(pkmSource==='pokeos'){
     if(/^[a-z0-9-]+\.gif$/i.test(rawIcon)){var ic=cachedIconCss(rawIcon,shiny);if(ic)return {bg:ic};return {icon:rawIcon};}
@@ -2902,6 +2917,9 @@ function pkImgHTML(species,icon,shiny,cls){
   var r=pkImgSmart(species,icon,shiny);
   if(r&&r.img){
     return '<div class="pk-img '+cls+'"><img src="'+esc(r.img)+'" alt="" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated" onerror="this.remove();this.parentNode.classList.add(\'no-img\');this.parentNode.textContent=\'?\'"></div>';
+  }
+  if(r&&r.imgRef){
+    return '<div class="pk-img '+cls+'"><img data-pkidb="'+esc(r.imgRef)+'" alt="" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated"></div>';
   }
   if(r&&r.bg){
     return '<div class="pk-img '+cls+'" style="background-image:'+r.bg+'"></div>';
@@ -7223,6 +7241,7 @@ function hudRefresh(){
   
   try{if(!hudPendingActions.length){stat_data=loadStatData();hudExternalStateChanged();hudRebuildLocationIndex();}}catch(e){hudDiagError('manual refresh state',e);}
   try{diySyncFromStorage(false);}catch(e){}
+  try{hudMigrateInlineDiyAssets();}catch(e){}
   try{recordSeen();}catch(e){}
   try{
     render();
