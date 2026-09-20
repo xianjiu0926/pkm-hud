@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.3.0';
+var PK_VER='2.3.6';
 /*PK_NOTICE_BEGIN
-修复背包最后一项数量与丢弃按钮错位；统一背包各行右侧列对齐
+优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3454,31 +3454,61 @@ function nearbyTypeChipsHTML(t1,t2){
 }
 function nearbyTypeBarHTML(m){
   var out=(m.type1?typeChipHTML(m.type1):'')+(m.type2?typeChipHTML(m.type2):'');
-  if(!m.type1)out+='<span data-nb-type="'+esc(m.name)+'" data-nb-type-mode="chip"></span>';
+  if(!m.type1)out+='<span data-nb-type="'+esc(m.name)+'" data-nb-en="'+esc((m.pokemon&&m.pokemon.英文名)||'')+'" data-nb-type-mode="chip"></span>';
   return out;
 }
-function nearbyFetchTypes(name,cb){
+function nearbyEnSlug(en){
+  var s=String(en||'').toLowerCase();
+  s=s.replace(/['‘’`]/g,'').replace(/[.·]/g,'-').replace(/♀/g,'-f').replace(/♂/g,'-m');
+  s=s.replace(/[éèêë]/g,'e').replace(/[áàâä]/g,'a').replace(/[íìîï]/g,'i').replace(/[óòôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ñ]/g,'n').replace(/[ç]/g,'c');
+  s=s.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return s;
+}
+function nearbyFetchTypesByEn(en,cb){
+  var slug=nearbyEnSlug(en);
+  if(!slug){cb&&cb('','');return;}
+  hudFetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(slug))
+    .then(function(r){return r.ok?r.json():Promise.reject();})
+    .then(function(j){
+      var ts=(j&&j.types)||[];
+      function cnm(i){var n=ts[i]&&ts[i].type&&ts[i].type.name;if(!n)return '';return nearbyCleanType(TYPE_CN[n]||n);}
+      cb&&cb(cnm(0),cnm(1));
+    })
+    .catch(function(){cb&&cb('','');});
+}
+function nearbyFetchTypes(name,en,cb){
   name=String(name==null?'':name).trim();
-  if(!name){cb&&cb('','');return;}
-  if(nearbyTypeCache[name]){var c=nearbyTypeCache[name];cb&&cb(c.type1,c.type2);return;}
-  var key='nbtype_v2_'+name;
-  try{var raw=lsGet(key,'');if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){o={type1:String(o.type1||''),type2:String(o.type2||'')};nearbyTypeCache[name]=o;cb&&cb(o.type1,o.type2);return;}}}catch(e){}
-  if(nearbyTypePending[name]){nearbyTypePending[name].push(cb);return;}
-  nearbyTypePending[name]=cb?[cb]:[];
+  en=String(en==null?'':en).trim();
+  if(!name&&!en){cb&&cb('','');return;}
+  var cacheKey=name||('en:'+nearbyEnSlug(en));
+  if(nearbyTypeCache[cacheKey]){var c=nearbyTypeCache[cacheKey];cb&&cb(c.type1,c.type2);return;}
+  var key='nbtype_v3_'+cacheKey;
+  try{var raw=lsGet(key,'');if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){o={type1:String(o.type1||''),type2:String(o.type2||'')};nearbyTypeCache[cacheKey]=o;cb&&cb(o.type1,o.type2);return;}}}catch(e){}
+  if(nearbyTypePending[cacheKey]){nearbyTypePending[cacheKey].push(cb);return;}
+  nearbyTypePending[cacheKey]=cb?[cb]:[];
   function fin(t1,t2){
     var o={type1:t1||'',type2:t2||''};
-    nearbyTypeCache[name]=o;
+    nearbyTypeCache[cacheKey]=o;
     try{lsSet(key,JSON.stringify(o));}catch(e){}
-    var q=nearbyTypePending[name]||[];nearbyTypePending[name]=null;
+    var q=nearbyTypePending[cacheKey]||[];nearbyTypePending[cacheKey]=null;
     for(var i=0;i<q.length;i++){try{q[i]&&q[i](o.type1,o.type2);}catch(e){}}
   }
-  try{
-    fetchPokemon(name,function(d){
-      var f=d&&d.forms&&d.forms[0];
-      if(!f){fin('','');return;}
-      fin(nearbyCleanType(f.type1),nearbyCleanType(f.type2));
+  function viaWiki(){
+    try{
+      fetchPokemon(name,function(d){
+        var f=d&&d.forms&&d.forms[0];
+        if(!f){fin('','');return;}
+        fin(nearbyCleanType(f.type1),nearbyCleanType(f.type2));
+      });
+    }catch(e){fin('','');}
+  }
+  if(en){
+    nearbyFetchTypesByEn(en,function(t1,t2){
+      if(t1||t2){fin(t1,t2);}else{viaWiki();}
     });
-  }catch(e){fin('','');}
+  }else{
+    viaWiki();
+  }
 }
 function resolveNearbyTypes(scope){
   var root=scope||document;if(!root.querySelectorAll)return;
@@ -3486,7 +3516,8 @@ function resolveNearbyTypes(scope){
   for(var i=0;i<els.length;i++){(function(el){
     if(el._nbTypeDone)return;el._nbTypeDone=1;
     var name=el.getAttribute('data-nb-type');
-    nearbyFetchTypes(name,function(t1,t2){
+    var en=el.getAttribute('data-nb-en')||'';
+    nearbyFetchTypes(name,en,function(t1,t2){
       if(!t1&&!t2){if(el.parentNode)el.parentNode.removeChild(el);return;}
       el.innerHTML=nearbyTypeChipsHTML(t1,t2);
       var card=el.closest?el.closest('.nb-primary-normal'):null;
@@ -3519,7 +3550,7 @@ function nearbyPillsHTML(m){var a=[];if(m.legendary)a.push(nearbyPillHTML('legen
 function nearbyCellClasses(m){var cls=['nb-primary-'+m.primary];if(m.legendary)cls.push('is-legendary');if(m.mythical)cls.push('is-mythical');if(m.ultra)cls.push('is-ultra');if(m.boss)cls.push('is-boss');if(m.mega)cls.push('is-mega');if(m.dynamax)cls.push('is-dynamax');if(m.shiny)cls.push('is-shiny');return cls.join(' ');}
 function nearbyCellStyle(m){return '--nb-accent1:'+m.accent1+';--nb-accent2:'+m.accent2+';--nb-soft1:'+m.soft1+';--nb-soft2:'+m.soft2+';--nb-glow1:'+m.glow1+';--nb-glow2:'+m.glow2+';';}
 function nearbyCardHTML(key,raw,mode){var m=nearbyCategoryMeta(raw),p=m.pokemon,img=pkImgHTML(p.名字,p.图标,m.shiny,mode==='page'?'box-icon nearby-pic':'nb-icon nearby-pic'),attr=(mode==='page'?'data-nearby':'data-nearby-open')+'="'+esc(key)+'"',cls=(mode==='page'?'box-cell nearby-cell ':'nb-cell ')+nearbyCellClasses(m),sub='×'+num(p.数量,1),title=esc(p.名字||'未知宝可梦');return '<div class="'+cls+'" style="'+nearbyCellStyle(m)+'" '+attr+'><div class="nb-aura"></div><div class="nb-edge"></div><div class="nb-thumb-wrap">'+img+'</div><div class="nb-name-row"><span class="nb-name" title="'+title+'">'+title+'</span><span class="nb-name-icons">'+nearbyNameIconsHTML(m)+'</span></div><div class="nb-pillbar">'+nearbyPillsHTML(m)+'</div><div class="nb-typebar">'+nearbyTypeBarHTML(m)+'</div><div class="nb-cnt">'+sub+'</div></div>';}
-function nearbyDiagnostics(){var obj=stat_data.附近宝可梦||{},out=[];Object.keys(obj).forEach(function(key){var raw=obj[key],m=nearbyCategoryMeta(raw),p=m.pokemon,w=[];if(!p.名字)w.push('缺少名字');if((m.legendary||m.mythical||m.ultra)&&!p.属性1)w.push('稀有宝可梦未提供属性，将自动从 52poke 图鉴补齐');var rv=(raw&&raw.是否闪光);if(typeof rv==='string'&&!/^(?:是|否|true|false|1|0|yes|no|y|n|闪光|异色|異色)$/i.test(rv.trim()))w.push('是否闪光字段不是推荐布尔/是/否格式');if(!p.图标)w.push('未提供图标，将依赖 HUD 在线图片解析');out.push({key:key,normalized:{名字:p.名字,英文名:p.英文名,数量:p.数量,是否闪光:p.是否闪光,状态:p.状态,属性1:p.属性1,属性2:p.属性2,图标:p.图标,标签:p._nearbyTags},detected:{神兽:m.legendary,幻兽:m.mythical,异兽:m.ultra,霸主:m.boss,Mega:m.mega,极巨化:m.dynamax,闪光:m.shiny,primary:m.primary},warnings:w});});return out;}
+function nearbyDiagnostics(){var obj=stat_data.附近宝可梦||{},out=[];Object.keys(obj).forEach(function(key){var raw=obj[key],m=nearbyCategoryMeta(raw),p=m.pokemon,w=[];if(!p.名字)w.push('缺少名字');if((m.legendary||m.mythical||m.ultra)&&!p.属性1)w.push('稀有宝可梦未提供属性，将自动联网补齐（PokeAPI 英文名优先，52poke 中文兜底）');var rv=(raw&&raw.是否闪光);if(typeof rv==='string'&&!/^(?:是|否|true|false|1|0|yes|no|y|n|闪光|异色|異色)$/i.test(rv.trim()))w.push('是否闪光字段不是推荐布尔/是/否格式');if(!p.图标)w.push('未提供图标，将依赖 HUD 在线图片解析');out.push({key:key,normalized:{名字:p.名字,英文名:p.英文名,数量:p.数量,是否闪光:p.是否闪光,状态:p.状态,属性1:p.属性1,属性2:p.属性2,图标:p.图标,标签:p._nearbyTags},detected:{神兽:m.legendary,幻兽:m.mythical,异兽:m.ultra,霸主:m.boss,Mega:m.mega,极巨化:m.dynamax,闪光:m.shiny,primary:m.primary},warnings:w});});return out;}
 function nearbyHTML(){var obj=stat_data.附近宝可梦||{};var keys=nearbySortedKeys(obj);if(!keys.length)return frame('附近宝可梦','<div class="empty">暂无</div>');var show=nearbyOpen?keys:keys.slice(0,6);var cells=show.map(function(key){return nearbyCardHTML(key,obj[key],'strip');}).join('');var rare=keys.filter(function(k){var m=nearbyCategoryMeta(obj[k]);return m.legendary||m.mythical||m.ultra||m.boss||m.mega||m.dynamax||m.shiny;}).length;var more=keys.length>6?'<span class="nb-toggle" data-nearby-toggle>'+(nearbyOpen?'收起 ▲':'展开全部('+keys.length+') ▼')+'</span>':'';var rareText=rare?'<span class="nb-rare-count">✦ '+rare+' 特殊</span>':'';return '<div class="info-frame nearby-frame">'+svgFrame+'<div class="info-inner"><div class="info-title"><span>附近宝可梦</span>'+rareText+more+'</div><div class="nb-grid">'+cells+'</div></div></div>';}
 function nearbyPageHTML(){var obj=stat_data.附近宝可梦||{};var keys=nearbySortedKeys(obj);if(!keys.length)return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="empty">暂无</div></div>';var cells=keys.map(function(key){return nearbyCardHTML(key,obj[key],'page');}).join('');return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦 <span class="nb-page-count">'+keys.length+' 个目标</span></div><div class="nearby-grid">'+cells+'</div></div>';}
 function openNearbyPage(){pageOverlayPopout(false);pageOverlay.innerHTML='<div class="page nearby-page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body nearby-body">'+nearbyPageHTML()+'</div></div>';pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);resolvePkmImgs(pageOverlay);resolveNearbyTypes(pageOverlay);hudResolvePkidbImages(pageOverlay);}
