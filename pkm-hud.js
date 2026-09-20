@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.3.7';
+var PK_VER='2.3.8';
 /*PK_NOTICE_BEGIN
-优化
+修复 DIY 本地图片与 Phone Suite 联动时可能导致“个人信息”刷新按钮循环刷新的问题；程序化刷新不再触发人工刷新链，DIY hydration 仅更新图片 DOM；增加 DIY 迁移防重入与重复渲染抑制。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -224,7 +224,22 @@ function hudBlobHash(blob){try{var c=WIN.crypto||crypto;if(!c||!c.subtle)return 
 function hudDataUrlBlob(v){var m=String(v||'').match(/^data:(image\/[^;,]+);base64,(.*)$/s);if(!m)throw new Error('不是图片 DataURL');var bin=atob(m[2].replace(/\s+/g,'')),a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m[1]||'image/png'});}
 function hudDiyAssetStoreBlob(blob){if(!blob||!/^image\//i.test(String(blob.type||'')))return Promise.reject(new Error('仅支持图片'));return hudBlobHash(blob).then(function(id){return hudDiyAssetDb().then(function(db){return new Promise(function(res,rej){var tx=db.transaction(HUD_DIY_ASSET_STORE,'readwrite');tx.objectStore(HUD_DIY_ASSET_STORE).put({id:id,blob:blob,type:blob.type||'image/png',size:Number(blob.size||0),created_at:Date.now()});var tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}rej(new Error('DIY 图片写入超时'));},7000);tx.oncomplete=function(){WIN.clearTimeout(tm);var ref=HUD_DIY_SCHEME+id;try{var old=hudDiyBlobByRef[ref];if(old)URL.revokeObjectURL(old);var u=URL.createObjectURL(blob);hudDiyBlobByRef[ref]=u;hudDiyRefByBlob[u]=ref;}catch(e){}res(ref);};tx.onerror=tx.onabort=function(){WIN.clearTimeout(tm);rej(tx.error||new Error('DIY 图片写入失败'));};});});});}
 function hudDiyAssetGet(ref){var id=String(ref||'').indexOf(HUD_DIY_SCHEME)===0?String(ref).slice(HUD_DIY_SCHEME.length):'';if(!id)return Promise.resolve(null);return hudDiyAssetDb().then(function(db){return new Promise(function(res,rej){var tx=db.transaction(HUD_DIY_ASSET_STORE,'readonly'),rq=tx.objectStore(HUD_DIY_ASSET_STORE).get(id);var tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}rej(new Error('DIY 图片读取超时'));},6000);rq.onsuccess=function(){WIN.clearTimeout(tm);res(rq.result||null);};rq.onerror=function(){WIN.clearTimeout(tm);rej(rq.error||new Error('DIY 图片读取失败'));};});});}
-function hudScheduleVisualRefresh(){if(hudVisualRefreshTimer)return;hudVisualRefreshTimer=hudScope.setTimeout(function(){hudVisualRefreshTimer=0;try{pkmHudRenderCurrent();}catch(e){}try{if(overlay)hudResolvePkidbImages(overlay);}catch(e){}try{if(pageOverlay)hudResolvePkidbImages(pageOverlay);}catch(e){}},80);}
+function hudHydrateDiyDomOnly(){
+  try{hudResolvePkidbImages(document);}catch(e){hudDiagError('DIY hydrate document',e);}
+  try{if(overlay)hudResolvePkidbImages(overlay);}catch(e){hudDiagError('DIY hydrate overlay',e);}
+  try{if(pageOverlay)hudResolvePkidbImages(pageOverlay);}catch(e){hudDiagError('DIY hydrate page',e);}
+  hudDiagInc('diyDomHydrates');
+  return true;
+}
+function hudScheduleVisualRefresh(){
+  if(hudVisualRefreshTimer)return;
+  hudVisualRefreshTimer=hudScope.setTimeout(function(){
+    hudVisualRefreshTimer=0;
+    // pkidb:// -> blob: is a view-layer hydration only. Do not rebuild the HUD here:
+    // rebuilding creates a new refresh button and can feed legacy external .click() bridges.
+    hudHydrateDiyDomOnly();
+  },80);
+}
 function hudDiyAssetResolve(ref){ref=String(ref||'');if(ref.indexOf(HUD_DIY_SCHEME)!==0)return Promise.resolve(ref);if(hudDiyBlobByRef[ref])return Promise.resolve(hudDiyBlobByRef[ref]);if(hudDiyResolvePending[ref])return hudDiyResolvePending[ref];hudDiyResolvePending[ref]=hudDiyAssetGet(ref).then(function(rec){if(!rec||!rec.blob)return '';var u=URL.createObjectURL(rec.blob);hudDiyBlobByRef[ref]=u;hudDiyRefByBlob[u]=ref;hudScheduleVisualRefresh();return u;}).catch(function(e){hudDiagError('DIY asset resolve',e);return '';}).finally(function(){delete hudDiyResolvePending[ref];});return hudDiyResolvePending[ref];}
 function hudDiyAssetResolveSync(ref){ref=String(ref||'');if(ref.indexOf(HUD_DIY_SCHEME)!==0)return ref;if(hudDiyBlobByRef[ref])return hudDiyBlobByRef[ref];hudDiyAssetResolve(ref);return '';}
 
@@ -1024,6 +1039,8 @@ var DIY_INPUT_STYLE='width:100%;box-sizing:border-box;padding:6px 10px;margin-bo
 var diyType='move';
 var diyStorageRawSeen='';
 var hudDiyNameIndex=new Map();
+var hudDiyMigrationPromise=null,hudDiyMigrationTimer=0;
+var hudDiyLastVisualFingerprint='',hudDiyVisualRefreshTimer=0,hudDiyVisualRefreshForce=false;
 function diyNormalizeData(d){
   d=(d&&typeof d==='object')?d:{};
   d.move=(d.move&&typeof d.move==='object')?d.move:{};
@@ -1049,8 +1066,15 @@ hudBuildDiyIndex();
 diyPreloadImages();
 hudScope.setTimeout(function(){hudMigrateInlineDiyAssets();},120);
 
-try{WIN.__pkmDiyData=function(){return diyData;};}catch(e){}
-try{if(window!==WIN)window.__pkmDiyData=function(){return diyData;};}catch(e){}
+function hudLegacyDiySnapshot(){
+  // Never expose the live diyData object. Older Phone Suite bridges historically hydrated
+  // pkidb:// references by mutating the returned object to blob:, which could race with
+  // HUD canonicalization and cause a pkidb <-> blob refresh loop.
+  try{return JSON.parse(JSON.stringify(diyData||{move:{},ability:{},item:{},pokemon:{}}));}
+  catch(e){return {move:{},ability:{},item:{},pokemon:{}};}
+}
+try{WIN.__pkmDiyData=function(){return hudLegacyDiySnapshot();};}catch(e){}
+try{if(window!==WIN)window.__pkmDiyData=function(){return hudLegacyDiySnapshot();};}catch(e){}
 var diyDelStep=0,diyDelType='move',diyDelName='';
 var diyEditingName='';
 var diyClearStep=0;
@@ -1078,28 +1102,81 @@ function diySave(opt){
     localStorage.setItem('pk_diy',raw);diyStorageRawSeen=raw;hudBuildDiyIndex();
   }catch(e){hudDiagError('DIY save',e);}
   diyPreloadImages();
-  if(!opt.skipAssetMigration)hudScope.setTimeout(hudMigrateInlineDiyAssets,20);
+  if(!opt.skipAssetMigration)hudScheduleDiyMigration(40);
 }
-
-function hudRefreshDiyVisuals(){
-  try{diySyncFromStorage(false);}catch(e){}
+function hudScheduleDiyMigration(delay){
+  if(hudDiyMigrationTimer)hudScope.clearTimeout(hudDiyMigrationTimer);
+  hudDiyMigrationTimer=hudScope.setTimeout(function(){
+    hudDiyMigrationTimer=0;
+    Promise.resolve(hudMigrateInlineDiyAssets()).catch(function(e){hudDiagError('DIY scheduled migrate',e);});
+  },Math.max(20,Number(delay)||40));
+}
+function hudDiyVisualFingerprint(){
+  var raw='';
+  try{raw=localStorage.getItem('pk_diy')||'';}catch(e){}
+  if(!raw){try{raw=JSON.stringify(diyData||{});}catch(e){raw='';}}
+  var h=2166136261;
+  for(var i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619);}
+  return (h>>>0).toString(16)+':'+raw.length;
+}
+function hudRefreshDiyVisuals(force){
+  var synced=false;
+  try{synced=diySyncFromStorage(false);}catch(e){}
+  var fp=hudDiyVisualFingerprint();
+  // Always hydrate existing <img data-pkidb> nodes, but rebuild panels only when
+  // the canonical DIY data actually changed (or an explicit caller forces it).
+  hudHydrateDiyDomOnly();
+  if(!force&&!synced&&fp===hudDiyLastVisualFingerprint){hudDiagInc('diyVisualRendersSkipped');return false;}
+  hudDiyLastVisualFingerprint=fp;
   try{hudBuildDiyIndex();diyPreloadImages();}catch(e){}
-  try{pkmHudRenderCurrent();}catch(e){}
-  try{hudResolvePkidbImages(document);}catch(e){}
-  try{if(overlay)hudResolvePkidbImages(overlay);}catch(e){}
-  try{if(pageOverlay)hudResolvePkidbImages(pageOverlay);}catch(e){}
+  try{pkmHudRenderCurrent();hudDiagInc('diyVisualRenders');}catch(e){hudDiagError('DIY visual render',e);return false;}
+  hudHydrateDiyDomOnly();
+  return true;
 }
+function hudScheduleDiyVisualRefresh(force){
+  hudDiyVisualRefreshForce=hudDiyVisualRefreshForce||!!force;
+  if(hudDiyVisualRefreshTimer)return;
+  hudDiyVisualRefreshTimer=hudScope.setTimeout(function(){
+    var f=hudDiyVisualRefreshForce;hudDiyVisualRefreshForce=false;hudDiyVisualRefreshTimer=0;
+    hudRefreshDiyVisuals(f);
+  },70);
+}
+hudDiyLastVisualFingerprint=hudDiyVisualFingerprint();
 try{hudScope.listen(WIN,'pkworkshop:diy-imported',function(){
-  try{diySyncFromStorage(true);hudBuildDiyIndex();diyPreloadImages();Promise.resolve(hudMigrateInlineDiyAssets()).then(hudRefreshDiyVisuals,hudRefreshDiyVisuals);}catch(e){hudDiagError('Workshop DIY sync event',e);}
+  try{
+    diySyncFromStorage(true);hudBuildDiyIndex();diyPreloadImages();
+    Promise.resolve(hudMigrateInlineDiyAssets()).then(function(){hudScheduleDiyVisualRefresh(true);},function(){hudScheduleDiyVisualRefresh(true);});
+  }catch(e){hudDiagError('Workshop DIY sync event',e);}
 });}catch(e){}
-try{hudScope.listen(WIN,'pkworkshop:diy-runtime-hydrated',function(){hudRefreshDiyVisuals();});}catch(e){}
-try{hudScope.listen(WIN,'storage',function(e){if(e&&e.key==='pk_diy'){try{diySyncFromStorage(true);}catch(_){}hudRefreshDiyVisuals();}});}catch(e){}
+try{hudScope.listen(WIN,'pkworkshop:diy-runtime-hydrated',function(){
+  // This event means image URLs were hydrated, not that DIY data changed.
+  // Re-resolve DOM images only; never rebuild the HUD or animate the manual refresh button.
+  hudHydrateDiyDomOnly();hudDiagInc('diyRuntimeHydratedEvents');
+});}catch(e){}
+try{hudScope.listen(WIN,'storage',function(e){if(e&&e.key==='pk_diy'){try{diySyncFromStorage(true);}catch(_){}hudScheduleDiyVisualRefresh(false);}});}catch(e){}
 function hudMigrateInlineDiyAssets(){
-  var jobs=[],changed=false;
-  function one(obj,key){if(!obj||!obj[key])return;var v=String(obj[key]||'');if(/^data:image\//i.test(v))jobs.push(hudDiyAssetStoreBlob(hudDataUrlBlob(v)).then(function(ref){obj[key]=ref;changed=true;}));else if(v.indexOf(HUD_DIY_SCHEME)===0)hudDiyAssetResolve(v);else if(/^blob:/i.test(v))jobs.push(hudDiyAssetPersistValue(v).then(function(ref){if(ref&&ref!==v){obj[key]=ref;changed=true;}}).catch(function(e){hudDiagError('DIY blob migrate',e);}));}
-  try{Object.keys((diyData&&diyData.pokemon)||{}).forEach(function(k){var o=diyData.pokemon[k];one(o,'img');if(o&&Array.isArray(o.chain))o.chain.forEach(function(st){one(st,'img');});});Object.keys((diyData&&diyData.item)||{}).forEach(function(k){one(diyData.item[k],'img');});}catch(e){hudDiagError('DIY asset scan',e);}
-  if(!jobs.length)return Promise.resolve(false);
-  return Promise.all(jobs).then(function(){if(changed){diySave({skipAssetMigration:true});hudDiagEvent('DIY','内联图片（DataURL/blob）已迁入 IndexedDB');}return changed;}).catch(function(e){hudDiagError('DIY asset migrate',e);return false;});
+  if(hudDiyMigrationPromise)return hudDiyMigrationPromise;
+  hudDiyMigrationPromise=(async function(){
+    var jobs=[],changed=false;
+    function one(obj,key){
+      if(!obj||!obj[key])return;
+      var v=String(obj[key]||'');
+      if(/^data:image\//i.test(v))jobs.push(hudDiyAssetStoreBlob(hudDataUrlBlob(v)).then(function(ref){obj[key]=ref;changed=true;}));
+      else if(v.indexOf(HUD_DIY_SCHEME)===0)hudDiyAssetResolve(v);
+      else if(/^blob:/i.test(v))jobs.push(hudDiyAssetPersistValue(v).then(function(ref){if(ref&&ref!==v){obj[key]=ref;changed=true;}}).catch(function(e){hudDiagError('DIY blob migrate',e);}));
+    }
+    try{
+      Object.keys((diyData&&diyData.pokemon)||{}).forEach(function(k){var o=diyData.pokemon[k];one(o,'img');if(o&&Array.isArray(o.chain))o.chain.forEach(function(st){one(st,'img');});});
+      Object.keys((diyData&&diyData.item)||{}).forEach(function(k){one(diyData.item[k],'img');});
+    }catch(e){hudDiagError('DIY asset scan',e);}
+    if(!jobs.length)return false;
+    try{
+      await Promise.all(jobs);
+      if(changed){diySave({skipAssetMigration:true});hudDiagEvent('DIY','内联图片（DataURL/blob）已迁入 IndexedDB');}
+      return changed;
+    }catch(e){hudDiagError('DIY asset migrate',e);return false;}
+  })().finally(function(){hudDiyMigrationPromise=null;});
+  return hudDiyMigrationPromise;
 }
 
 function diyPreloadImages(){
@@ -1185,8 +1262,8 @@ function hudResolveDiyPokemonInfo(input){
 
 (function(){
   var api={
-    version:'2.10.3',
-    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true,diyAssetHydrationV2:true,silentMvuRefresh:true,pendingWriteBarrier:true},
+    version:'2.10.4',
+    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true,diyAssetHydrationV2:true,diyHydrationDomOnlyV1:true,programmaticRefreshGuardV1:true,silentMvuRefresh:true,pendingWriteBarrier:true},
     getStatData:function(){return pkmHudClone(stat_data);},
     getNearbyDiagnostics:function(){try{return pkmHudClone(nearbyDiagnostics());}catch(e){return [];}},
     getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
@@ -1209,10 +1286,11 @@ function hudResolveDiyPokemonInfo(input){
     canonicalizeImageRef:function(value){return hudDiyAssetCanonicalRef(value);},
     persistImageValue:function(value){return hudDiyAssetPersistValue(value);},
     resolveImageRef:function(value){return hudDiyAssetResolve(String(value||''));},
-    refreshDiyAssets:function(){return Promise.resolve(hudMigrateInlineDiyAssets()).then(function(){hudRefreshDiyVisuals();return true;},function(){hudRefreshDiyVisuals();return false;});},
+    refreshDiyAssets:function(){return Promise.resolve(hudMigrateInlineDiyAssets()).then(function(){hudRefreshDiyVisuals(false);return true;},function(){hudRefreshDiyVisuals(false);return false;});},
+    hydrateDiyDomOnly:function(){return hudHydrateDiyDomOnly();},
     getSpriteProviders:function(){return pkmHudClone(hudSpriteProviders());},
     buildPokemonSpriteUrls:function(opt){return pkmHudClone(hudBuildPokemonSpriteUrls(opt||{}));},
-    reloadDiy:function(){try{diySyncFromStorage(true);pkmHudRenderCurrent();return true;}catch(e){return false;}},
+    reloadDiy:function(){try{diySyncFromStorage(true);return hudRefreshDiyVisuals(true);}catch(e){return false;}},
     installDiyBundle:function(bundle,opt){
       opt=opt&&typeof opt==='object'?opt:{};
       bundle=bundle&&typeof bundle==='object'?bundle:{};
@@ -7308,19 +7386,44 @@ function refreshIconHTML(){
 function refreshBtnHTML(){
   return '<button type="button" class="hud-refresh-btn" data-hud-refresh title="刷新变量">'+refreshIconHTML()+'</button>';
 }
+function hudBindRefreshProgrammaticGuard(root){
+  try{
+    var scope=(root&&root.querySelectorAll)?root:document,list=[];
+    if(scope.matches&&scope.matches('[data-hud-refresh]'))list.push(scope);
+    var q=scope.querySelectorAll?scope.querySelectorAll('[data-hud-refresh]'):[];
+    for(var i=0;i<q.length;i++)list.push(q[i]);
+    for(var j=0;j<list.length;j++)(function(btn){
+      if(!btn||btn._pkmProgrammaticRefreshGuard)return;
+      btn._pkmProgrammaticRefreshGuard=true;
+      // External legacy bridges use button.click(). Shadow only the instance method so
+      // real mouse/touch/keyboard activation still produces a trusted click event.
+      var safeClick=function(){hudDiagInc('programmaticRefreshIntercepted');hudHydrateDiyDomOnly();};
+      try{Object.defineProperty(btn,'click',{configurable:true,writable:true,value:safeClick});}
+      catch(e){try{btn.click=safeClick;}catch(_e){hudDiagError('refresh button programmatic guard',_e);}}
+    })(list[j]);
+  }catch(e){hudDiagError('refresh button guard bind',e);}
+}
 function hudRefreshFromMvuSilent(){
-  try{if(!hudPendingActions.length){stat_data=loadStatData();hudExternalStateChanged();hudRebuildLocationIndex();}}catch(e){hudDiagError('silent refresh state',e);return false;}
+  try{
+    var before=pkmStateSnapshot(stat_data),next=hudPendingActions.length?stat_data:loadStatData();
+    if(next){stat_data=next;hudExternalStateChanged();hudRebuildLocationIndex();}
+    var after=pkmStateSnapshot(stat_data);
+    if(before===after){hudHydrateDiyDomOnly();hudDiagInc('silentRefreshSkipped');return true;}
+  }catch(e){hudDiagError('silent refresh state',e);return false;}
   try{pkmHudRenderCurrent();return true;}catch(e){hudDiagError('silent refresh render',e);return false;}
 }
+var hudManualRefreshBusy=false;
 function hudRefresh(){
+  if(hudManualRefreshBusy){hudDiagInc('manualRefreshDeduped');return false;}
+  hudManualRefreshBusy=true;
   var activeTab='1';
   try{var at=document.querySelector('.tab-btn.active');if(at)activeTab=at.getAttribute('data-tab')||'1';}catch(e){}
   var btn=document.querySelector('[data-hud-refresh]');
   if(btn){btn.classList.add('spin');btn.disabled=true;}
-  
   try{if(!hudPendingActions.length){stat_data=loadStatData();hudExternalStateChanged();hudRebuildLocationIndex();}}catch(e){hudDiagError('manual refresh state',e);}
   try{diySyncFromStorage(false);}catch(e){}
-  try{hudMigrateInlineDiyAssets();}catch(e){}
+  // Manual MVU refresh must not migrate/canonicalize DIY images. Image migration has its
+  // own lifecycle (startup/save/import) and mixing the two was the feedback-loop trigger.
   try{recordSeen();}catch(e){}
   try{
     render();
@@ -7328,16 +7431,18 @@ function hudRefresh(){
     for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-tab')===activeTab);}
     var panels=document.querySelectorAll('.tab-panel');
     for(var j=0;j<panels.length;j++){panels[j].classList.toggle('active',panels[j].id==='tab-'+activeTab);}
-    resizeFrame();
+    hudHydrateDiyDomOnly();resizeFrame();
   }catch(e){try{fail('HUD 刷新失败：'+e.message);}catch(e2){}}
   hudScope.setTimeout(function(){
+    hudManualRefreshBusy=false;
     var b=document.querySelector('[data-hud-refresh]');
-    if(b){b.classList.remove('spin');b.disabled=false;b.innerHTML='<span class="hud-refresh-ok">✔</span>';}
+    if(b){b.classList.remove('spin');b.disabled=false;b.innerHTML='<span class="hud-refresh-ok">✔</span>';hudBindRefreshProgrammaticGuard(b);}
     hudScope.setTimeout(function(){
       var b2=document.querySelector('[data-hud-refresh]');
-      if(b2){b2.innerHTML=refreshIconHTML();}
+      if(b2){b2.innerHTML=refreshIconHTML();hudBindRefreshProgrammaticGuard(b2);}
     },900);
   },80);
+  return true;
 }
 function bindHudRefresh(){}
 function hudActiveTab(app){try{var b=app&&app.querySelector('.tab-btn.active');return b?String(b.getAttribute('data-tab')||'1'):'1';}catch(e){return '1';}}
@@ -7353,6 +7458,7 @@ function refreshHudPanels(app){
   app.querySelectorAll('.tab-btn').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===active);});
   app.querySelectorAll('.tab-panel').forEach(function(el){var k=String(el.id||'').replace('tab-','');el.classList.toggle('active',k===active);if(scrolls[k]!=null)el.scrollTop=scrolls[k];});
   for(var i=0;i<cards.length;i++)preloadMoves(cards[i].skills);
+  hudBindRefreshProgrammaticGuard(app);
   pkImgFix(app);resolvePkmImgs(app);resolveItemImgs(app);resolveNearbyTypes(app);hudResolvePkidbImages(app);hudDiagInc('partialRenders');return true;
 }
 function hudBindRootDelegation(app){
@@ -7364,7 +7470,11 @@ function hudBindRootDelegation(app){
   });
   app.addEventListener('click',function(e){
     var _et=e.target;if(_et&&_et.nodeType!==1)_et=_et.parentElement;var x=_et&&_et.closest?_et.closest.bind(_et):null;if(!x)return;
-    var r=x('[data-hud-refresh]');if(r){e.stopPropagation();hudRefresh();return;}
+    var r=x('[data-hud-refresh]');if(r){
+      e.preventDefault();e.stopPropagation();
+      if(e.isTrusted===false){hudDiagInc('syntheticRefreshEventsBlocked');hudHydrateDiyDomOnly();return;}
+      hudRefresh();return;
+    }
     var ht=x('[data-hud-cmd-toggle]');if(ht){e.stopPropagation();hudCmdOpen=!hudCmdOpen;refreshHudPanels(app);resizeFrame();return;}
     var hr=x('[data-hud-cmd-remove]');if(hr){e.stopPropagation();hudRemoveAction(hr.getAttribute('data-hud-cmd-remove'));return;}
     var tip=x('[data-tip]');if(tip){e.preventDefault();e.stopPropagation();hudMsg(tip.getAttribute('data-tip'));return;}
@@ -7396,6 +7506,7 @@ function render(){
   '<div class="tab-panel" id="tab-4">'+menuHTML()+'</div>'+
   '</div>'+
   '<div class="tab-bar"><button class="tab-btn active" data-tab="1">主页</button><button class="tab-btn" data-tab="2">世界</button><button class="tab-btn" data-tab="3">战场</button><button class="tab-btn" data-tab="4">菜单</button></div></div>';
+hudBindRefreshProgrammaticGuard(app);
 pkImgFix(app);
 resolvePkmImgs(app);
 resolveItemImgs(app);
