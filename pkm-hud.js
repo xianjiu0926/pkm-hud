@@ -3,11 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.2.9';
+var PK_VER='2.3.0';
 /*PK_NOTICE_BEGIN
-@狮子酱
-修复创意工坊导入 DIY 精灵后的本地图片识别与刷新同步
--注意：需要重新在创意工坊下载diy
+修复背包最后一项数量与丢弃按钮错位；统一背包各行右侧列对齐
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -451,6 +449,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.item-icon.placeholder{display:flex;align-items:center;justify-content:center;color:var(--dim);background:rgba(170,204,255,.12);border-radius:4px;width:28px;height:28px}'+
 '.item-name{flex:1;font-size:.85rem;color:var(--text)}'+
 '.item-count{font-size:.85rem;color:var(--dim)}'+
+'.bag-list>.item-entry{display:grid;grid-template-columns:28px minmax(0,1fr) 36px 58px;column-gap:8px;align-items:center;padding-right:clamp(8px,2vw,12px)}'+
+'.bag-list>.item-entry .item-icon-wrap{width:28px;min-width:28px}'+
+'.bag-list>.item-entry .item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+'.bag-list>.item-entry .item-count{width:36px;min-width:36px;text-align:right;justify-self:end}'+
+'.bag-list>.item-entry>[data-bag-discard]{width:58px;min-width:58px;justify-self:end;text-align:center;padding-left:6px;padding-right:6px}'+
 '.box-select{background:rgba(43,74,111,.7);color:#fff;border:1px solid var(--frame);border-radius:4px;padding:1px 14px;font-family:inherit;font-size:.75rem;margin-bottom:5px;width:auto;min-width:120px;text-align:center;text-align-last:center;float:right}'+
 '.box-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:280px;overflow-y:auto;padding-right:4px;clear:both}'+
 '.box-cell{display:flex;flex-direction:column;align-items:center;padding:6px;cursor:pointer;border-radius:6px;transition:background .12s}'+
@@ -529,7 +532,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dex-cell.unknown .dex-types{visibility:hidden}'+
 '.item-badge{height:1em;width:auto;image-rendering:pixelated;object-fit:contain;flex-shrink:0;transform:scale(1.5);transform-origin:center}'+
 '.info-title{margin-left:8%}'+
-'.info-row.cmd,.info-row:last-child,.task-item:last-child,.event-item:last-child,.item-entry:last-child{padding-right:7%}'+
+'.info-row.cmd,.info-row:last-child,.task-item:last-child,.event-item:last-child{padding-right:7%}'+
 '.card-inner{padding-left:8%;padding-right:7%}'+
 '.bottom-row{padding:0}'+
 '.empty-inner{padding-left:8%}'+
@@ -1182,8 +1185,8 @@ function hudResolveDiyPokemonInfo(input){
 
 (function(){
   var api={
-    version:'2.10.1',
-    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true,diyAssetHydrationV2:true},
+    version:'2.10.3',
+    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true,diyAssetHydrationV2:true,silentMvuRefresh:true,pendingWriteBarrier:true},
     getStatData:function(){return pkmHudClone(stat_data);},
     getNearbyDiagnostics:function(){try{return pkmHudClone(nearbyDiagnostics());}catch(e){return [];}},
     getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
@@ -1247,7 +1250,9 @@ function hudResolveDiyPokemonInfo(input){
       return {count:count,pokemon:pokemon,changed:changed,installed:installed,worldbookQueued:worldbookQueue.length,worldbookScheduled:worldbookQueue.length>0};
     },
     persist:function(){return pkmHudPersistStatData();},
+    flushPendingWrites:function(){return __pkmHudPersistQueue.catch(function(){return false;});},
     refreshView:function(){return pkmHudRenderCurrent();},
+    refreshFromMvuSilent:function(){try{return hudRefreshFromMvuSilent();}catch(e){return false;}},
     refreshFromMvu:function(){try{hudRefresh();return true;}catch(e){return false;}},
     setTeamSlot:function(slot,pokemon){
       slot=String(parseInt(slot,10)||'');if(!slot||Number(slot)<1||Number(slot)>6)return Promise.reject(new Error('无效队伍位置'));
@@ -7232,6 +7237,10 @@ function refreshIconHTML(){
 }
 function refreshBtnHTML(){
   return '<button type="button" class="hud-refresh-btn" data-hud-refresh title="刷新变量">'+refreshIconHTML()+'</button>';
+}
+function hudRefreshFromMvuSilent(){
+  try{if(!hudPendingActions.length){stat_data=loadStatData();hudExternalStateChanged();hudRebuildLocationIndex();}}catch(e){hudDiagError('silent refresh state',e);return false;}
+  try{pkmHudRenderCurrent();return true;}catch(e){hudDiagError('silent refresh render',e);return false;}
 }
 function hudRefresh(){
   var activeTab='1';
