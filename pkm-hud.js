@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.3.6';
+var PK_VER='2.3.7';
 /*PK_NOTICE_BEGIN
 优化
 PK_NOTICE_END*/
@@ -2960,7 +2960,7 @@ function fetchPkmSlug(name,cb){
     cb&&cb(slug);
   }
   function parsePage(title,onFail){
-    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(title)+'&format=json&prop=wikitext&variant=zh-hans&origin=*')
+    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(title)+'&format=json&prop=wikitext&variant=zh-hans&redirects=1&origin=*')
       .then(function(r){return r.ok?r.json():Promise.reject();})
       .then(function(j){
         var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
@@ -3454,8 +3454,15 @@ function nearbyTypeChipsHTML(t1,t2){
 }
 function nearbyTypeBarHTML(m){
   var out=(m.type1?typeChipHTML(m.type1):'')+(m.type2?typeChipHTML(m.type2):'');
-  if(!m.type1)out+='<span data-nb-type="'+esc(m.name)+'" data-nb-en="'+esc((m.pokemon&&m.pokemon.英文名)||'')+'" data-nb-type-mode="chip"></span>';
+  if(!m.type1)out+='<span data-nb-type="'+esc(m.name)+'" data-nb-en="'+esc((m.pokemon&&m.pokemon.英文名)||'')+'" data-nb-cn="'+esc((m.pokemon&&m.pokemon.名字)||'')+'" data-nb-type-mode="chip"></span>';
   return out;
+}
+function nearbyTypeCacheKeyOf(p){
+  var cn=String((p&&p.名字)||'').trim();
+  if(cn)return cn;
+  var en=nearbyEnSlug((p&&p.英文名)||'');
+  if(en)return 'en:'+en;
+  return '';
 }
 function nearbyEnSlug(en){
   var s=String(en||'').toLowerCase();
@@ -3464,25 +3471,56 @@ function nearbyEnSlug(en){
   s=s.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   return s;
 }
-function nearbyFetchTypesByEn(en,cb){
-  var slug=nearbyEnSlug(en);
-  if(!slug){cb&&cb('','');return;}
-  hudFetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(slug))
-    .then(function(r){return r.ok?r.json():Promise.reject();})
-    .then(function(j){
-      var ts=(j&&j.types)||[];
-      function cnm(i){var n=ts[i]&&ts[i].type&&ts[i].type.name;if(!n)return '';return nearbyCleanType(TYPE_CN[n]||n);}
-      cb&&cb(cnm(0),cnm(1));
-    })
-    .catch(function(){cb&&cb('','');});
+function nearbyPickForm(d,cn,en){
+  if(!d||!d.forms||!d.forms.length)return null;
+  var forms=d.forms;
+  if(forms.length===1)return forms[0];
+  var s=t2s(String(cn||'')+' '+String(en||'')).toLowerCase();
+  s=s
+    .replace(/\bmega\b/g,' 超级 ')
+    .replace(/\bgigantamax\b|\bgmax\b|\bg-max\b/g,' 超极巨 ')
+    .replace(/\bprimal\b/g,' 原始 ')
+    .replace(/\balolan\b|\balola\b/g,' 阿罗拉 ')
+    .replace(/\bgalarian\b|\bgalar\b/g,' 伽勒尔 ')
+    .replace(/\bhisuian\b|\bhisui\b/g,' 洗翠 ')
+    .replace(/\bpaldean\b|\bpaldea\b/g,' 帕底亚 ')
+    .replace(/dusk\s*mane/g,' 黄昏之鬃 ')
+    .replace(/dawn\s*wings/g,' 拂晓之翼 ')
+    .replace(/ice\s*rider/g,' 骑白马 ')
+    .replace(/shadow\s*rider/g,' 骑黑马 ')
+    .replace(/crowned\s*sword/g,' 剑之王 ')
+    .replace(/crowned\s*shield/g,' 盾之王 ')
+    .replace(/\bsky\s*forme\b/g,' 天空形态 ')
+    .replace(/zen\s*mode/g,' 达摩模式 ');
+  var best=null,bestScore=0,i;
+  for(i=1;i<forms.length;i++){
+    var nm=t2s(String(forms[i].name||''));
+    var score=0;
+    if(forms[i].region){
+      if(forms[i].region==='alola'&&s.indexOf('阿罗拉')>=0)score+=3;
+      else if(forms[i].region==='galar'&&s.indexOf('伽勒尔')>=0)score+=3;
+      else if(forms[i].region==='hisui'&&s.indexOf('洗翠')>=0)score+=3;
+      else if(forms[i].region==='paldea'&&s.indexOf('帕底亚')>=0)score+=3;
+    }
+    var kw=['超级','原始','超极巨','加热','清洗','结冰','旋转','切割','热辣','啪滋','呼拉','轻盈','黄昏之鬃','拂晓之翼','究极','骑白马','骑黑马','剑之王','盾之王','天空','舞步','斗战','火炽','水澜','达摩模式'];
+    for(var k=0;k<kw.length;k++){if(s.indexOf(kw[k])>=0&&nm.indexOf(kw[k])>=0)score+=4;}
+    var cnT=String(cn||''),enL=String(en||'').toLowerCase();
+    if(/[ＸXx]$/.test(cnT)&&/[ＸXx]$/.test(nm))score+=2;
+    if(/[ＹYy]$/.test(cnT)&&/[ＹYy]$/.test(nm))score+=2;
+    if(/(^|\s)x$/.test(enL)&&/[ＸXx]$/.test(nm))score+=2;
+    if(/(^|\s)y$/.test(enL)&&/[ＹYy]$/.test(nm))score+=2;
+    if(score>bestScore){bestScore=score;best=forms[i];}
+  }
+  return bestScore>0?best:forms[0];
 }
-function nearbyFetchTypes(name,en,cb){
+function nearbyFetchTypes(name,en,cn,cb){
   name=String(name==null?'':name).trim();
   en=String(en==null?'':en).trim();
+  cn=String(cn==null?'':cn).trim();
   if(!name&&!en){cb&&cb('','');return;}
-  var cacheKey=name||('en:'+nearbyEnSlug(en));
+  var cacheKey=nearbyTypeCacheKeyOf({名字:cn||name,英文名:en})||name;
   if(nearbyTypeCache[cacheKey]){var c=nearbyTypeCache[cacheKey];cb&&cb(c.type1,c.type2);return;}
-  var key='nbtype_v3_'+cacheKey;
+  var key='nbtype_v7_'+cacheKey;
   try{var raw=lsGet(key,'');if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){o={type1:String(o.type1||''),type2:String(o.type2||'')};nearbyTypeCache[cacheKey]=o;cb&&cb(o.type1,o.type2);return;}}}catch(e){}
   if(nearbyTypePending[cacheKey]){nearbyTypePending[cacheKey].push(cb);return;}
   nearbyTypePending[cacheKey]=cb?[cb]:[];
@@ -3493,22 +3531,22 @@ function nearbyFetchTypes(name,en,cb){
     var q=nearbyTypePending[cacheKey]||[];nearbyTypePending[cacheKey]=null;
     for(var i=0;i<q.length;i++){try{q[i]&&q[i](o.type1,o.type2);}catch(e){}}
   }
-  function viaWiki(){
+  function viaName(nm,next){
+    if(!nm){next();return;}
     try{
-      fetchPokemon(name,function(d){
-        var f=d&&d.forms&&d.forms[0];
-        if(!f){fin('','');return;}
-        fin(nearbyCleanType(f.type1),nearbyCleanType(f.type2));
+      fetchPokemon(nm,function(d){
+        var f=nearbyPickForm(d,cn,en);
+        if(!f){next();return;}
+        var a=nearbyCleanType(f.type1),b=nearbyCleanType(f.type2);
+        if(a||b){fin(a,b);}else{next();}
       });
-    }catch(e){fin('','');}
+    }catch(e){next();}
   }
-  if(en){
-    nearbyFetchTypesByEn(en,function(t1,t2){
-      if(t1||t2){fin(t1,t2);}else{viaWiki();}
-    });
-  }else{
-    viaWiki();
-  }
+  var tries=[en,cn,name],seen={},uniq=[];
+  for(var z=0;z<tries.length;z++){var t=tries[z];if(t&&!seen[t]){seen[t]=1;uniq.push(t);}}
+  var ti=0;
+  function step(){if(ti>=uniq.length){fin('','');return;}viaName(uniq[ti++],step);}
+  step();
 }
 function resolveNearbyTypes(scope){
   var root=scope||document;if(!root.querySelectorAll)return;
@@ -3517,7 +3555,8 @@ function resolveNearbyTypes(scope){
     if(el._nbTypeDone)return;el._nbTypeDone=1;
     var name=el.getAttribute('data-nb-type');
     var en=el.getAttribute('data-nb-en')||'';
-    nearbyFetchTypes(name,en,function(t1,t2){
+    var cn=el.getAttribute('data-nb-cn')||'';
+    nearbyFetchTypes(name,en,cn,function(t1,t2){
       if(!t1&&!t2){if(el.parentNode)el.parentNode.removeChild(el);return;}
       el.innerHTML=nearbyTypeChipsHTML(t1,t2);
       var card=el.closest?el.closest('.nb-primary-normal'):null;
@@ -3540,7 +3579,7 @@ function nearbyNormName(name){var t=String(name||'').trim();try{if(typeof baseNa
 function nearbyTypeColor(tp){return NEARBY_TYPE_COLORS[String(tp||'').trim()]||'#7d95b5';}
 function nearbyHexToRgba(hex,a){hex=String(hex||'').replace('#','');if(hex.length===3)hex=hex.replace(/(.)/g,'$1$1');var n=parseInt(hex,16);if(!isFinite(n))return 'rgba(125,149,181,'+(a||1)+')';var r=(n>>16)&255,g=(n>>8)&255,b=n&255;return 'rgba('+r+','+g+','+b+','+(a==null?1:a)+')';}
 function nearbyAllText(p){p=(p&&Array.isArray(p._nearbyTags))?p:nearbyNormalizeEntry(p);return [p.名字,p.英文名,p.状态,(p._nearbyTags||[]).join(' ')].join(' ');}
-function nearbyCategoryMeta(raw){var p=nearbyNormalizeEntry(raw),nm=nearbyNormName(p.名字),txt=nearbyAllText(p),shiny=p.是否闪光,boss=/霸主|头目|頭目|首领|首領|boss|alpha/i.test(txt),mega=/(?:^|[\s·_-])mega(?:[\s·_-]|$)|\bmage\b|mega进化|mega進化|超级进化|超級進化|超进化|超進化/i.test(txt)||/^(?:Mega|mega|MAGE|mage)/.test(String(p.名字||'')),dynamax=/超极巨|超極巨|极巨化|極巨化|极巨|極巨|dynamax|gigantamax|g-max/i.test(txt),ultra=/异兽|異獸|究极异兽|究極異獸|ultra\s*beast|\bUB\b/i.test(txt)||!!NEARBY_ULTRA_SET[nm],mythical=/幻兽|幻獸|mythical/i.test(txt)||!!NEARBY_MYTHICAL_SET[nm],legendary=!mythical&&!ultra&&(/神兽|神獸|传说宝可梦|傳說寶可夢|legendary/i.test(txt)||!!NEARBY_LEGENDARY_SET[nm]),t1=String(p.属性1||'').trim(),t2=String(p.属性2||'').trim();if(t2==='无')t2='';if(!t1){var _nt=nearbyTypeCache[nm];if(_nt){t1=_nt.type1||'';if(!t2)t2=_nt.type2||'';}}var c1=nearbyTypeColor(t1||(legendary?'龙':'一般')),c2=t2?nearbyTypeColor(t2):c1,primary=legendary?'legendary':mythical?'mythical':ultra?'ultra':boss?'boss':mega?'mega':dynamax?'dynamax':shiny?'shiny':'normal';if(primary==='mythical'){c1='#ff78a9';c2='#b98cff';}else if(primary==='ultra'){c1='#00e5ff';c2='#7c3aed';}else if(primary==='boss'){c1='#ff9a3d';c2='#dc2626';}else if(primary==='mega'){c1='#58c8ff';c2='#8b5cf6';}else if(primary==='dynamax'){c1='#ff5cac';c2='#e11d48';}else if(primary==='shiny'){c1='#ffe47a';c2='#e6b800';}return {pokemon:p,name:nm,text:txt,legendary:legendary,mythical:mythical,ultra:ultra,boss:boss,mega:mega,dynamax:dynamax,shiny:shiny,type1:t1,type2:t2,primary:primary,accent1:c1,accent2:c2,soft1:nearbyHexToRgba(c1,.28),soft2:nearbyHexToRgba(c2,.20),glow1:nearbyHexToRgba(c1,.38),glow2:nearbyHexToRgba(c2,.28)};}
+function nearbyCategoryMeta(raw){var p=nearbyNormalizeEntry(raw),nm=nearbyNormName(p.名字),txt=nearbyAllText(p),shiny=p.是否闪光,boss=/霸主|头目|頭目|首领|首領|boss|alpha/i.test(txt),mega=/(?:^|[\s·_-])mega(?:[\s·_-]|$)|\bmage\b|mega进化|mega進化|超级进化|超級進化|超进化|超進化/i.test(txt)||/^(?:Mega|mega|MAGE|mage)/.test(String(p.名字||'')),dynamax=/超极巨|超極巨|极巨化|極巨化|极巨|極巨|dynamax|gigantamax|g-max/i.test(txt),ultra=/异兽|異獸|究极异兽|究極異獸|ultra\s*beast|\bUB\b/i.test(txt)||!!NEARBY_ULTRA_SET[nm],mythical=/幻兽|幻獸|mythical/i.test(txt)||!!NEARBY_MYTHICAL_SET[nm],legendary=!mythical&&!ultra&&(/神兽|神獸|传说宝可梦|傳說寶可夢|legendary/i.test(txt)||!!NEARBY_LEGENDARY_SET[nm]),t1=String(p.属性1||'').trim(),t2=String(p.属性2||'').trim();if(t2==='无')t2='';if(!t1){var _nt=nearbyTypeCache[nearbyTypeCacheKeyOf(p)];if(_nt){t1=_nt.type1||'';if(!t2)t2=_nt.type2||'';}}var c1=nearbyTypeColor(t1||(legendary?'龙':'一般')),c2=t2?nearbyTypeColor(t2):c1,primary=legendary?'legendary':mythical?'mythical':ultra?'ultra':boss?'boss':mega?'mega':dynamax?'dynamax':shiny?'shiny':'normal';if(primary==='mythical'){c1='#ff78a9';c2='#b98cff';}else if(primary==='ultra'){c1='#00e5ff';c2='#7c3aed';}else if(primary==='boss'){c1='#ff9a3d';c2='#dc2626';}else if(primary==='mega'){c1='#58c8ff';c2='#8b5cf6';}else if(primary==='dynamax'){c1='#ff5cac';c2='#e11d48';}else if(primary==='shiny'){c1='#ffe47a';c2='#e6b800';}return {pokemon:p,name:nm,text:txt,legendary:legendary,mythical:mythical,ultra:ultra,boss:boss,mega:mega,dynamax:dynamax,shiny:shiny,type1:t1,type2:t2,primary:primary,accent1:c1,accent2:c2,soft1:nearbyHexToRgba(c1,.28),soft2:nearbyHexToRgba(c2,.20),glow1:nearbyHexToRgba(c1,.38),glow2:nearbyHexToRgba(c2,.28)};}
 function nearbyCardPriority(raw){var m=nearbyCategoryMeta(raw),s=0;if(m.legendary)s+=700;if(m.mythical)s+=640;if(m.ultra)s+=580;if(m.boss)s+=440;if(m.mega)s+=360;if(m.dynamax)s+=300;if(m.shiny)s+=240;s+=(Number(m.pokemon&&m.pokemon.数量)||0);return s;}
 function nearbySortedKeys(obj){return Object.keys(obj||{}).map(function(k){return {key:k,score:nearbyCardPriority(obj[k])};}).sort(function(a,b){return b.score-a.score;}).map(function(x){return x.key;});}
 function nearbyMarkHTML(kind,label,text,style){return '<span class="nb-mark '+kind+'"'+(style?' style="'+style+'"':'')+' title="'+esc(label)+'"><span>'+text+'</span></span>';}
@@ -3550,7 +3589,7 @@ function nearbyPillsHTML(m){var a=[];if(m.legendary)a.push(nearbyPillHTML('legen
 function nearbyCellClasses(m){var cls=['nb-primary-'+m.primary];if(m.legendary)cls.push('is-legendary');if(m.mythical)cls.push('is-mythical');if(m.ultra)cls.push('is-ultra');if(m.boss)cls.push('is-boss');if(m.mega)cls.push('is-mega');if(m.dynamax)cls.push('is-dynamax');if(m.shiny)cls.push('is-shiny');return cls.join(' ');}
 function nearbyCellStyle(m){return '--nb-accent1:'+m.accent1+';--nb-accent2:'+m.accent2+';--nb-soft1:'+m.soft1+';--nb-soft2:'+m.soft2+';--nb-glow1:'+m.glow1+';--nb-glow2:'+m.glow2+';';}
 function nearbyCardHTML(key,raw,mode){var m=nearbyCategoryMeta(raw),p=m.pokemon,img=pkImgHTML(p.名字,p.图标,m.shiny,mode==='page'?'box-icon nearby-pic':'nb-icon nearby-pic'),attr=(mode==='page'?'data-nearby':'data-nearby-open')+'="'+esc(key)+'"',cls=(mode==='page'?'box-cell nearby-cell ':'nb-cell ')+nearbyCellClasses(m),sub='×'+num(p.数量,1),title=esc(p.名字||'未知宝可梦');return '<div class="'+cls+'" style="'+nearbyCellStyle(m)+'" '+attr+'><div class="nb-aura"></div><div class="nb-edge"></div><div class="nb-thumb-wrap">'+img+'</div><div class="nb-name-row"><span class="nb-name" title="'+title+'">'+title+'</span><span class="nb-name-icons">'+nearbyNameIconsHTML(m)+'</span></div><div class="nb-pillbar">'+nearbyPillsHTML(m)+'</div><div class="nb-typebar">'+nearbyTypeBarHTML(m)+'</div><div class="nb-cnt">'+sub+'</div></div>';}
-function nearbyDiagnostics(){var obj=stat_data.附近宝可梦||{},out=[];Object.keys(obj).forEach(function(key){var raw=obj[key],m=nearbyCategoryMeta(raw),p=m.pokemon,w=[];if(!p.名字)w.push('缺少名字');if((m.legendary||m.mythical||m.ultra)&&!p.属性1)w.push('稀有宝可梦未提供属性，将自动联网补齐（PokeAPI 英文名优先，52poke 中文兜底）');var rv=(raw&&raw.是否闪光);if(typeof rv==='string'&&!/^(?:是|否|true|false|1|0|yes|no|y|n|闪光|异色|異色)$/i.test(rv.trim()))w.push('是否闪光字段不是推荐布尔/是/否格式');if(!p.图标)w.push('未提供图标，将依赖 HUD 在线图片解析');out.push({key:key,normalized:{名字:p.名字,英文名:p.英文名,数量:p.数量,是否闪光:p.是否闪光,状态:p.状态,属性1:p.属性1,属性2:p.属性2,图标:p.图标,标签:p._nearbyTags},detected:{神兽:m.legendary,幻兽:m.mythical,异兽:m.ultra,霸主:m.boss,Mega:m.mega,极巨化:m.dynamax,闪光:m.shiny,primary:m.primary},warnings:w});});return out;}
+function nearbyDiagnostics(){var obj=stat_data.附近宝可梦||{},out=[];Object.keys(obj).forEach(function(key){var raw=obj[key],m=nearbyCategoryMeta(raw),p=m.pokemon,w=[];if(!p.名字)w.push('缺少名字');if((m.legendary||m.mythical||m.ultra)&&!p.属性1)w.push('稀有宝可梦未提供属性，将自动联网补齐（52poke 英文名重定向优先，中文名兜底）');var rv=(raw&&raw.是否闪光);if(typeof rv==='string'&&!/^(?:是|否|true|false|1|0|yes|no|y|n|闪光|异色|異色)$/i.test(rv.trim()))w.push('是否闪光字段不是推荐布尔/是/否格式');if(!p.图标)w.push('未提供图标，将依赖 HUD 在线图片解析');out.push({key:key,normalized:{名字:p.名字,英文名:p.英文名,数量:p.数量,是否闪光:p.是否闪光,状态:p.状态,属性1:p.属性1,属性2:p.属性2,图标:p.图标,标签:p._nearbyTags},detected:{神兽:m.legendary,幻兽:m.mythical,异兽:m.ultra,霸主:m.boss,Mega:m.mega,极巨化:m.dynamax,闪光:m.shiny,primary:m.primary},warnings:w});});return out;}
 function nearbyHTML(){var obj=stat_data.附近宝可梦||{};var keys=nearbySortedKeys(obj);if(!keys.length)return frame('附近宝可梦','<div class="empty">暂无</div>');var show=nearbyOpen?keys:keys.slice(0,6);var cells=show.map(function(key){return nearbyCardHTML(key,obj[key],'strip');}).join('');var rare=keys.filter(function(k){var m=nearbyCategoryMeta(obj[k]);return m.legendary||m.mythical||m.ultra||m.boss||m.mega||m.dynamax||m.shiny;}).length;var more=keys.length>6?'<span class="nb-toggle" data-nearby-toggle>'+(nearbyOpen?'收起 ▲':'展开全部('+keys.length+') ▼')+'</span>':'';var rareText=rare?'<span class="nb-rare-count">✦ '+rare+' 特殊</span>':'';return '<div class="info-frame nearby-frame">'+svgFrame+'<div class="info-inner"><div class="info-title"><span>附近宝可梦</span>'+rareText+more+'</div><div class="nb-grid">'+cells+'</div></div></div>';}
 function nearbyPageHTML(){var obj=stat_data.附近宝可梦||{};var keys=nearbySortedKeys(obj);if(!keys.length)return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦</div><div class="empty">暂无</div></div>';var cells=keys.map(function(key){return nearbyCardHTML(key,obj[key],'page');}).join('');return '<div class="nearby-wrap"><div class="nearby-title">附近宝可梦 <span class="nb-page-count">'+keys.length+' 个目标</span></div><div class="nearby-grid">'+cells+'</div></div>';}
 function openNearbyPage(){pageOverlayPopout(false);pageOverlay.innerHTML='<div class="page nearby-page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body nearby-body">'+nearbyPageHTML()+'</div></div>';pageOverlay.classList.add('open');bindPageInteractions();pkImgFix(pageOverlay);resolvePkmImgs(pageOverlay);resolveNearbyTypes(pageOverlay);hudResolvePkidbImages(pageOverlay);}
@@ -4938,7 +4977,7 @@ function fetchPokemon(name,cb){
     for(var i=0;i<cbs.length;i++){try{cbs[i](d);}catch(e){}}
   }
   function parsePage(title,onFail){
-    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(title)+'&format=json&prop=wikitext&variant=zh-hans&origin=*')
+    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(title)+'&format=json&prop=wikitext&variant=zh-hans&redirects=1&origin=*')
       .then(function(r){return r.ok?r.json():Promise.reject();})
       .then(function(j){
         var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
