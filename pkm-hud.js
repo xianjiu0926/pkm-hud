@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.3.8';
+var PK_VER='2.4.0';
 /*PK_NOTICE_BEGIN
-修复 DIY 本地图片与 Phone Suite 联动时可能导致“个人信息”刷新按钮循环刷新的问题；程序化刷新不再触发人工刷新链，DIY hydration 仅更新图片 DOM；增加 DIY 迁移防重入与重复渲染抑制。
+DIY 数据和世界书写入职责已完全移交 Phone Suite v1.43+。HUD 仅保留 pk_diy / pkidb:// 读取、图片显示及兼容调用代理；installDiyBundle 不再自行写 DIY 或世界书，避免双写和隐式世界书修改。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -819,7 +819,6 @@ var MENU=[
   {key:'breeding',label:'繁育',emoji:'🥚',img:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',isz:20},
   {key:'pokedex',label:'图鉴',emoji:'📖',img:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png'},
   {key:'badge',label:'徽章盒',emoji:'🏅',img:''},
-  {key:'diy',label:'DIY',emoji:'🛠️',img:''},
   {key:'map',label:'地图',emoji:'🗺️',img:''},
   {key:'settings',label:'设置',emoji:'⚙️',img:''}
 ];
@@ -1156,6 +1155,7 @@ try{hudScope.listen(WIN,'pkworkshop:diy-runtime-hydrated',function(){
 try{hudScope.listen(WIN,'storage',function(e){if(e&&e.key==='pk_diy'){try{diySyncFromStorage(true);}catch(_){}hudScheduleDiyVisualRefresh(false);}});}catch(e){}
 function hudMigrateInlineDiyAssets(){
   if(hudDiyMigrationPromise)return hudDiyMigrationPromise;
+  try{var ps=(WIN.__PokemonPhoneSuite||window.__PokemonPhoneSuite),lib=ps&&ps.diyLibrary;if(lib&&Number(lib.schema||0)>=2){diyPreloadImages();hudHydrateDiyDomOnly();hudDiagInc('diyExternalOwnerMigrationSkips');return Promise.resolve(false);}}catch(e){}
   hudDiyMigrationPromise=(async function(){
     var jobs=[],changed=false;
     function one(obj,key){
@@ -1262,8 +1262,8 @@ function hudResolveDiyPokemonInfo(input){
 
 (function(){
   var api={
-    version:'2.10.4',
-    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:true,diyAssetCanonicalRef:true,diyAssetPersistence:true,diyAssetHydrationV2:true,diyHydrationDomOnlyV1:true,programmaticRefreshGuardV1:true,silentMvuRefresh:true,pendingWriteBarrier:true},
+    version:'2.12.0',
+    capabilities:{nearbyVisualV3:true,nearbyDiagnostics:true,pokemonIdentity:true,pokemonIdentityCore:true,pokemonIdentityMigrationV3:true,identityGuard:true,pokemonReferenceV2:true,assetLocks:true,cloudStubs:true,stateRevision:true,locations:true,assetMutationBridge:true,authoritativeAssetMutation:true,diyCanonicalData:true,diyPokemonResolver:true,spriteProviders:true,dynamicSpriteUrls:true,diyBundleInstallV2:true,diyWorldbookSync:false,diyAssetCanonicalRef:true,diyAssetPersistence:true,diyAssetHydrationV2:true,diyHydrationDomOnlyV1:true,programmaticRefreshGuardV1:true,silentMvuRefresh:true,pendingWriteBarrier:true,diyExternalOwnerV1:true,diyExternalOwnerV2:true,diyEditorUi:false,diyWorldbookOnlyCompatV1:false,diyWorldbookWriter:false,diyReadOnlyRuntimeV1:true},
     getStatData:function(){return pkmHudClone(stat_data);},
     getNearbyDiagnostics:function(){try{return pkmHudClone(nearbyDiagnostics());}catch(e){return [];}},
     getTeam:function(){return pkmHudClone((stat_data&&stat_data.队伍)||{});},
@@ -1280,8 +1280,8 @@ function hudResolveDiyPokemonInfo(input){
     recordAssetMutation:function(p,opt){return hudRecordAssetMutation(p,opt||{});},
     applyAssetMutation:function(opt){return pkmHudAuthoritativeAssetMutation(opt||{});},
     getStateRevision:function(){return hudStateRevision();},
-    getDiyData:function(){try{diySyncFromStorage(false);}catch(e){}return pkmHudClone(diyData||{});},
-    getDiyDataCanonical:function(){return pkmHudClone(hudDiyCanonicalData());},
+    getDiyData:function(){try{var s=(WIN.__PokemonPhoneSuite||window.__PokemonPhoneSuite),lib=s&&s.diyLibrary;if(lib&&typeof lib.ready==='function'&&lib.ready()&&typeof lib.getCanonicalDataSync==='function')return pkmHudClone(lib.getCanonicalDataSync());}catch(e){}try{diySyncFromStorage(false);}catch(e){}return pkmHudClone(diyData||{});},
+    getDiyDataCanonical:function(){try{var s=(WIN.__PokemonPhoneSuite||window.__PokemonPhoneSuite),lib=s&&s.diyLibrary;if(lib&&typeof lib.ready==='function'&&lib.ready()&&typeof lib.getCanonicalDataSync==='function')return pkmHudClone(lib.getCanonicalDataSync());}catch(e){}return pkmHudClone(hudDiyCanonicalData());},
     getDiyPokemonInfo:function(input){return pkmHudClone(hudResolveDiyPokemonInfo(input));},
     canonicalizeImageRef:function(value){return hudDiyAssetCanonicalRef(value);},
     persistImageValue:function(value){return hudDiyAssetPersistValue(value);},
@@ -1292,40 +1292,14 @@ function hudResolveDiyPokemonInfo(input){
     buildPokemonSpriteUrls:function(opt){return pkmHudClone(hudBuildPokemonSpriteUrls(opt||{}));},
     reloadDiy:function(){try{diySyncFromStorage(true);return hudRefreshDiyVisuals(true);}catch(e){return false;}},
     installDiyBundle:function(bundle,opt){
-      opt=opt&&typeof opt==='object'?opt:{};
-      bundle=bundle&&typeof bundle==='object'?bundle:{};
-      
-      if(bundle.diy&&typeof bundle.diy==='object')bundle=bundle.diy;
-      else if(bundle.bundle&&typeof bundle.bundle==='object')bundle=bundle.bundle;
-      try{diySyncFromStorage(false);}catch(e){}
-      diyData=diyNormalizeData(diyData);
-      var count=0,pokemon=0,changed=0,installed=[],worldbookQueue=[];
-      ['move','ability','item','pokemon'].forEach(function(t){
-        var src=bundle[t]&&typeof bundle[t]==='object'&&!Array.isArray(bundle[t])?bundle[t]:{};
-        diyData[t]=diyData[t]||{};
-        Object.keys(src).forEach(function(k){
-          var name=String(k||'').trim();if(!name)return;
-          var existed=Object.prototype.hasOwnProperty.call(diyData[t],name);
-          var before=existed?JSON.stringify(diyData[t][name]):'';
-          var next=pkmHudClone(src[k]);
-          diyData[t][name]=next;count++;if(t==='pokemon')pokemon++;
-          var different=!existed||before!==JSON.stringify(next);if(different)changed++;
-          installed.push({type:t,name:name,existed:existed,changed:different});
-          if(opt.writeLorebook)worldbookQueue.push({type:t,name:name,existed:existed});
-        });
-      });
-      diySave();
-      try{pkmHudRenderCurrent();}catch(e){}
-      
-      if(worldbookQueue.length){
-        worldbookQueue.forEach(function(row,idx){
-          hudScope.setTimeout(function(){
-            try{diyWriteLorebook(row.type,row.name,row.existed?row.name:'',true);}catch(e){hudDiagError('Workshop worldbook sync',e);}
-          },idx*650);
-        });
+      opt=opt&&typeof opt==='object'?opt:{};bundle=bundle&&typeof bundle==='object'?bundle:{};if(bundle.diy&&typeof bundle.diy==='object')bundle=bundle.diy;else if(bundle.bundle&&typeof bundle.bundle==='object')bundle=bundle.bundle;
+      /* v2.4.0：HUD 是只读消费者。所有 DIY / 世界书写入都必须交给 Phone Suite。 */
+      var suite=null,lib=null;try{suite=(WIN.__PokemonPhoneSuite||window.__PokemonPhoneSuite);lib=suite&&suite.diyLibrary;}catch(e){}
+      if(!opt.skipLocalInstall&&lib&&typeof lib.installBundle==='function'){
+        return Promise.resolve(typeof lib.ensure==='function'?lib.ensure():true).then(function(){return lib.installBundle(pkmHudClone(bundle),{source:String(opt.source||'hud-compat'),overwrite:true,sourceRecord:{kind:String(opt.source||'hud-compat')}});}).then(function(rr){try{diySyncFromStorage(true);hudBuildDiyIndex();diyPreloadImages();hudRefreshDiyVisuals(true);}catch(e){}return {count:Number(rr&&rr.count||0),pokemon:Number(rr&&rr.pokemon||0),changed:Number(rr&&rr.changed||0),installed:rr&&rr.installed||[],worldbookQueued:0,worldbookScheduled:false,externalOwner:true,readOnlyHud:true};});
       }
-      try{WIN.dispatchEvent(new CustomEvent('pkm-hud:diy-installed',{detail:{source:String(opt.source||'external'),count:count,pokemon:pokemon,changed:changed,worldbookQueued:worldbookQueue.length}}));}catch(e){}
-      return {count:count,pokemon:pokemon,changed:changed,installed:installed,worldbookQueued:worldbookQueue.length,worldbookScheduled:worldbookQueue.length>0};
+      if(opt.skipLocalInstall){try{diySyncFromStorage(true);hudBuildDiyIndex();diyPreloadImages();hudRefreshDiyVisuals(true);}catch(e){}return {count:0,pokemon:0,changed:0,installed:[],worldbookQueued:0,worldbookScheduled:false,externalOwner:true,localInstallSkipped:true,readOnlyHud:true};}
+      return Promise.reject(new Error('HUD v2.4.0 已切换为 DIY 只读运行时；请安装/启用 Phone Suite v1.43+ 后再写入 DIY。'));
     },
     persist:function(){return pkmHudPersistStatData();},
     flushPendingWrites:function(){return __pkmHudPersistQueue.catch(function(){return false;});},
