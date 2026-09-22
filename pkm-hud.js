@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.4.0';
+var PK_VER='2.4.1';
 /*PK_NOTICE_BEGIN
-DIY 数据和世界书写入职责已完全移交 Phone Suite v1.43+。HUD 仅保留 pk_diy / pkidb:// 读取、图片显示及兼容调用代理；installDiyBundle 不再自行写 DIY 或世界书，避免双写和隐式世界书修改。
+修复宝可梦图标文件名含中划线「-」导致无法识别、图床 404 裂图的问题（如 nidoran-f.gif）。pokeos 与 Showdown 两条图源现均支持「带/不带中划线」自动回退：nidoran-f → nidoranf、nidoran-m → nidoranm、mr-mime → mrmime、porygon-z → porygonz、ho-oh → hooh 等均可正确加载。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3155,6 +3155,8 @@ function pkmIconParse(icon){
   var f=String(icon||'').trim().toLowerCase().replace(/\.gif$/,'');
   if(!/^[a-z0-9-]+$/.test(f)||!f)return null;
   if(PKM_EN_DEX[f]!==undefined)return {base:f,suf:''};
+  var noHyphen=f.replace(/-/g,'');
+  if(noHyphen!==f&&PKM_EN_DEX[noHyphen]!==undefined)return {base:noHyphen,suf:''};
   var i=f.indexOf('-');
   if(i<=0)return null;
   var base=f.slice(0,i),suf=f.slice(i+1);
@@ -3172,12 +3174,20 @@ function pkmPokeosIconUrls(icon,shiny){
 }
 function resolvePkmIconShowdown(el,icon,shiny){
   var fn=String(icon||'').toLowerCase().replace(/\.gif$/,'');
-  var ani='https://play.pokemonshowdown.com/sprites/'+(shiny?'ani-shiny/':'ani/')+fn+'.gif';
-  var png='https://play.pokemonshowdown.com/sprites/'+(shiny?'gen5-shiny/':'gen5/')+fn+'.png';
+  var cands=slugCandidates(fixSlug(fn));
+  if(!cands.length)cands=[fn];
   function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');}
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');}
   function load(u,onErr){if(!u){onErr();return;}var im=noRefImg();im.onload=function(){apply(u);};im.onerror=onErr;im.src=u;}
-  load(ani,function(){load(png,function(){fail();});});
+  var i=0;
+  function next(){
+    if(i>=cands.length){fail();return;}
+    var s=cands[i++];
+    var ani='https://play.pokemonshowdown.com/sprites/'+(shiny?'ani-shiny/':'ani/')+s+'.gif';
+    var png='https://play.pokemonshowdown.com/sprites/'+(shiny?'gen5-shiny/':'gen5/')+s+'.png';
+    load(ani,function(){load(png,next);});
+  }
+  next();
 }
 function resolvePkmIcon(el,icon,shiny){
   if(pkmSource==='showdown'){resolvePkmIconShowdown(el,icon,shiny);return;}
