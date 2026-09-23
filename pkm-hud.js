@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.1';
+var PK_VER='2.5.2';
 /*PK_NOTICE_BEGIN
-道具（背包、队伍栏携带物、详情页）新增按英文名抓取：同时利用 52poke「道具列表」里的英文名列与英文名重定向页面查图片和介绍（介绍仍为中文）。英文道具名（如 Leftovers、Focus Sash）也能正确显示图片与中文介绍；英文名匹配已做大小写与重音符号归一化（如 Poké Ball / Poke Ball 均可）。
+技能机支持「技能机·招式名」格式（如 技能机·百万吨重拳）：自动识别招式、按招式属性显示图标、点击查看招式详情。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3658,8 +3658,7 @@ function openNearbyPage(){pageOverlayPopout(false);pageOverlay.innerHTML='<div c
 
 function bagCategories(){var cats=[{key:'道具',label:'道具',items:[]},{key:'精灵球',label:'精灵球',items:[]},{key:'重要物品',label:'重要物品',items:[]}];var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var c=cats.find(function(x){return x.key===it.类型;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
 var activeBag='道具';
-function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0);var icon;if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var ov=itemImgOf(it.name);
-if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=(isTM||!itemClickEnabled)?'':' data-item="'+esc(it.name)+'" style="cursor:pointer"';return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
+function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0||it.name.indexOf('招式学习器')>=0);var tmMove=isTM?tmMoveName(it.name):'';var icon;if(tmMove){var iconSlug=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');icon=iconSlug?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconSlug,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder tm-wiki" data-tm="'+esc(tmMove)+'">?</span></span>';}else if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var ov=itemImgOf(it.name);if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=tmMove?' data-tm="'+esc(tmMove)+'" style="cursor:pointer"':((!isTM&&itemClickEnabled)?' data-item="'+esc(it.name)+'" style="cursor:pointer"':'');return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
 function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return frame('背包','<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
 
 var MAPS_DATA=[
@@ -5518,6 +5517,14 @@ b.innerHTML='<div class="row block"><span class="k">介绍</span><span class="v"
 var itemCache={},itemLoading={},itemSpriteCache={};
 var ITEM_ALIAS={'厚底鞋':'厚底靴','洛托姆手机':'手机洛托姆','奇异糖果':'神奇糖果','稀有糖果':'神奇糖果','药水':'伤药','回复药':'伤药','治疗药水':'伤药','超级药水':'超级伤药','高级药水':'好伤药','完全药水':'全满药','完全回复药':'全复药','解毒剂':'解毒药','烧伤药':'灼伤药','冰冻药':'解冻药','苏醒药':'清醒药','麻痹治愈':'麻痹药','万能药':'万灵药','复活碎片':'活力碎片','复活块':'活力块','复活药':'活力碎片','命玉':'生命宝珠','生命珠':'生命宝珠','剩菜':'剩饭','气腰':'气势披带','气势腰带':'气势披带','攻击背心':'突击背心','辉石':'进化奇石','进化辉石':'进化奇石','弱点对策':'弱点保险','专家腰带':'达人带','黑泥':'黑色污泥','岩石头盔':'凸凸头盔','尖锐头盔':'凸凸头盔','红色卡片':'红牌','逃脱按钮':'逃生按钮','快速爪子':'先制之爪','幸运金币':'护符金币','护身金币':'护符金币','速度围巾':'讲究围巾','特攻眼镜':'讲究眼镜','固执头带':'讲究头带'};
 function itemKey(name){var n=String(name||'').trim();return ITEM_ALIAS[n]||n;}
+function tmMoveName(name){
+  var n=String(name||'').trim();
+  var m=n.match(/^(?:技能机|招式学习器|TM)\s*[·:：]?\s*(.+)$/i);
+  if(!m)return '';
+  var v=m[1].trim();
+  if(!v||/^\d+$/.test(v))return '';
+  return v;
+}
 function itemCands(name){
   var n=String(name||'').trim();
   var keys=[n];
@@ -5795,6 +5802,22 @@ function resolveItemImgs(scope){
       });
     })(els[i]);
   }
+  var tms=(scope||document).querySelectorAll('.tm-wiki[data-tm]');
+  for(var j=0;j<tms.length;j++){
+    (function(el){
+      var move=el.getAttribute('data-tm');
+      fetchMove(move,function(d){
+        var slug=typeSlug(d&&d.type);
+        if(slug){
+          var img=document.createElement('img');
+          img.className='item-icon';
+          img.src=psItemUrl('tm-'+slug,'bag');
+          img.onerror=function(){var p=document.createElement('span');p.className='item-icon placeholder';p.textContent='?';this.parentNode.replaceChild(p,this);};
+          el.parentNode.replaceChild(img,el);
+        }
+      });
+    })(tms[j]);
+  }
 }
 var TYPE_CHART=[['一般',[],['岩石','钢'],['幽灵']],['格斗',['一般','岩石','钢','冰','恶'],['飞行','毒','虫','超能力','妖精'],['幽灵']],['飞行',['格斗','虫','草'],['岩石','钢','电'],[]],['毒',['草','妖精'],['毒','地面','岩石','幽灵'],['钢']],['地面',['毒','岩石','钢','火','电'],['草','虫'],['飞行']],['岩石',['飞行','虫','火','冰'],['格斗','地面','钢'],[]],['虫',['草','超能力','恶'],['格斗','飞行','毒','幽灵','钢','火','妖精'],[]],['幽灵',['幽灵','超能力'],['恶'],['一般']],['钢',['岩石','冰','妖精'],['钢','火','水','电'],[]],['火',['虫','钢','草','冰'],['岩石','火','水','龙'],[]],['水',['地面','岩石','火'],['水','草','龙'],[]],['草',['地面','岩石','水'],['飞行','毒','虫','钢','火','草','龙'],[]],['电',['飞行','水'],['草','电','龙'],['地面']],['超能力',['格斗','毒'],['钢','超能力'],['恶']],['冰',['飞行','地面','草','龙'],['钢','火','水','冰'],[]],['龙',['龙'],['钢'],['妖精']],['恶',['幽灵','超能力'],['格斗','恶','妖精'],[]],['妖精',['格斗','龙','恶'],['毒','钢','火'],[]]];
 function typeMul(atk,def){
@@ -5857,6 +5880,13 @@ function typeChartHTML(){
 }
 function typeColor(t){t=t2s(String(t||'').trim());return TYPE_COLORS[t]||TYPE_COLORS[TYPE_CN[t]]||'#888';}
 function typeLabel(t){t=t2s(String(t||'').trim());return TYPE_CN[t]||t;}
+function typeSlug(t){
+  t=t2s(String(t||'').trim());
+  if(!t)return '';
+  if(/^[a-z]+$/i.test(t))return t.toLowerCase();
+  for(var en in TYPE_CN){if(TYPE_CN[en]===t)return en;}
+  return '';
+}
 function typeChipHTML(t){return '<span class="type-chip" style="background:'+typeColor(t)+'">'+esc(typeLabel(t))+'</span>';}
 function typesHTML(a1,a2){var out='';if(a1)out+=typeChipHTML(a1);if(a2&&a2!=='无')out+=typeChipHTML(a2);if(!out)return '<span class="dim">-</span>';return '<div class="types">'+out+'</div>';}
 function genderText(g){if(g==='♂')return '雄性';if(g==='♀')return '雌性';return '无性别';}
@@ -7539,6 +7569,7 @@ function hudBindRootDelegation(app){
     var fold=x('#home-fold [data-fold]');if(fold){var k=fold.getAttribute('data-fold');foldState[k]=!foldState[k];var home=app.querySelector('#home-fold');if(home){home.innerHTML=homeFoldHTML();resolveItemImgs(home);hudResolvePkidbImages(home);}resizeFrame();return;}
     var bag=x('#home-fold .bag-tab[data-bag]');if(bag){activeBag=bag.getAttribute('data-bag');var home2=app.querySelector('#home-fold');if(home2){home2.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===bag);});var list=home2.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(home2);}}resizeFrame();return;}
     var bd=x('#home-fold [data-bag-discard]');if(bd){e.stopPropagation();discardBagItemAsk(bd.getAttribute('data-bag-discard'));return;}
+    var tmv=x('#home-fold .item-entry[data-tm]');if(tmv){e.stopPropagation();showMoveInfo(tmv.getAttribute('data-tm'));return;}
     var item=x('#home-fold .item-entry[data-item]');if(item){e.stopPropagation();if(itemClickEnabled)showItemInfo(item.getAttribute('data-item'));return;}
     var bc=x('#badge-cycle');if(bc){badgeClick(e);return;}
     var bo=x('[data-badge-open]');if(bo){e.stopPropagation();openPage('badge');return;}
@@ -7589,6 +7620,8 @@ for(var i=0;i<cards.length;i++){preloadMoves(cards[i].skills);}
   if(bagDiscard){e.stopPropagation();discardBagItemAsk(bagDiscard.getAttribute('data-bag-discard'));return;}
   var dc=e.target.closest('.dex-cell[data-name]');
 if(dc){e.stopPropagation();showPokemonInfo(dc.getAttribute('data-name'),dc.getAttribute('data-id'));return;}
+var tm=e.target.closest('.item-entry[data-tm]');
+if(tm){e.stopPropagation();showMoveInfo(tm.getAttribute('data-tm'));return;}
 var it=e.target.closest('.item-entry[data-item]');
 if(it){e.stopPropagation();if(itemClickEnabled)showItemInfo(it.getAttribute('data-item'));return;}
 var tb=e.target.closest('[data-tc-big]');
