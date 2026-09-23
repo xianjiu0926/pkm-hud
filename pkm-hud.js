@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.0';
+var PK_VER='2.5.1';
 /*PK_NOTICE_BEGIN
 道具（背包、队伍栏携带物、详情页）新增按英文名抓取：同时利用 52poke「道具列表」里的英文名列与英文名重定向页面查图片和介绍（介绍仍为中文）。英文道具名（如 Leftovers、Focus Sash）也能正确显示图片与中文介绍；英文名匹配已做大小写与重音符号归一化（如 Poké Ball / Poke Ball 均可）。
 PK_NOTICE_END*/
@@ -5610,6 +5610,16 @@ function itemPageTitles(key){
   if(/[\u4e00-\u9fff]/.test(k))return [t2s(k)+'（道具）'];
   return [t2s(k)];
 }
+function itemBagIconEn(name){
+  try{
+    var it=(stat_data&&stat_data.背包)?stat_data.背包[name]:null;
+    if(it&&it.图标){
+      var s=String(it.图标).trim().replace(/\.(png|gif|jpe?g|webp)$/i,'').trim();
+      if(s){return s.replace(/[-_]+/g,' ').replace(/\b[a-z]/g,function(c){return c.toUpperCase();});}
+    }
+  }catch(e){}
+  return '';
+}
 function fetchItemList(cb){
   if(itemListCache){cb&&cb(itemListCache);return;}
   var _c=lsGet('pk_itemlist',null);if(_c){itemListCache=_c;cb&&cb(_c);return;}
@@ -5678,6 +5688,8 @@ function fetchItem(name,cb){
   if(itemCache[name]){cb&&cb(itemCache[name]);return;}
   var _c=lsGet('pk_item_'+name,null);if(_c){itemCache[name]=_c;cb&&cb(_c);return;}
   var cands=itemCands(name);
+  var bagEn=itemBagIconEn(name);
+  if(bagEn&&cands.indexOf(bagEn)<0)cands.push(bagEn);
   fetchItemList(function(raw){
     var list=itemListMaps(raw);
     var text='';
@@ -5729,6 +5741,8 @@ function fetchItemSprite(name,cb){
     if(/^(?:https?:|data:image\/)/i.test(_ref)){itemSpriteCache[name]=_ref;cb&&cb(_ref);return;}
   }
   var cands=itemCands(name);
+  var bagEn=itemBagIconEn(name);
+  if(bagEn&&cands.indexOf(bagEn)<0)cands.push(bagEn);
   var ci=0,ti=0;
   function _try(){
   if(ci>=cands.length){itemSpriteCache[name]='';cb&&cb('');return;}
