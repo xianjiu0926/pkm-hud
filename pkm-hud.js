@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.2';
+var PK_VER='2.5.3';
 /*PK_NOTICE_BEGIN
-技能机支持「技能机·招式名」格式（如 技能机·百万吨重拳）：自动识别招式、按招式属性显示图标、点击查看招式详情。
+优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3486,7 +3486,7 @@ var itemImg;
 if(!itName){itemImg='';}
 else if(diyImgOk){itemImg='<img class="item-badge" '+hudDiyImgAttrs(diyImg)+' onerror="itemImgErr(this)">';}
 else if(ov!==undefined){itemImg=ov?'<img class="item-badge" src="'+esc(ov)+'" onerror="itemImgErr(this)">':'<span class="item-badge">?</span>';}
-else{itemImg='<span class="item-badge item-wiki" data-item="'+esc(itName)+'" data-cls="item-badge">?</span>';}
+else{itemImg='<span class="item-badge item-wiki" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'" data-cls="item-badge">?</span>';}
   return '<div class="card-frame" data-slot="'+c.slot+'">'+(isGmax?'<svg class="card-bg-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="7,1.5 98.5,1.5 98.5,74 93,98.5 1.5,98.5 1.5,26" fill="#D70645" fill-opacity="0.65" stroke="#7d95b5" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>':svgFrame)+'<div class="card-inner"><div class="pk-top"><div class="pk-side">'+img+'</div><div class="pk-info"><div class="name-row"><span class="pk-left"><span class="pk-name">'+esc(c.name)+'</span></span><span class="gender-side">'+(ail||'')+fnt+(isMega?'<img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/YNBKTy/1788349081288.png" onerror="this.remove()">':'')+(isGigantamax?'<img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/GKpwto/1788410257587.png" onerror="this.remove()">':'')+'<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></span></div><div class="bar-row"><span class="hp-label">HP</span><div class="bar-stack"><div class="hp-bar"><div class="hp-fill '+hpCls+'" style="width:'+pct+'%"></div></div><div class="exp-bar"><div class="exp-fill" style="width:'+expPct+'%"></div></div></div></div></div></div><div class="bottom-row"><span class="pk-lv-wrap"><span class="pk-level">Lv.'+c.level+'</span>'+itemImg+'</span><span class="hp-num">'+c.hpCur+'/'+c.hpMax+'</span></div></div></div>';
 }
 function frame(title,content){return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">'+title+'</div>'+content+'</div></div>';}function frameP(title,content){return '<div class="info-frame plain-frame"><div class="info-inner"><div class="info-title">'+title+'</div>'+content+'</div></div>';}
@@ -5627,6 +5627,17 @@ function itemBagIconEn(name){
   }catch(e){}
   return '';
 }
+function itemEnCands(en){
+  var out=[];
+  var e=String(en||'').trim();
+  if(!e)return out;
+  if(out.indexOf(e)<0)out.push(e);
+  var spaced=e.replace(/[-_]+/g,' ');
+  if(spaced!==e&&out.indexOf(spaced)<0)out.push(spaced);
+  var titled=spaced.replace(/\b[a-z]/g,function(c){return c.toUpperCase();});
+  if(out.indexOf(titled)<0)out.push(titled);
+  return out;
+}
 function fetchItemList(cb){
   if(itemListCache){cb&&cb(itemListCache);return;}
   var _c=lsGet('pk_itemlist',null);if(_c){itemListCache=_c;cb&&cb(_c);return;}
@@ -5687,7 +5698,8 @@ function fetchItemPage(cands,i,cb){
   }
   next();
 }
-function fetchItem(name,cb){
+function fetchItem(name,enName,cb){
+  if(typeof enName==='function'){cb=enName;enName='';}
   if(!name){cb&&cb(null);return;}
   var _diy=diyGet('item',name);
   if(_diy){cb&&cb(_diy);return;}
@@ -5697,6 +5709,8 @@ function fetchItem(name,cb){
   var cands=itemCands(name);
   var bagEn=itemBagIconEn(name);
   if(bagEn&&cands.indexOf(bagEn)<0)cands.push(bagEn);
+  var ens=itemEnCands(enName);
+  for(var x=0;x<ens.length;x++){if(cands.indexOf(ens[x])<0)cands.push(ens[x]);}
   fetchItemList(function(raw){
     var list=itemListMaps(raw);
     var text='';
@@ -5723,21 +5737,22 @@ function fetchItem(name,cb){
     });
   });
 }
-function showItemInfo(name,back){
+function showItemInfo(name,back,enName){
   var toSub=!!(back&&subOverlay);
   var target=toSub?subOverlay:overlay;
   var closeAttr=toSub?'data-sub-close':'data-move-back';
   if(!toSub){if(back){pushBack();}else{clearBack();}}
   target.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" '+closeAttr+'>✕</button></div><div class="modal-body" id="item-body"><div class="empty">道具数据加载中...</div></div></div>';
   target.classList.add('open');
-  fetchItem(name,function(d){
+  fetchItem(name,enName,function(d){
     var b=document.getElementById('item-body');
     if(!b)return;
     if(!d||!d.text){b.innerHTML='<div class="empty">道具数据获取失败</div>';return;}
     b.innerHTML=(d.img?'<div style="text-align:center;margin-bottom:8px"><img src="'+esc(d.img)+'" style="max-width:96px;max-height:96px;object-fit:contain;image-rendering:pixelated" onerror="this.remove()"></div>':'')+'<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text).replace(/\n/g,'<br>')+'</span></div>';
   });
 }
-function fetchItemSprite(name,cb){
+function fetchItemSprite(name,enName,cb){
+  if(typeof enName==='function'){cb=enName;enName='';}
   if(!name){cb&&cb('');return;}
   if(itemSpriteCache[name]){cb&&cb(itemSpriteCache[name]);return;}
   var _c=lsGet('pk_itemimg_'+name,'');if(_c){itemSpriteCache[name]=_c;cb&&cb(_c);return;}
@@ -5750,6 +5765,8 @@ function fetchItemSprite(name,cb){
   var cands=itemCands(name);
   var bagEn=itemBagIconEn(name);
   if(bagEn&&cands.indexOf(bagEn)<0)cands.push(bagEn);
+  var ens=itemEnCands(enName);
+  for(var x=0;x<ens.length;x++){if(cands.indexOf(ens[x])<0)cands.push(ens[x]);}
   var ci=0,ti=0;
   function _try(){
   if(ci>=cands.length){itemSpriteCache[name]='';cb&&cb('');return;}
@@ -5791,7 +5808,8 @@ function resolveItemImgs(scope){
   for(var i=0;i<els.length;i++){
     (function(el){
       var name=el.getAttribute('data-item');
-      fetchItemSprite(name,function(url){
+      var en=el.getAttribute('data-item-en')||'';
+      fetchItemSprite(name,en,function(url){
         if(url){
           var img=document.createElement('img');
           img.className=el.getAttribute('data-cls')||'item-icon';
@@ -5941,8 +5959,8 @@ function showNatureInfo(name){
   subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body"><div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div></div></div>';
   subOverlay.classList.add('open');
 }
-function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
-var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
+function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-item-en="'+esc(c.ballEn||'')+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
+var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
 if(c.where==='team') hudActions+='<button class="act-btn" data-pkm-store>存入盒子</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-withdraw>取出到队伍</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-movebox>切换盒子</button>';
@@ -7570,7 +7588,7 @@ function hudBindRootDelegation(app){
     var bag=x('#home-fold .bag-tab[data-bag]');if(bag){activeBag=bag.getAttribute('data-bag');var home2=app.querySelector('#home-fold');if(home2){home2.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===bag);});var list=home2.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(home2);}}resizeFrame();return;}
     var bd=x('#home-fold [data-bag-discard]');if(bd){e.stopPropagation();discardBagItemAsk(bd.getAttribute('data-bag-discard'));return;}
     var tmv=x('#home-fold .item-entry[data-tm]');if(tmv){e.stopPropagation();showMoveInfo(tmv.getAttribute('data-tm'));return;}
-    var item=x('#home-fold .item-entry[data-item]');if(item){e.stopPropagation();if(itemClickEnabled)showItemInfo(item.getAttribute('data-item'));return;}
+    var item=x('#home-fold .item-entry[data-item]');if(item){e.stopPropagation();if(itemClickEnabled)showItemInfo(item.getAttribute('data-item'),false,item.getAttribute('data-item-en')||'');return;}
     var bc=x('#badge-cycle');if(bc){badgeClick(e);return;}
     var bo=x('[data-badge-open]');if(bo){e.stopPropagation();openPage('badge');return;}
     var card=x('.card-frame[data-slot]');if(card){var sl=parseInt(card.getAttribute('data-slot'),10),c=null;for(var i=0;i<cards.length;i++)if(cards[i].slot===sl){c=cards[i];break;}if(c){currentDetailCard=c;clearBack();overlay.innerHTML=detailHTML(c);overlay.classList.add('open');pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);hudResolvePkidbImages(overlay);}return;}
@@ -7623,7 +7641,7 @@ if(dc){e.stopPropagation();showPokemonInfo(dc.getAttribute('data-name'),dc.getAt
 var tm=e.target.closest('.item-entry[data-tm]');
 if(tm){e.stopPropagation();showMoveInfo(tm.getAttribute('data-tm'));return;}
 var it=e.target.closest('.item-entry[data-item]');
-if(it){e.stopPropagation();if(itemClickEnabled)showItemInfo(it.getAttribute('data-item'));return;}
+if(it){e.stopPropagation();if(itemClickEnabled)showItemInfo(it.getAttribute('data-item'),false,it.getAttribute('data-item-en')||'');return;}
 var tb=e.target.closest('[data-tc-big]');
 if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-width:none;width:100%"><div class="modal-head"><div class="modal-name">属性克制表（可滚动查看）</div><button class="close" data-close>✕</button></div><div class="modal-body" style="padding:8px;overflow:auto;text-align:center"><img src="'+tb.getAttribute('data-tc-big')+'" style="width:200%;max-width:none;height:auto"></div></div>';overlay.classList.add('open');return;}
   if(e.target===pageOverlay||e.target.closest('[data-page-close]')){
@@ -7648,7 +7666,7 @@ if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-widt
   overlay.addEventListener('click',function(e){
     e.stopPropagation();
     if(e.target.closest('[data-move-back]')){e.stopPropagation();var _pb=popBack();if(_pb){overlay.innerHTML=_pb;}else{overlay.classList.remove('open');}return;}
-var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true);return;}
+var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true,itm.getAttribute('data-item-en')||'');return;}
     if(e.target===overlay){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();var _pb2=popBack();if(_pb2){overlay.innerHTML=_pb2;}else{overlay.classList.remove('open');}return;}
         if(e.target.closest('[data-close]')){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();overlay.classList.remove('open');clearBack();return;}
 var bnc=e.target.closest('[data-box-new-confirm]');if(bnc){e.stopPropagation();var inp=document.getElementById('box-new-name');createBox(inp?inp.value:'');return;}
@@ -7708,7 +7726,7 @@ var pkc2=e.target.closest('[data-pk-copy-content-close]');if(pkc2){e.stopPropaga
     var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
     var ab=e.target.closest('[data-ability]');if(ab){e.stopPropagation();showAbilityInfo(ab.getAttribute('data-ability'));return;}
     var nt=e.target.closest('[data-nature]');if(nt){e.stopPropagation();showNatureInfo(nt.getAttribute('data-nature'));return;}
-    var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true);return;}
+    var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true,itm.getAttribute('data-item-en')||'');return;}
   });
 }
 
