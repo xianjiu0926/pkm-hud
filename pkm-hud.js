@@ -3,12 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.7';
+var PK_VER='2.5.8';
 /*PK_NOTICE_BEGIN
 修复
-· 适配 52poke 图片防盗链：图片请求自动带 Referer 来源，图标恢复显示
-改进
-· 宝可梦种族值统一由 52poke 提供，移除已废弃的 PokeAPI 依赖
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
