@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.8';
+var PK_VER='2.6.0';
 /*PK_NOTICE_BEGIN
-修复
+帕底亚地图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4055,6 +4055,63 @@ var MAPS_DATA=[
         specials:[]
       }
     ]
+  },
+  {
+  name:'帕底亚',
+  img:'https://img.baibai.cv/f/AznmHX/%E5%B8%95%E5%BA%95%E4%BA%9A.png',
+  towns:[
+    {name:'小匙镇',x:47.9,y:91.7},
+    {name:'平碟镇',x:47.9,y:74.6},
+    {name:'桌台市',x:47.9,y:61.4},
+    {name:'深钵镇',x:78.4,y:56.2},
+    {name:'酿光市',x:83.1,y:44.3},
+    {name:'焙固镇',x:7.3,y:74.1},
+    {name:'圆模镇',x:26.5,y:59.9},
+    {name:'玻瓶市',x:30.3,y:35.1},
+    {name:'渍沁镇',x:14.8,y:32.2},
+    {name:'穴扎镇',x:66.1,y:37.5},
+    {name:'锦汇镇',x:40.6,y:30.7},
+    {name:'冰柜镇',x:54.1,y:4.5}
+  ],
+  roads:[
+    {name:'南第1区',x:57.5,y:77.7},
+    {name:'南第5区',x:68.5,y:71.5},
+    {name:'南第3区',x:66.1,y:61.6},
+    {name:'东第1区',x:71.8,y:47.4},
+    {name:'东第2区',x:76.5,y:46.1},
+    {name:'东第3区',x:72.8,y:36.9},
+    {name:'北第2区',x:84.7,y:23.9},
+    {name:'北第1区',x:69.1,y:17.3},
+    {name:'北第3区',x:44.6,y:8.7},
+    {name:'西第3区',x:40,y:26.1},
+    {name:'西第2区',x:22.3,y:28.9},
+    {name:'西第1区',x:16.4,y:50},
+    {name:'南第2区',x:31.1,y:58.8},
+    {name:'南第4区',x:33.6,y:75.5},
+    {name:'南第6区',x:16.2,y:72.4}
+  ],
+  specials:[
+    {name:'小匙小径',x:50.8,y:84.4},
+    {name:'朽木之祠',x:65.6,y:80.9},
+    {name:'火难之祠',x:77.9,y:21.4},
+    {name:'尘土之祠',x:25.8,y:14.5},
+    {name:'冻裂之祠',x:5.2,y:43.6},
+    {name:'橘子学院|葡萄学院',x:48.2,y:54.4},
+    {name:'第零区|零区研究所',x:49.1,y:42.6},
+    {name:'帕底亚巨坑',x:49.3,y:38.9},
+    {name:'南帕底亚海',x:47.8,y:98.4},
+    {name:'北帕底亚海',x:44.6,y:2.4},
+    {name:'西帕底亚海',x:2.8,y:28.9},
+    {name:'东帕底亚海',x:95.9,y:39.6},
+    {name:'印记树林',x:65.6,y:30.2},
+    {name:'霜抹山',x:55.2,y:14.3},
+    {name:'锦穴山道',x:55.6,y:26.6},
+    {name:'大锅湖',x:27.9,y:22.7},
+    {name:'锅巴林道',x:27.4,y:14.5},
+    {name:'烘烘沙漠',x:20.7,y:37.5},
+    {name:'宝可梦联盟',x:36.6,y:47.7},
+    {name:'烘固空洞',x:10.3,y:71.1}
+  ]
   }
 
 ];
@@ -4208,15 +4265,30 @@ function cnNumNormalize(s){
   return s.replace(/[零〇一二两三四五六七八九十百千万]+/g,function(x){var v=cnNumToInt(x);return (v===null)?x:String(v);});
 }
 function normLoc(s){return cnNumNormalize(t2s(String(s||'').trim()));}
+function normLocParts(s){
+  var t=String(s||'').split(/[|｜、/／]+/);
+  var out=[];
+  for(var i=0;i<t.length;i++){
+    var v=normLoc(t[i]);
+    if(v&&out.indexOf(v)<0)out.push(v);
+  }
+  return out;
+}
 function findSpot(map,loc){
   if(!map||!loc)return null;
   var l=normLoc(loc);
   if(!l)return null;
   var all=mapAllSpots(map);
-  for(var i=0;i<all.length;i++){if(normLoc(all[i].name)===l)return all[i];}
+  for(var i=0;i<all.length;i++){
+    var parts=normLocParts(all[i].name);
+    if(parts.indexOf(l)>=0)return all[i];
+  }
   for(var j=0;j<all.length;j++){
-    var n=normLoc(all[j].name);
-    if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0))return all[j];
+    var parts=normLocParts(all[j].name);
+    for(var p=0;p<parts.length;p++){
+      var n=parts[p];
+      if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0))return all[j];
+    }
   }
   return null;
 }
@@ -4230,7 +4302,8 @@ function regionOfLocation(loc){
   for(var i=0;i<MAPS.length;i++){
     var all=mapAllSpots(MAPS[i]);
     for(var j=0;j<all.length;j++){
-      if(normLoc(all[j].name)===l){hits.push(MAPS[i].name);break;}
+      var parts=normLocParts(all[j].name);
+      if(parts.indexOf(l)>=0){hits.push(MAPS[i].name);break;}
     }
   }
   if(hits.length===1)return hits[0];
@@ -4239,8 +4312,11 @@ function regionOfLocation(loc){
     for(var i2=0;i2<MAPS.length;i2++){
       var all2=mapAllSpots(MAPS[i2]);
       for(var j2=0;j2<all2.length;j2++){
-        var n=normLoc(all2[j2].name);
-        if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0)){hits2.push(MAPS[i2].name);break;}
+        var parts2=normLocParts(all2[j2].name);
+        for(var p2=0;p2<parts2.length;p2++){
+          var n=parts2[p2];
+          if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0)){hits2.push(MAPS[i2].name);break;}
+        }
       }
     }
     if(hits2.length===1)return hits2[0];
