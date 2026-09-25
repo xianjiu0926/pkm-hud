@@ -3,9 +3,14 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.3';
+var PK_VER='2.5.4';
 /*PK_NOTICE_BEGIN
-优化
+修复
+· 修复道具图标因尺寸后缀解析错误导致的串图（如天界之笛显示成探险套装）
+改进
+· 道具图标改为优先使用该道具的 Dream 图，没有 Dream 图再退回主图
+新增
+· 设置页底部新增「资料来源」板块
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -371,7 +376,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.info-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(170,204,255,.25);font-size:clamp(.78rem,2.6vw,.88rem);color:var(--text)}'+
 '.info-row:last-child{border-bottom:none}'+
 '.info-row .k{color:var(--dim);flex-shrink:0;font-weight:600}'+
-'.info-row .v{text-align:right;word-break:break-word}'+'.cmd-panel{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin-bottom:10px;padding:0 10px 8px}'+'.cmd-panel>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none}'+'.cmd-panel>summary::-webkit-details-marker{display:none}'+'.cmd-note{font-size:.7rem;color:var(--dim);line-height:1.5;padding-bottom:6px}'+'.cmd-row{display:flex;gap:6px;align-items:center;padding:3px 0}'+'.cmd-btn{flex:1;min-width:0;text-align:left;padding:6px 10px;font-family:inherit;font-size:.8rem;color:var(--text);background:rgba(43,74,111,.6);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+'.cmd-btn:hover{filter:brightness(1.2)}'+'.cmd-tip{flex:0 0 30px;padding:6px 0;font-family:inherit;font-size:.8rem;font-weight:800;color:var(--dim);background:rgba(170,204,255,.12);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+
+'.info-row .v{text-align:right;word-break:break-word}'+'.cmd-panel{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin-bottom:10px;padding:0 10px 8px}'+'.cmd-panel>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none}'+'.cmd-panel>summary::-webkit-details-marker{display:none}'+'.src-fold{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin:8px 0 10px;padding:0 10px 8px}'+'.src-fold>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none;color:var(--text)}'+'.src-fold>summary::-webkit-details-marker{display:none}'+'.cmd-note{font-size:.7rem;color:var(--dim);line-height:1.5;padding-bottom:6px}'+'.cmd-row{display:flex;gap:6px;align-items:center;padding:3px 0}'+'.cmd-btn{flex:1;min-width:0;text-align:left;padding:6px 10px;font-family:inherit;font-size:.8rem;color:var(--text);background:rgba(43,74,111,.6);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+'.cmd-btn:hover{filter:brightness(1.2)}'+'.cmd-tip{flex:0 0 30px;padding:6px 0;font-family:inherit;font-size:.8rem;font-weight:800;color:var(--dim);background:rgba(170,204,255,.12);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+
 '.info-row.cmd{justify-content:space-between;gap:10px;padding-right:clamp(10px,2.5vw,14px)}'+
 '.info-row.cmd .v{text-align:right}'+
 '.info-row.block{flex-direction:column;align-items:flex-start;gap:2px}'+
@@ -5751,6 +5756,16 @@ function showItemInfo(name,back,enName){
     b.innerHTML=(d.img?'<div style="text-align:center;margin-bottom:8px"><img src="'+esc(d.img)+'" style="max-width:96px;max-height:96px;object-fit:contain;image-rendering:pixelated" onerror="this.remove()"></div>':'')+'<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text).replace(/\n/g,'<br>')+'</span></div>';
   });
 }
+function itemCleanTarget(v){
+  return String(v||'')
+    .replace(/^\[\[(?:File|文件|檔案):/i,'')
+    .replace(/[\[\]]/g,'')
+    .replace(/\{\{[^}]*\}\}/g,'')
+    .replace(/\|\s*\d+\s*px\s*$/i,'')
+    .replace(/\d+\s*px\s*$/i,'')
+    .replace(/\s+/g,'_')
+    .replace(/^_+|_+$/g,'');
+}
 function fetchItemSprite(name,enName,cb){
   if(typeof enName==='function'){cb=enName;enName='';}
   if(!name){cb&&cb('');return;}
@@ -5783,7 +5798,15 @@ function fetchItemSprite(name,enName,cb){
       var box=wt.match(/\{\{\s*[^{}\n]*信息框[\s\S]*?\n\}\}/);
       if(box){
         var im=box[0].match(/\|\s*(?:sprite|image|图片|贴图|img|圖)\s*=\s*([^\n|]+)/i);
-        if(im){target=String(im[1]||'').replace(/^\[\[(?:File|文件|檔案):/i,'').replace(/[\[\]]/g,'').replace(/\{\{[^}]*\}\}/g,'').replace(/ /g,'_').trim();}
+        var primary=im?itemCleanTarget(im[1]):'';
+        var dream='';
+        var allre=/\|\s*(sprite\d*|image|img|图片|贴图|圖)\s*=\s*([^\n|]+)/gi;
+        var mm;
+        while((mm=allre.exec(box[0]))!==null){
+          var v=itemCleanTarget(mm[2]);
+          if(v&&/^Dream[_\s]/i.test(v)){dream=v;break;}
+        }
+        target=dream||primary;
       }
       if(target&&html){
         var enc=encodeURIComponent(target);
@@ -6367,7 +6390,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>宝可梦种族值、形态数据：PokeAPI：<br>　　https://pokeapi.co<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
