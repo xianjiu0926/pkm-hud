@@ -3,16 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.6';
+var PK_VER='2.5.7';
 /*PK_NOTICE_BEGIN
 修复
-· 修复道具图标因尺寸后缀解析错误导致的串图（如天界之笛显示成探险套装）
-· 修复附近宝可梦属性缓存未纳入清理范围、空结果被持久化导致属性抓不到的问题
 · 适配 52poke 图片防盗链：图片请求自动带 Referer 来源，图标恢复显示
 改进
-· 道具图标改为优先使用该道具的 Dream 图，没有 Dream 图再退回主图
-新增
-· 设置页底部新增「资料来源」板块
+· 宝可梦种族值统一由 52poke 提供，移除已废弃的 PokeAPI 依赖
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5071,22 +5067,6 @@ function fetchPokemon(name,cb){
   parsePage(t2s(key),searchThen);
 }
 var curPkm=null,curPkmForm=0,curPkmForms=[],curPkmShiny=false,curPkmNdex=0;
-var formIdCache={};
-function fetchFormId(enname,region,cb){
-  var key=String(enname||'').toLowerCase()+'-'+region;
-  if(formIdCache[key]){cb&&cb(formIdCache[key]);return;}
-  var _f=lsGet('pk_fid_'+key,'');if(_f){formIdCache[key]=_f;cb&&cb(_f);return;}
-  hudFetch('https://pokeapi.co/api/v2/pokemon-form/'+key)
-    .then(function(r){return r.ok?r.json():Promise.reject();})
-    .then(function(j){
-      var m=String((j&&j.pokemon&&j.pokemon.url)||'').match(/\/(\d+)\/?$/);
-      var id=m?m[1]:'';
-      formIdCache[key]=id;
-      if(id){lsSet('pk_fid_'+key,id);}
-      cb&&cb(id);
-    })
-    .catch(function(){formIdCache[key]='';cb&&cb('');});
-}
 function pkmPreviewFallback(el){
   var cur=String(el.getAttribute('src')||'');
   if(!cur){el.style.display='none';return;}
@@ -5179,7 +5159,7 @@ function renderPkmForm(idx){
 if(big){
   var url=pickHomeImg(idx,curPkmShiny);
   var tag='<span class="pkm-shiny-tag'+(curPkmShiny?'':' off')+'">'+(curPkmShiny?'✦ 闪光':'普通')+'</span>';
-  big.innerHTML=url?('<img class="pkm-big-img" src="'+url+'">'+tag):'<div class="dim">图片加载中…</div>';
+  big.innerHTML=url?('<img class="pkm-big-img" src="'+url+'" referrerpolicy="origin">'+tag):'<div class="dim">图片加载中…</div>';
   var imgEl=big.querySelector('img.pkm-big-img');
   if(imgEl){imgEl.addEventListener('error',function(){pkmPreviewFallback(imgEl);});}
 }
@@ -5288,64 +5268,6 @@ function pickHomeImg(idx,shiny){
   var nd=curPkmNdex||(d?parseInt(d.ndex,10):0)||0;
   if(!nd)return '';
   return homeImgUrl(nd,homeFormCode(f),shiny);
-}
-var pokeStatsCache={};
-function pokeStatsFromList(list){
-  if(!list||!list.length)return null;
-  var o={},has=false;
-  for(var i=0;i<list.length;i++){
-    var s=list[i];var n=s&&s.stat&&s.stat.name;var v=(s&&s.base_stat!=null)?s.base_stat:null;
-    if(n==='hp'){o.hp=v;has=true;}else if(n==='attack'){o.atk=v;has=true;}else if(n==='defense'){o.def=v;has=true;}else if(n==='special-attack'){o.spa=v;has=true;}else if(n==='special-defense'){o.spd=v;has=true;}else if(n==='speed'){o.spe=v;has=true;}
-  }
-  return has?o:null;
-}
-function pokeGet(urls,cb){
-  var i=0;
-  function next(){
-    if(i>=urls.length){cb(null);return;}
-    var u=urls[i++];
-    if(pokeStatsCache[u]){cb(pokeStatsCache[u]);return;}
-    hudFetch(u).then(function(r){return r.ok?r.json():Promise.reject();}).then(function(j){pokeStatsCache[u]=j;cb(j);}).catch(next);
-  }
-  next();
-}
-function applyPokeStats(d){
-  var nd=parseInt(d.ndex,10)||0;
-  if(!nd||!d.forms||!d.forms.length)return;
-  var en=normSlug(d.enname);
-  function setStats(f,o){if(o){f.stats={hp:o.hp!=null?o.hp:'',atk:o.atk!=null?o.atk:'',def:o.def!=null?o.def:'',spa:o.spa!=null?o.spa:'',spd:o.spd!=null?o.spd:'',spe:o.spe!=null?o.spe:''};}}
-  function psCacheGet(ck){return lsGet(ck,null);}
-  function psCacheSet(ck,o){lsSet(ck,o);}
-  var ck='pk_ps_'+nd;
-  var cached=psCacheGet(ck);
-  if(cached){applyBase(cached);return;}
-  pokeGet([
-    'https://cdn.jsdelivr.net/gh/PokeAPI/api-data@master/data/api/v2/pokemon/'+nd+'/index.json',
-    'https://fastly.jsdelivr.net/gh/PokeAPI/api-data@master/data/api/v2/pokemon/'+nd+'/index.json',
-    'https://pokeapi.co/api/v2/pokemon/'+nd+'/'
-  ],function(j){
-    var o=pokeStatsFromList(j&&j.stats);
-    if(o)lsSet(ck,o);
-    applyBase(o);
-  });
-  function applyBase(base){
-    if(!base)return;
-    var n=d.forms.length,count=0;
-    function oneDone(){count++;if(count>=n){renderPkmForm(curPkmForm);}}
-    d.forms.forEach(function(f){
-      if(!f.region&&!f.formKey){setStats(f,base);oneDone();return;}
-      var key=en+'-'+(f.formKey||f.region);
-      var ckf='pk_psf_'+key;
-      var cf=lsGet(ckf);
-      if(cf){setStats(f,cf);oneDone();return;}
-      pokeGet(['https://pokeapi.co/api/v2/pokemon-form/'+key+'/'],function(j2){
-        var of=pokeStatsFromList(j2&&j2.stats)||base;
-        if(of)lsSet(ckf,of);
-        setStats(f,of);
-        oneDone();
-      });
-    });
-  }
 }
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
@@ -5919,7 +5841,7 @@ function typeChartHTML(){
   h+='<div style="display:flex;gap:6px;margin-bottom:8px"><select id="tc-def-1" style="'+selStyle+'">'+opts+'</select><select id="tc-def-2" style="'+selStyle+'">'+opts+'</select></div>';
   h+='<div id="tc-result"><div class="empty">选择防御方属性后，自动显示克制它的属性</div></div>';
   h+='<div class="set-title" style="margin-left:0;margin-top:6px">完整克制表</div>';
-  h+='<div style="text-align:center"><img src="https://s1.52poke.com/wiki/thumb/8/8a/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png/601px-%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png?20200201130327" data-tc-big="https://s1.52poke.com/wiki/thumb/8/8a/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png/601px-%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png?20200201130327" style="max-width:100%;height:auto;border-radius:6px;cursor:zoom-in" onerror="this.style.display=\'none\'"><div class="dim" style="font-size:.72rem;margin-top:4px">点击图片放大查看</div></div>';
+  h+='<div style="text-align:center"><img src="https://s1.52poke.com/wiki/thumb/8/8a/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png/601px-%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png?20200201130327" referrerpolicy="origin" data-tc-big="https://s1.52poke.com/wiki/thumb/8/8a/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png/601px-%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png?20200201130327" style="max-width:100%;height:auto;border-radius:6px;cursor:zoom-in" onerror="this.style.display=\'none\'"><div class="dim" style="font-size:.72rem;margin-top:4px">点击图片放大查看</div></div>';
   return frameP('属性克制表',h);
 }
 function typeColor(t){t=t2s(String(t||'').trim());return TYPE_COLORS[t]||TYPE_COLORS[TYPE_CN[t]]||'#888';}
@@ -6393,7 +6315,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>宝可梦种族值、形态数据：PokeAPI：<br>　　https://pokeapi.co<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -6794,7 +6716,6 @@ function doClear(target){
     if(target==='all'||target==='pm')pkmCache={};
     if(target==='all'||target==='ab')abiCache={};
     if(target==='all'||target==='dex')dexCache=null;
-    if(target==='all'||target==='fid')formIdCache={};
     if(target==='all'){itemListCache=null;itemSpriteCache={};itemCache={};pkmSpriteCache={};pkmIconCache={};pkmSlugCache={};pkmDexCache={};nearbyTypeCache={};nearbyTypePending={};}
   }catch(e){}
 }
