@@ -3,14 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.5.4';
+var PK_VER='2.5.5';
 /*PK_NOTICE_BEGIN
-修复
-· 修复道具图标因尺寸后缀解析错误导致的串图（如天界之笛显示成探险套装）
-改进
-· 道具图标改为优先使用该道具的 Dream 图，没有 Dream 图再退回主图
-新增
-· 设置页底部新增「资料来源」板块
+· 附近宝可梦属性缓存未纳入清理范围、空结果被持久化导致属性抓不到的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3594,7 +3589,7 @@ function nearbyFetchTypes(name,en,cn,cb){
   function fin(t1,t2){
     var o={type1:t1||'',type2:t2||''};
     nearbyTypeCache[cacheKey]=o;
-    try{lsSet(key,JSON.stringify(o));}catch(e){}
+    if(t1||t2){try{lsSet(key,JSON.stringify(o));}catch(e){}}
     var q=nearbyTypePending[cacheKey]||[];nearbyTypePending[cacheKey]=null;
     for(var i=0;i<q.length;i++){try{q[i]&&q[i](o.type1,o.type2);}catch(e){}}
   }
@@ -6778,7 +6773,7 @@ function doClear(target){
       var deli=[];for(var i2=0;i2<localStorage.length;i2++){var k2=localStorage.key(i2);if(k2&&(k2.indexOf('pk_item_')===0||k2==='pk_itemlist'||k2.indexOf('pk_itemimg_')===0))deli.push(k2);}deli.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
     }
     var map={mv:'pk_mv_',pm:'pk_pm_',ab:'pk_ab_',dex:'pk_dexlist',fid:'pk_fid_'};
-    var pre=target==='all'?['pk_mv_','pk_pm_','pk_ab_','pk_dexlist','pk_fid_','pk_item_','pk_itemlist','pk_itemimg_','pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_ps_','pk_psf_','pk_abilist']:[map[target]];
+    var pre=target==='all'?['pk_mv_','pk_pm_','pk_ab_','pk_dexlist','pk_fid_','pk_item_','pk_itemlist','pk_itemimg_','pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_ps_','pk_psf_','pk_abilist','nbtype_']:[map[target]];
     hudCacheDeletePrefixes(pre.filter(Boolean));
     var del=[];
     for(var i=0;i<localStorage.length;i++){
@@ -6792,7 +6787,7 @@ function doClear(target){
     if(target==='all'||target==='ab')abiCache={};
     if(target==='all'||target==='dex')dexCache=null;
     if(target==='all'||target==='fid')formIdCache={};
-    if(target==='all'){itemListCache=null;itemSpriteCache={};itemCache={};pkmSpriteCache={};pkmIconCache={};pkmSlugCache={};pkmDexCache={};}
+    if(target==='all'){itemListCache=null;itemSpriteCache={};itemCache={};pkmSpriteCache={};pkmIconCache={};pkmSlugCache={};pkmDexCache={};nearbyTypeCache={};nearbyTypePending={};}
   }catch(e){}
 }
 function confirmClearModal(){
