@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.6.1';
+var PK_VER='2.6.2';
 /*PK_NOTICE_BEGIN
-城都地图
+修复
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6129,7 +6129,7 @@ var ICON_CFG=[
   {id:'m-bag',label:'菜单·背包',src:'https://img.baibai.cv/f/3o2qte/1788188339193.png',def:30},
   {id:'m-box',label:'菜单·盒子',src:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png',def:30},
   {id:'m-breeding',label:'菜单·繁育',src:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',def:20},
-  {id:'m-pokedex',label:'菜单·图鉴',src:'https://media.52poke.com/wiki/2/2d/%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png',def:30},
+  {id:'m-pokedex',label:'菜单·图鉴',src:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png',def:30},
   {id:'m-rel',label:'菜单·人际关系',emoji:'💬',def:22},
   {id:'m-rivals',label:'菜单·劲敌',emoji:'👥',def:22},
   {id:'m-badge',label:'菜单·徽章盒',emoji:'🏅',def:22},
