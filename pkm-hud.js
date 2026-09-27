@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.6.9';
+var PK_VER='2.7.0';
 /*PK_NOTICE_BEGIN
 优化
 PK_NOTICE_END*/
@@ -4990,7 +4990,7 @@ var cls=caught?'caught':(seen?'seen':'unknown');
 var label=known?name:'？？？';
 var attr=known?' data-name="'+esc(bn)+'"':' data-noclick="1"';
 var imgHtml='';
-if(showThumbs){var img=dexCellImgUrl(ndex);imgHtml=img?'<span class="dex-img"><img loading="lazy" decoding="async" src="'+esc(img)+'" referrerpolicy="origin" alt="" onerror="this.style.display=\'none\'"></span>':'';}
+if(showThumbs){var img=dexCellImgUrl(ndex);if(img){var sil=(label==='？？？')?' style="filter:brightness(0) opacity(.45)"':'';imgHtml='<span class="dex-img"><img loading="lazy" decoding="async" src="'+esc(img)+'" referrerpolicy="origin" alt="" onerror="this.style.display=\'none\'"'+sil+'></span>';}}
 html+='<div class="dex-cell '+cls+'" data-id="'+esc(ndex)+'" data-rdex="'+esc(id)+'"'+attr+'><span class="dex-no">#'+esc(id)+'</span>'+imgHtml+'<span class="dex-name">'+esc(label)+'</span></div>';
   });
   g.innerHTML=html;
