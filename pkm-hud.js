@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.7.3';
+var PK_VER='2.7.4';
 /*PK_NOTICE_BEGIN
-优化
+道具详细效果（重要道具没有，因为很乱）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5792,13 +5792,182 @@ function fetchItemList(cb){
     })
     .catch(function(){itemListLoading=false;var cbs=itemListCbs;itemListCbs=[];for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}if(cb)cb(null);});
 }
-function parseItemPage(wt,html){
+function itemDetailFromHtml(doc){
+  function stripBad(el){
+    var bad=el.querySelectorAll('style,script,.mw-editsection');
+    for(var i=0;i<bad.length;i++){if(bad[i].parentNode)bad[i].parentNode.removeChild(bad[i]);}
+    var sprites=Array.prototype.slice.call(el.querySelectorAll('.sprite-pm'));
+    for(var j=0;j<sprites.length;j++){
+      var sp=sprites[j];
+      if(!sp.parentNode)continue;
+      var wrap=sp.closest?sp.closest('a'):null;
+      if(wrap){
+        var txt=(wrap.textContent||'').trim();
+        if(!txt){
+          var nx=wrap.nextSibling;
+          if(nx&&nx.nodeType===3){nx.textContent=String(nx.textContent||'').replace(/^\s+/,'');}
+          if(wrap.parentNode)wrap.parentNode.removeChild(wrap);
+          continue;
+        }
+      }
+      if(sp.parentNode)sp.parentNode.removeChild(sp);
+    }
+    var sups=el.querySelectorAll('sup');
+    for(var s=0;s<sups.length;s++){
+      var su=sups[s];
+      var nx=su.nextSibling;
+      var isFrac=(nx&&nx.nodeType===3&&String(nx.textContent||'').indexOf('\u2044')>=0);
+      if(!isFrac&&su.parentNode)su.parentNode.removeChild(su);
+    }
+    var subs=el.querySelectorAll('sub');
+    for(var t=0;t<subs.length;t++){
+      var sb=subs[t];
+      var pv=sb.previousSibling;
+      var isFrac2=(pv&&pv.nodeType===3&&String(pv.textContent||'').indexOf('\u2044')>=0);
+      if(!isFrac2&&sb.parentNode)sb.parentNode.removeChild(sb);
+    }
+    return el;
+  }
+  function nodeText(el){
+    var c=stripBad(el.cloneNode(true));
+    return (c.textContent||'').replace(/\s+/g,' ').trim();
+  }
+  function hLvl(el){return parseInt((el.tagName||'h2').toLowerCase().replace('h',''),10);}
+  var all=doc.querySelectorAll('h1,h2,h3,h4,h5,h6');
+  var idx=-1,lvl=0;
+  var wants=['效果','游戏中'];
+  for(var pass=0;pass<wants.length&&idx<0;pass++){
+    for(var i=0;i<all.length;i++){
+      if(hLvl(all[i])===2&&nodeText(all[i])===wants[pass]){idx=i;lvl=2;break;}
+    }
+  }
+  if(idx<0){
+    for(var j=0;j<all.length;j++){
+      if(nodeText(all[j])==='效果'){idx=j;lvl=hLvl(all[j]);break;}
+    }
+  }
+  if(idx<0)return '';
+  var start=all[idx];
+  var p=start.parentElement;
+  if(p&&String(p.className||'').indexOf('mw-heading')>=0)start=p;
+  var node=start.nextElementSibling;
+  var keep=[];
+  while(node){
+    var t2=node.tagName?node.tagName.toLowerCase():'';
+    var headEl=null;
+    if(/^h[1-6]$/.test(t2))headEl=node;
+    else if(node.querySelector){headEl=node.querySelector('h1,h2,h3,h4,h5,h6');}
+    if(headEl){
+      var hlvl=hLvl(headEl);
+      if(hlvl<=lvl)break;
+      var sub=nodeText(headEl);
+      if(sub)keep.push(sub);
+      node=node.nextElementSibling;
+      continue;
+    }
+    if(t2==='style'||t2==='script'){node=node.nextElementSibling;continue;}
+    var lis=[];
+    var lisHost=null;
+    if(t2==='ul'||t2==='ol')lisHost=node;
+    else if(node.querySelector){lisHost=node.querySelector('ul,ol');}
+    if(lisHost){
+      var lc=lisHost.firstElementChild;
+      while(lc){if(lc.tagName==='LI')lis.push(lc);lc=lc.nextElementSibling;}
+    }
+    if(lis.length){
+      for(var k=0;k<lis.length;k++){
+        var lt=nodeText(lis[k]);
+        if(lt)keep.push('- '+lt);
+      }
+    }else{
+      var tx=nodeText(node);
+      if(tx)keep.push(tx);
+    }
+    node=node.nextElementSibling;
+  }
+  return keep.length?keep.join('\n').replace(/[•·・●]/g,'-'):'';
+}
+function itemWikiLineClean(s){
+  return String(s||'')
+    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g,'')
+    .replace(/<ref[^/>]*\/>/g,'')
+    .replace(/\{\{\s*i\s*\|([^}|]+)\}\}/g,'$1')
+    .replace(/\{\{\s*frac\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\}\}/g,'$1/$2')
+    .replace(/\{\{\s*MSP\s*\|[^}]*\}\}\s*/g,'')
+    .replace(/\{\{[^}]*\}\}/g,'')
+    .replace(/\u005B\u005B(?:[^\u005D|]*\|)?([^\u005D]*)\u005D\u005D/g,'$1')
+    .replace(/'{2,}/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function itemDetailFromWiki(wt){
+  var lines=wt.split('\n');
+  var heads=[];
+  for(var i=0;i<lines.length;i++){
+    var hm=lines[i].trim().match(/^(={2,6})\s*(.+?)\s*\1\s*$/);
+    if(hm)heads.push({i:i,lvl:hm[1].length,txt:hm[2].trim()});
+  }
+  var start=-1,lvl=0;
+  var wants=['效果','游戏中'];
+  for(var p=0;p<wants.length&&start<0;p++){
+    for(var h=0;h<heads.length;h++){
+      if(heads[h].lvl===2&&heads[h].txt===wants[p]){start=heads[h].i;lvl=heads[h].lvl;break;}
+    }
+  }
+  if(start<0){
+    for(var h2=0;h2<heads.length;h2++){
+      if(heads[h2].txt==='效果'){start=heads[h2].i;lvl=heads[h2].lvl;break;}
+    }
+  }
+  if(start<0)return '';
+  var out=[];
+  for(var i=start+1;i<lines.length;i++){
+    var line=lines[i].trim();
+    var hm=line.match(/^(={2,6})\s*(.+?)\s*\1\s*$/);
+    if(hm){
+      var hlvl=hm[1].length;
+      if(hlvl<=lvl)break;
+      out.push(hm[2].trim());
+      continue;
+    }
+    if(line.indexOf('*')===0){
+      var rawLine=line.replace(/^\*+\s*/,'');
+      var t=itemWikiLineClean(rawLine);
+      if(t)out.push('- '+t);
+    }
+  }
+  return out.join('\n');
+}
+function parseItemDetail(wt,html){
+  var det='';
+  if(html){
+    try{det=itemDetailFromHtml(new DOMParser().parseFromString(html,'text/html'));}catch(e){}
+  }
+  if(!det){det=itemDetailFromWiki(wt);}
+  return det;
+}
+function itemIntroFromHtml(doc){
+  var ps=doc.querySelectorAll('p');
+  for(var i=0;i<ps.length;i++){
+    var t=(ps[i].textContent||'').replace(/\s+/g,' ').trim();
+    if(t.indexOf('日文')<0&&t.indexOf('英文')<0)continue;
+    var cleaned=t.replace(/[（(][^（()）]*(?:日文|英文)[^（()）]*[)）]/g,'').replace(/\s+/g,' ').trim();
+    if(cleaned&&/^[\u4e00-\u9fffA-Za-z0-9]{1,12}是一种/.test(cleaned))return cleaned;
+  }
+  return '';
+}
+function parseItemPage(wt,html,skipIntro){
   var d='';
-  var m=wt.match(/\|\s*text\s*=\s*([^\n|]+)/)||wt.match(/\|\s*效果\s*=\s*([^\n|]+)/)||wt.match(/\|\s*effect\s*=\s*([^\n|]+)/)||wt.match(/\|\s*说明\s*=\s*([^\n|]+)/)||wt.match(/\|\s*desc\s*=\s*([^\n|]+)/);
-  if(m){
-    var raw=m[1].trim();
-    var z=raw.match(/zh-hans[：:]([^;}]+)/);
-    if(z){d=cleanText(z[1]);}else{d=cleanText(raw);}
+  if(!skipIntro&&html){
+    try{d=itemIntroFromHtml(new DOMParser().parseFromString(html,'text/html'));}catch(e){}
+  }
+  if(!d){
+    var m=wt.match(/\|\s*text\s*=\s*([^\n|]+)/)||wt.match(/\|\s*效果\s*=\s*([^\n|]+)/)||wt.match(/\|\s*effect\s*=\s*([^\n|]+)/)||wt.match(/\|\s*说明\s*=\s*([^\n|]+)/)||wt.match(/\|\s*desc\s*=\s*([^\n|]+)/);
+    if(m){
+      var raw=m[1].trim();
+      var z=raw.match(/zh-hans[：:]([^;}]+)/);
+      if(z){d=cleanText(z[1]);}else{d=cleanText(raw);}
+    }
   }
   if(!d){
     var z2=wt.match(/zh-hans[：:]([^;}]+)/);
@@ -5814,12 +5983,12 @@ function parseItemPage(wt,html){
   }
   return d;
 }
-function fetchItemPage(cands,i,cb){
-  if(i>=cands.length){cb&&cb('');return;}
+function fetchItemPage(cands,i,cb,skipIntro){
+  if(i>=cands.length){cb&&cb(null);return;}
   var titles=itemPageTitles(cands[i]);
   var ti=0;
   function next(){
-    if(ti>=titles.length){fetchItemPage(cands,i+1,cb);return;}
+    if(ti>=titles.length){fetchItemPage(cands,i+1,cb,skipIntro);return;}
     var page=titles[ti++];
     hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=text|wikitext&variant=zh-hans&origin=*&redirects=1')
       .then(function(r){return r.ok?r.json():Promise.reject();})
@@ -5827,8 +5996,10 @@ function fetchItemPage(cands,i,cb){
         if(!j||!j.parse){next();return;}
         var wt=(j.parse.wikitext&&j.parse.wikitext['*'])?j.parse.wikitext['*']:'';
         var html=(j.parse.text&&j.parse.text['*'])?j.parse.text['*']:'';
-        var t=parseItemPage(wt,html);
-        if(t){cb&&cb(t);}else{next();}
+        var t=parseItemPage(wt,html,skipIntro);
+        var det=skipIntro?'':parseItemDetail(wt,html);
+        if(!skipIntro&&!det){t=parseItemPage(wt,html,true);}
+        if(t||det){cb&&cb({text:t,detail:det});}else{next();}
       })
       .catch(function(){next();});
   }
@@ -5857,7 +6028,6 @@ function fetchItem(name,enName,cb){
         if(list.en[ek]){var cn=list.en[ek];text=list.cn[cn];if(text)break;}
       }
     }
-    if(text){var d={name:name,text:text};itemCache[name]=d;lsSet('pk_item_'+name,d);cb&&cb(d);return;}
     var pageCands=cands.slice();
     for(var k=0;k<cands.length;k++){
       var ck=cands[k];
@@ -5865,12 +6035,18 @@ function fetchItem(name,enName,cb){
       var ek2=enNorm(ck);
       if(list.en[ek2]&&pageCands.indexOf(list.en[ek2])<0)pageCands.push(list.en[ek2]);
     }
-    fetchItemPage(pageCands,0,function(t2){
-      var d=t2?{name:name,text:t2}:null;
+    var bagType='';
+    try{var _bit=stat_data.背包&&stat_data.背包[name];bagType=_bit&&_bit.类型?String(_bit.类型):'';}catch(e){}
+    var isKey=(bagType==='重要物品');
+    fetchItemPage(pageCands,0,function(obj){
+      var t2=obj?obj.text:'';
+      var det=obj?obj.detail:'';
+      var finalText=t2||text;
+      var d=(finalText||det)?{name:name,text:finalText,detail:det}:null;
       itemCache[name]=d;
       if(d){lsSet('pk_item_'+name,d);}
       cb&&cb(d);
-    });
+    },isKey);
   });
 }
 function showItemInfo(name,back,enName){
@@ -5884,7 +6060,9 @@ function showItemInfo(name,back,enName){
     var b=document.getElementById('item-body');
     if(!b)return;
     if(!d||!d.text){b.innerHTML='<div class="empty">道具数据获取失败</div>';return;}
-    b.innerHTML=(d.img?'<div style="text-align:center;margin-bottom:8px">'+hudDiyImgTag(d.img,'referrerpolicy="origin" style="max-width:96px;max-height:96px;object-fit:contain;image-rendering:pixelated" onerror="this.remove()"')+'</div>':'')+'<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text).replace(/\n/g,'<br>')+'</span></div>';
+    var _body=(d.img?'<div style="text-align:center;margin-bottom:8px">'+hudDiyImgTag(d.img,'referrerpolicy="origin" style="max-width:96px;max-height:96px;object-fit:contain;image-rendering:pixelated" onerror="this.remove()"')+'</div>':'')+'<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text||'').replace(/\n/g,'<br>')+'</span></div>';
+    if(d.detail)_body+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>';
+    b.innerHTML=_body;
     if(d.img)hudResolvePkidbImages(b);
   });
 }
