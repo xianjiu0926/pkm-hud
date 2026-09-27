@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.6.7';
+var PK_VER='2.6.8';
 /*PK_NOTICE_BEGIN
-优化一下
+图鉴格子加入 pokeos 静态图（render PNG），列表与名称仍来自 52poke
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -546,6 +546,14 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dex-cell.unknown .dex-name{color:rgba(150,170,190,.5)}'+
 '.dex-types{font-size:.6rem;color:var(--dim);white-space:nowrap;overflow:hidden;max-width:100%;text-overflow:ellipsis}'+
 '.dex-cell.unknown .dex-types{visibility:hidden}'+
+'.dex-img{width:100%;height:44px;display:flex;align-items:center;justify-content:center}'+
+'.dex-img img{width:100%;height:100%;object-fit:contain}'+
+'.dex-cell.unknown .dex-img img{filter:brightness(0) opacity(.45)}'+
+'.pokedex.list-only{grid-template-columns:1fr;gap:3px}'+
+'.pokedex.list-only .dex-cell{flex-direction:row;align-items:center;gap:8px;padding:3px 8px;text-align:left}'+
+'.pokedex.list-only .dex-img{display:none}'+
+'.pokedex.list-only .dex-no{flex:0 0 auto;min-width:42px;text-align:left}'+
+'.pokedex.list-only .dex-name{text-align:left}'+
 '.item-badge{height:1em;width:auto;image-rendering:pixelated;object-fit:contain;flex-shrink:0;transform:scale(1.5);transform-origin:center}'+
 '.info-title{margin-left:8%}'+
 '.info-row.cmd,.info-row:last-child,.task-item:last-child,.event-item:last-child{padding-right:7%}'+
@@ -4945,12 +4953,28 @@ function fetchDex(cb){
     })
     .catch(function(){dexLoading=false;var cbs=dexCbs;dexCbs=[];for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}if(cb)cb(null);});
 }
+function dexCellImgUrl(ndex){
+  var n=parseInt(ndex,10);
+  if(!n||n<=0)return '';
+  return 'https://'+PKM_POKEOS_S3+'render/'+n+'.png';
+}
+function dexThumbsEnabled(){try{return localStorage.getItem('pk_dex_thumbs')!=='0';}catch(e){return true;}}
+function dexThumbsToggle(){
+  var now=!dexThumbsEnabled();
+  try{localStorage.setItem('pk_dex_thumbs',now?'1':'0');}catch(e){}
+  var b=pageOverlay.querySelector('[data-dex-thumb]');
+  if(b)b.textContent=now?'🖼️ 缩略图':'📃 仅列表';
+  renderDexRegion();
+  dexSearch();
+}
 function renderDexGrid(list,cSet,sSet,owned){
   var g=document.getElementById('pokedex-grid');
   if(!g)return;
+  g.classList.toggle('list-only',!dexThumbsEnabled());
   var t=document.getElementById('dex-total');
   if(!list){g.innerHTML='<div class="empty">图鉴数据加载失败</div>';if(t)t.textContent='—';return;}
   if(t)t.textContent=list.length;
+  var showThumbs=dexThumbsEnabled();
   var html='';
   list.forEach(function(p){
     var id=p.id||'',ndex=p.ndex||id,name=p.name||'';
@@ -4961,7 +4985,9 @@ var known=caught||seen;
 var cls=caught?'caught':(seen?'seen':'unknown');
 var label=known?name:'？？？';
 var attr=known?' data-name="'+esc(bn)+'"':' data-noclick="1"';
-html+='<div class="dex-cell '+cls+'" data-id="'+esc(ndex)+'" data-rdex="'+esc(id)+'"'+attr+'><span class="dex-no">#'+esc(id)+'</span><span class="dex-name">'+esc(label)+'</span></div>';
+var imgHtml='';
+if(showThumbs){var img=dexCellImgUrl(ndex);imgHtml=img?'<span class="dex-img"><img loading="lazy" decoding="async" src="'+esc(img)+'" referrerpolicy="origin" alt="" onerror="this.style.display=\'none\'"></span>':'';}
+html+='<div class="dex-cell '+cls+'" data-id="'+esc(ndex)+'" data-rdex="'+esc(id)+'"'+attr+'><span class="dex-no">#'+esc(id)+'</span>'+imgHtml+'<span class="dex-name">'+esc(label)+'</span></div>';
   });
   g.innerHTML=html;
 }
@@ -5090,7 +5116,10 @@ function renderDexRegion(){
   });
 }
 function pokedexHTML(){
-  var html=frame('图鉴',dexRegionTabsHTML()+'<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号" autocomplete="off"></div><div id="dex-count"><div class="dex-count">加载中…</div></div><div class="pokedex" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
+  var on=dexThumbsEnabled();
+  var toggle='<button class="btn-small" data-dex-thumb style="float:right;margin-left:6px">'+(on?'🖼️ 缩略图':'📃 仅列表')+'</button>';
+  var gridCls='pokedex'+(on?'':' list-only');
+  var html=frame('图鉴 '+toggle,dexRegionTabsHTML()+'<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号" autocomplete="off"></div><div id="dex-count"><div class="dex-count">加载中…</div></div><div class="'+gridCls+'" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
   hudScope.setTimeout(function(){renderDexRegion();},0);
   return html;
 }
@@ -5220,6 +5249,10 @@ function pkmPreviewFallback(el){
   if(cur.indexOf('media.52poke.com')>=0){
     var fn=cur.split('/').pop();
     if(fn){el.src='https://wiki.52poke.com/wiki/Special:FilePath/'+fn;return;}
+  }
+  if((cur.indexOf('pokeos')>=0||cur.indexOf('wsrv.nl')>=0)&&curPkmNdex){
+    var base='https://'+PKM_POKEOS_S3+'render/'+(curPkmShiny?'shiny/':'')+curPkmNdex+'.png';
+    if(base&&base!==cur){el.src=base;return;}
   }
   el.style.display='none';
 }
@@ -5408,13 +5441,36 @@ function homeFormCode(f){
   if(nm.indexOf('黄花')>=0)return 'Y';
   return '';
 }
+var PKM_POKEOS_FORM_SUFFIX={
+  'mega-x':'-mega-x','mega-y':'-mega-y','mega-z':'-mega-z','mega':'-mega','primal':'-mega',
+  'gmax':'-gmax','ash':'-ash','dusk':'-dusk','dawn':'-dawn','ultra':'-ultra','origin':'-origin',
+  'sky':'-sky','complete':'-complete','10':'-10','50':'-50','attack':'-attack','defense':'-defense',
+  'speed':'-speed','black':'-black','white':'-white','crowned-sword':'-crowned','crowned-shield':'-crowned',
+  'ice':'-ice','shadow':'-shadow','therian':'-therian','zen':'-zen','school':'-school','busted':'-busted',
+  'bloodmoon':'-bloodmoon','stellar':'-stellar','hero':'-hero',
+  'alola':'-regional-a','galar':'-regional-g','hisui':'-regional-h','paldea':'-regional-p'
+};
+function pokeosFormSuffixOf(f,nd){
+  if(!f)return '';
+  var fk=f.formKey||'';
+  var nm=((f.name||'')+' '+(f.label||'')).replace(/\s+/g,' ');
+  if(nm.indexOf('水井')>=0)return '-wellspring-mask';
+  if(nm.indexOf('火灶')>=0)return '-hearthflame-mask';
+  if(nm.indexOf('础石')>=0)return '-cornerstone-mask';
+  if(nm.indexOf('连击流')>=0)return '-rapid-strike';
+  if(nm.indexOf('觉悟')>=0)return '-resolute';
+  if(nd===877&&fk==='busted')return '-hangry';
+  if(PKM_POKEOS_FORM_SUFFIX[fk]!==undefined)return PKM_POKEOS_FORM_SUFFIX[fk];
+  return '';
+}
 function pickHomeImg(idx,shiny){
   var d=curPkm;
   var f=null;
   if(d){var forms=curPkmForms&&curPkmForms.length?curPkmForms:d.forms;f=forms[idx]||forms[0];}
   var nd=curPkmNdex||(d?parseInt(d.ndex,10):0)||0;
   if(!nd)return '';
-  return homeImgUrl(nd,homeFormCode(f),shiny);
+  var suf=pokeosFormSuffixOf(f,nd);
+  return 'https://'+PKM_POKEOS_S3+'render/'+(shiny?'shiny/':'')+nd+(suf||'')+'.png';
 }
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
@@ -7097,6 +7153,8 @@ var bs=pageOverlay.querySelector('#box-select');if(bs){bs.addEventListener('chan
   var si=pageOverlay.querySelector('#dex-search-input');
 if(si){si.addEventListener('input',dexSearch);}
 pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(b){b.addEventListener('click',function(){dexRegion=b.getAttribute('data-dexregion');pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(x){x.classList.toggle('active',x===b);});renderDexRegion();});});
+var dt=pageOverlay.querySelector('[data-dex-thumb]');
+if(dt){dt.addEventListener('click',function(e){e.stopPropagation();dexThumbsToggle();});}
   pageOverlay.querySelectorAll('input[data-clear]').forEach(function(r){r.addEventListener('change',function(){if(r.checked)clearTarget=r.getAttribute('data-clear');});});
 var ic=pageOverlay.querySelector('input[data-toggle="itemclick"]');
 if(ic){ic.addEventListener('change',function(){itemClickEnabled=ic.checked;try{localStorage.setItem('pk_itemclick',itemClickEnabled?'1':'0');}catch(e){}});}
