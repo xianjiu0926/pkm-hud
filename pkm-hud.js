@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.7.2';
+var PK_VER='2.7.3';
 /*PK_NOTICE_BEGIN
 优化
 PK_NOTICE_END*/
@@ -5944,6 +5944,14 @@ function fetchItemSprite(name,enName,cb){
         var enc=encodeURIComponent(target);
         var m3=html.match(new RegExp('src="([^"]*'+enc+'[^"]*)"','i'));
         if(m3){url=m3[1];}
+      }
+      if(!url&&html&&!target){
+        var ownT=itemCleanTarget('Bag '+name+' Sprite');
+        if(ownT){
+          var ownEnc=encodeURIComponent(ownT);
+          var ownM=html.match(new RegExp('src="([^"]*'+ownEnc+'[^"]*)"','i'));
+          if(ownM){url=ownM[1];}
+        }
       }
       if(!url&&html){
         var dm=html.match(/src="([^"]*Dream_[^"]*Sprite\.png[^"]*)"/);
