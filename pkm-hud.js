@@ -3,12 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.6.6';
+var PK_VER='2.6.7';
 /*PK_NOTICE_BEGIN
-修复悬浮窗模式HUD偶发消失且无法恢复的问题：
-- 悬浮球/悬浮窗结构自愈：窗口被移除后自动重建，悬浮球被隐藏后自动恢复
-- 悬浮球位置自动回拉进屏幕，避免拖出/保存到屏幕外导致“看不到球”
-- 启动时若缓存的更新版本无法运行，自动回退到上一版本或内置版本
+优化一下
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -2977,7 +2974,7 @@ function pkImgHTML(species,icon,shiny,cls){
   cls=cls||'';
   var r=pkImgSmart(species,icon,shiny);
   if(r&&r.img){
-    return '<div class="pk-img '+cls+'"><img src="'+esc(r.img)+'" alt="" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated" onerror="this.remove();this.parentNode.classList.add(\'no-img\');this.parentNode.textContent=\'?\'"></div>';
+    return '<div class="pk-img '+cls+'"><img src="'+esc(r.img)+'" referrerpolicy="origin" alt="" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated" onerror="this.remove();this.parentNode.classList.add(\'no-img\');this.parentNode.textContent=\'?\'"></div>';
   }
   if(r&&r.imgRef){
     return '<div class="pk-img '+cls+'"><img data-pkidb="'+esc(r.imgRef)+'" alt="" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated"></div>';
@@ -6324,25 +6321,6 @@ function fabImgReset(){
   applyFabImg();
   overlay.classList.remove('open');
   hudMsg('悬浮球图片已恢复默认');
-}
-function fabResetNow(){
-  // 悬浮球消失/拖出屏幕/图标异常时的急救：清掉位置、图标、大小，移除所有悬浮窗 DOM 后重建。
-  try{localStorage.removeItem('pk_fab_pos');}catch(e){}
-  try{localStorage.removeItem('pk_fabimg');}catch(e){}
-  try{localStorage.removeItem('pk_fabsize');}catch(e){}
-  fabImg='';
-  fabSize=54;
-  try{
-    var ids=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
-    for(var i=0;i<ids.length;i++){
-      var el=document.getElementById(ids[i]);
-      if(el&&el.parentNode)el.parentNode.removeChild(el);
-    }
-    var slots=document.querySelectorAll('#pkm-hud-slot');
-    for(var j=0;j<slots.length;j++){try{if(slots[j].parentNode)slots[j].parentNode.removeChild(slots[j]);}catch(e){}}
-  }catch(e){}
-  try{if(winMode==='1')ensureHud();}catch(e){}
-  hudMsg(winMode==='1'?'悬浮窗已重置，点一下悬浮球即可打开':'已重置悬浮窗数据；若要用悬浮窗模式，请先勾选「悬浮窗模式」');
 }
 function openIconSize(){
   clearBack();
