@@ -3,9 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.6.3';
+var PK_VER='2.6.6';
 /*PK_NOTICE_BEGIN
-适配小手机本地上传图片
+修复悬浮窗模式HUD偶发消失且无法恢复的问题：
+- 悬浮球/悬浮窗结构自愈：窗口被移除后自动重建，悬浮球被隐藏后自动恢复
+- 悬浮球位置自动回拉进屏幕，避免拖出/保存到屏幕外导致“看不到球”
+- 启动时若缓存的更新版本无法运行，自动回退到上一版本或内置版本
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6322,6 +6325,25 @@ function fabImgReset(){
   overlay.classList.remove('open');
   hudMsg('悬浮球图片已恢复默认');
 }
+function fabResetNow(){
+  // 悬浮球消失/拖出屏幕/图标异常时的急救：清掉位置、图标、大小，移除所有悬浮窗 DOM 后重建。
+  try{localStorage.removeItem('pk_fab_pos');}catch(e){}
+  try{localStorage.removeItem('pk_fabimg');}catch(e){}
+  try{localStorage.removeItem('pk_fabsize');}catch(e){}
+  fabImg='';
+  fabSize=54;
+  try{
+    var ids=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
+    for(var i=0;i<ids.length;i++){
+      var el=document.getElementById(ids[i]);
+      if(el&&el.parentNode)el.parentNode.removeChild(el);
+    }
+    var slots=document.querySelectorAll('#pkm-hud-slot');
+    for(var j=0;j<slots.length;j++){try{if(slots[j].parentNode)slots[j].parentNode.removeChild(slots[j]);}catch(e){}}
+  }catch(e){}
+  try{if(winMode==='1')ensureHud();}catch(e){}
+  hudMsg(winMode==='1'?'悬浮窗已重置，点一下悬浮球即可打开':'已重置悬浮窗数据；若要用悬浮窗模式，请先勾选「悬浮窗模式」');
+}
 function openIconSize(){
   clearBack();
   overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">自定义图标大小</div><button class="close" data-close>✕</button></div><div class="modal-body">'+iconSizeListHTML()+'<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-isz-apply>✔ 应用</button><button class="act-btn" data-isz-reset>↺ 恢复默认</button></div></div></div>';
@@ -7695,7 +7717,7 @@ function hudBindRootDelegation(app){
 function render(){
   var inline=(winMode==='0');
   var app=inline?document.getElementById('pkm-hud-inline'):document.getElementById('pkm-hud-slot');
-  if(!app){app=document.createElement('div');app.id=inline?'pkm-hud-inline':'pkm-hud-slot';if(inline){document.body.appendChild(app);}else{var win=document.getElementById('pkm-hud-win');if(win)win.appendChild(app);else document.body.appendChild(app);}}
+  if(!app){app=document.createElement('div');app.id=inline?'pkm-hud-inline':'pkm-hud-slot';if(inline){document.body.appendChild(app);}else{try{ensureHud();}catch(e){}var win=document.getElementById('pkm-hud-win');var slot=document.getElementById('pkm-hud-slot');if(slot){app=slot;}else if(win){win.appendChild(app);}else{document.body.appendChild(app);}}}
   if(inline)applyInlineH(app);
   if(app._pkmOptimizedReady&&app.querySelector('.hud')){refreshHudPanels(app);resizeFrame();return;}
   app.innerHTML='<div class="hud"><div class="hud-inner" id="hud-inner">'+
@@ -7835,6 +7857,22 @@ function vpSize(){
   return {w:w,h:h,ox:ox,oy:oy};
 }
 
+function hudClampFab(btn){
+  try{
+    if(!btn)return false;
+    var vp=vpSize(), size=fabSize, edge=14;
+    var rawL=parseFloat(btn.style.left), rawT=parseFloat(btn.style.top);
+    var l=rawL, t=rawT;
+    var maxL=Math.max(0,vp.w-size), maxT=Math.max(0,vp.h-size);
+    if(isNaN(l)||l<0||l>maxL)l=vp.w-size-edge;
+    if(isNaN(t)||t<0||t>maxT)t=vp.h-140-size;
+    var nl=Math.min(Math.max(0,l),maxL), nt=Math.min(Math.max(0,t),maxT);
+    if(nl!==rawL)btn.style.left=nl+'px';
+    if(nt!==rawT)btn.style.top=nt+'px';
+    return true;
+  }catch(e){return false;}
+}
+
 function hudSyncMapPopoutHeight(){
   try{
     if(!pageOverlay||!pageOverlay.classList.contains('popout'))return;
@@ -7895,7 +7933,31 @@ function ensureHud(){
     }catch(e){}
     return;
   }
-  if(document.getElementById('pkm-hud-btn'))return;
+  var _ebtn=document.getElementById('pkm-hud-btn');
+  var _ewin=document.getElementById('pkm-hud-win');
+  var _emask=document.getElementById('pkm-hud-mask');
+  var _eslot=document.getElementById('pkm-hud-slot');
+  var _estructOk=!!(_ewin&&_emask&&_eslot&&_ewin.contains(_eslot));
+  if(_ebtn&&_estructOk){
+    // FAB exists and window structure is intact. Repair any "hidden" leftovers from a
+    // previous inline-mode session, and make sure the FAB is visible when the window is
+    // closed and clamped inside the viewport.
+    if(!_ewin.classList.contains('open')&&_ebtn.style.display==='none'){try{_ebtn.style.display='';}catch(e){}}
+    try{if(_ewin.style.display==='none')_ewin.style.display='';}catch(e){}
+    try{if(_emask.style.display==='none')_emask.style.display='';}catch(e){}
+    try{hudClampFab(_ebtn);}catch(e){}
+    return;
+  }
+  // Structure broken (FAB/window/mask/slot partially or fully lost, or slot orphaned):
+  // tear down every stale piece and rebuild the whole floating UI below.
+  try{if(_ebtn&&_ebtn.parentNode)_ebtn.parentNode.removeChild(_ebtn);}catch(e){}
+  try{var _emf=document.getElementById('pkm-hud-mapfab');if(_emf&&_emf.parentNode)_emf.parentNode.removeChild(_emf);}catch(e){}
+  try{if(_ewin&&_ewin.parentNode)_ewin.parentNode.removeChild(_ewin);}catch(e){}
+  try{if(_emask&&_emask.parentNode)_emask.parentNode.removeChild(_emask);}catch(e){}
+  try{
+    var _slots=document.querySelectorAll('#pkm-hud-slot');
+    for(var _si=0;_si<_slots.length;_si++){var _s=_slots[_si];try{if(_s.parentNode)_s.parentNode.removeChild(_s);}catch(e){}}
+  }catch(e){}
 
   var size=fabSize, edge=14;
 var vp=vpSize();
@@ -7919,6 +7981,7 @@ applyFabUpdateBadge();
     btn.style.left=saved.l+'px';
     btn.style.top=saved.t+'px';
   }
+  try{hudClampFab(btn);}catch(e){}
 
   
   function fixPos(wantX,wantY){
@@ -8084,6 +8147,7 @@ function moveDrag(cx,cy){
   if(drag.moved){
     btn.style.left=(drag.l+dx)+'px';
     btn.style.top=(drag.t+dy)+'px';
+    try{hudClampFab(btn);}catch(e){}
   }
 }
 function fabToggleHud(){
@@ -8100,6 +8164,7 @@ function endDrag(e){
   fabSuppressMouseUntil=Date.now()+1500;
   if(wasMove){
     fabSkipClick=true;
+    try{hudClampFab(btn);}catch(err){}
     try{ localStorage.setItem('pkm_fab_pos', JSON.stringify({l:parseFloat(btn.style.left), t:parseFloat(btn.style.top)})); }catch(err){}
     hudArmGestureShield(btn,750);
     if(e && e.cancelable){ e.preventDefault(); }
@@ -8297,6 +8362,7 @@ function pkmStateSnapshot(d){
 }
 function pkmAutoCheck(){
   try{
+    try{if(winMode==='1')ensureHud();}catch(e){}
     if(hudPendingActions&&hudPendingActions.length)return;
     if((Date.now()-pkmLastLocalWrite)<1500)return;
     var ov=document.querySelector('.overlay.open,.page-overlay.open');if(ov)return;
@@ -8409,13 +8475,17 @@ if(PK_BOOT_DELEGATED){
             try{delete WIN.__PK_HUD_DELEGATED_BOOT__;}catch(e){}
             return;
           }catch(e){
-            try{pkRollbackPending(active.version);}catch(e2){}
+            try{await pkRollbackRecord();}catch(e2){}
             var prev=null;
             try{prev=await pkSlotRead('active');}catch(e2){}
             if(prev&&await pkValidRecord(prev)){
-              try{new Function(prev.content).call(window);}catch(e2){}
-              try{delete WIN.__PK_HUD_DELEGATED_BOOT__;}catch(e2){}
-              return;
+              var prevAck=false;
+              var prevDelegated={coreReady:function(){prevAck=true;},ready:function(){try{pkMarkHealthy(prev.version);}catch(e2){}},reportError:function(){}};
+              try{
+                WIN.__PK_HUD_DELEGATED_BOOT__=prevDelegated;
+                new Function(prev.content).call(window);
+                if(prevAck){try{delete WIN.__PK_HUD_DELEGATED_BOOT__;}catch(e2){}return;}
+              }catch(e2){}
             }
             try{delete WIN.__PK_HUD_DELEGATED_BOOT__;}catch(e2){}
           }
