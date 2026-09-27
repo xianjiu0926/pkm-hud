@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.6.8';
+var PK_VER='2.6.9';
 /*PK_NOTICE_BEGIN
-图鉴格子加入 pokeos 静态图（render PNG），列表与名称仍来自 52poke
+优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -554,6 +554,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.pokedex.list-only .dex-img{display:none}'+
 '.pokedex.list-only .dex-no{flex:0 0 auto;min-width:42px;text-align:left}'+
 '.pokedex.list-only .dex-name{text-align:left}'+
+'.dex-tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:8px;padding-bottom:6px;padding-left:8%;padding-right:4%}'+
+'.dex-tabs-scroll::-webkit-scrollbar{display:none}'+
+'.dex-tabs-grid{display:grid;grid-template-columns:repeat(7,max-content);gap:4px;width:max-content}'+
+'.dex-thumb-btn{padding:0 6px;font-size:.68rem;line-height:1.5;font-family:inherit;border:1px solid var(--frame);background:rgba(43,74,111,.7);color:#fff;border-radius:4px;cursor:pointer;float:right;margin-left:6px}'+
 '.item-badge{height:1em;width:auto;image-rendering:pixelated;object-fit:contain;flex-shrink:0;transform:scale(1.5);transform-origin:center}'+
 '.info-title{margin-left:8%}'+
 '.info-row.cmd,.info-row:last-child,.task-item:last-child,.event-item:last-child{padding-right:7%}'+
@@ -5092,7 +5096,7 @@ fetchRegionalDex(region,function(list){
 }
 function dexRegionTabsHTML(){
   var regs=['全国'].concat(Object.keys(REGIONAL_DEX));
-  return '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px" id="dex-region-tabs">'+regs.map(function(r){return '<button class="badge-tab'+(dexRegion===r?' active':'')+'" data-dexregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('')+'</div>';
+  return '<div class="dex-tabs-scroll"><div class="dex-tabs-grid">'+regs.map(function(r){return '<button class="badge-tab'+(dexRegion===r?' active':'')+'" data-dexregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('')+'</div></div>';
 }
 function dexCountHTML(list,owned,sSet){
   if(!list)return '<div class="dex-count">加载失败</div>';
@@ -5117,7 +5121,7 @@ function renderDexRegion(){
 }
 function pokedexHTML(){
   var on=dexThumbsEnabled();
-  var toggle='<button class="btn-small" data-dex-thumb style="float:right;margin-left:6px">'+(on?'🖼️ 缩略图':'📃 仅列表')+'</button>';
+  var toggle='<button class="dex-thumb-btn" data-dex-thumb>'+(on?'🖼️ 缩略图':'📃 仅列表')+'</button>';
   var gridCls='pokedex'+(on?'':' list-only');
   var html=frame('图鉴 '+toggle,dexRegionTabsHTML()+'<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号" autocomplete="off"></div><div id="dex-count"><div class="dex-count">加载中…</div></div><div class="'+gridCls+'" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
   hudScope.setTimeout(function(){renderDexRegion();},0);
