@@ -3,9 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.7.0';
+var PK_VER='2.7.1';
 /*PK_NOTICE_BEGIN
-优化
+@irispony
+更新从地里长出来，优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -548,7 +549,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dex-cell.unknown .dex-types{visibility:hidden}'+
 '.dex-img{width:100%;height:44px;display:flex;align-items:center;justify-content:center}'+
 '.dex-img img{width:100%;height:100%;object-fit:contain}'+
-'.dex-cell.unknown .dex-img img{filter:brightness(0) opacity(.45)}'+
+'.dex-cell.unknown .dex-img img{filter:brightness(0) opacity(.45) !important}'+
 '.pokedex.list-only{grid-template-columns:1fr;gap:3px}'+
 '.pokedex.list-only .dex-cell{flex-direction:row;align-items:center;gap:8px;padding:3px 8px;text-align:left}'+
 '.pokedex.list-only .dex-img{display:none}'+
@@ -4990,7 +4991,7 @@ var cls=caught?'caught':(seen?'seen':'unknown');
 var label=known?name:'？？？';
 var attr=known?' data-name="'+esc(bn)+'"':' data-noclick="1"';
 var imgHtml='';
-if(showThumbs){var img=dexCellImgUrl(ndex);if(img){var sil=(label==='？？？')?' style="filter:brightness(0) opacity(.45)"':'';imgHtml='<span class="dex-img"><img loading="lazy" decoding="async" src="'+esc(img)+'" referrerpolicy="origin" alt="" onerror="this.style.display=\'none\'"'+sil+'></span>';}}
+if(showThumbs){var img=dexCellImgUrl(ndex);if(img){var sil=(label==='？？？')?' style="filter:brightness(0) opacity(.45) !important"':'';imgHtml='<span class="dex-img"><img loading="lazy" decoding="async" src="'+esc(img)+'" referrerpolicy="origin" alt="" onerror="this.style.display=\'none\'"'+sil+'></span>';}}
 html+='<div class="dex-cell '+cls+'" data-id="'+esc(ndex)+'" data-rdex="'+esc(id)+'"'+attr+'><span class="dex-no">#'+esc(id)+'</span>'+imgHtml+'<span class="dex-name">'+esc(label)+'</span></div>';
   });
   g.innerHTML=html;
