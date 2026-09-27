@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.7.4';
+var PK_VER='2.7.5';
 /*PK_NOTICE_BEGIN
-道具详细效果（重要道具没有，因为很乱）
+优化了poke的重定向，查不到会查Poké，图更全了
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5751,7 +5751,10 @@ function itemPageTitles(key){
   var k=String(key||'').trim();
   if(!k)return [];
   if(/[\u4e00-\u9fff]/.test(k))return [t2s(k)+'（道具）'];
-  return [t2s(k)];
+  var titles=[t2s(k)];
+  var acc=t2s(k).replace(/\bPoke\b/g,'Poké');
+  if(acc!==titles[0]&&titles.indexOf(acc)<0)titles.push(acc);
+  return titles;
 }
 function itemBagIconEn(name){
   try{
