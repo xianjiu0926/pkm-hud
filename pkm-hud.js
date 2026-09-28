@@ -3,14 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.8.4';
+var PK_VER='2.8.5';
 /*PK_NOTICE_BEGIN
-v2.8.4
-设置里「缓存占用」可点击，新增缓存占用明细
-· 运行诊断 → 缓存占用 变成可点击，点开能看到各类缓存分别占了多少：道具图、精灵图、招式、特性、图鉴列表、形态ID、附近属性等
-· 顶部显示总计，并带一条彩色占比条，一眼看出哪个占大头
-· 地图图片、DIY 图片按真实文件大小统计；文字类缓存按字节数估算
-· 弹窗里有「重新扫描」按钮，清理完缓存后可以实时刷新统计
+优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4852,9 +4847,9 @@ function parseMove(wt,html){
 function grab(re){var m=wt.match(re);return m?m[1].trim():'';}
 d.power=cleanText(grab(/\|power=([^\n|]+)/));
 d.acc=cleanText(grab(/\|accuracy=([^\n|]+)/));
-d.type=cleanText(grab(/\|type=([^\n|]+)/)||grab(/\|属性=([^\n|]+)/));
-d.cat=cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)/));
-  var name=grab(/\|name=([^\n|]+)/);
+d.type=t2s(cleanText(grab(/\|type=([^\n|]+)/)||grab(/\|属性=([^\n|]+)/)));
+d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)/)));
+  var name=t2s(grab(/\|name=([^\n|]+)/));
   if(html){
     var doc=new DOMParser().parseFromString(html,'text/html');
     d.desc=descFromHtml(doc);
@@ -4865,6 +4860,7 @@ d.cat=cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)/));
     if(em)d.eff=renderEffect(em[1],name);
   }
   if(!d.desc)d.desc=descFromWiki(wt);
+  d.desc=t2s(d.desc||'');d.eff=t2s(d.eff||'');
   return d;
 }
 function fetchMove(name,cb){
@@ -4896,11 +4892,17 @@ function fetchMove(name,cb){
       .catch(onFail);
   }
   function searchThen(){
-    hudFetch('https://wiki.52poke.com/api.php?action=query&list=search&srsearch='+encodeURIComponent(t2s(name)+' 招式')+'&srnamespace=0&srlimit=3&format=json&origin=*')
+    hudFetch('https://wiki.52poke.com/api.php?action=query&list=search&srsearch='+encodeURIComponent(t2s(name)+' 招式')+'&srnamespace=0&srlimit=6&format=json&origin=*')
       .then(function(r){return r.json();})
       .then(function(j){
         var rs=(j&&j.query&&j.query.search)||[];
-        if(rs[0]){parsePage(rs[0].title,function(){done(null);});}
+        var pick=null;
+        for(var i=0;i<rs.length;i++){
+          var t=String(rs[i]&&rs[i].title||'');
+          if(/（招式）$/.test(t)){pick=t;break;}
+        }
+        if(!pick&&rs[0])pick=rs[0].title;
+        if(pick){parsePage(pick,function(){done(null);});}
         else{done(null);}
       })
       .catch(function(){done(null);});
