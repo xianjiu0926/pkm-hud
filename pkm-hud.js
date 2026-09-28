@@ -3,9 +3,15 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.8.6';
+var PK_VER='2.9.0';
 /*PK_NOTICE_BEGIN
-优化
+v2.9.0
+设置新增「道具图源」：Serebii ItemDex / 52poke 二选一
+· Serebii ItemDex：默认，英文图源，可直接外链，覆盖全世代＋朱紫/传说Z-A
+· 52poke 神奇宝贝百科：原图源，中文最全，需网络能访问其图床
+· 背包道具图标随图源切换：Serebii 按英文名直拼，52poke 走原抓图流程
+· 洛托姆手机、太晶珠、钥石、极巨腕带、盒子、图鉴等特殊图标改用固定图床直链
+· 招式效果说明过滤版本角标（ΩRαS/SM/USUM/ZA 等），显示更干净
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -834,11 +840,11 @@ try{
 
 var MENU=[
   {key:'bag',label:'背包',emoji:'🎒',img:'https://img.baibai.cv/f/3o2qte/1788188339193.png'},
-  {key:'box',label:'盒子',emoji:'📦',img:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png'},
+  {key:'box',label:'盒子',emoji:'📦',img:'https://img.baibai.cv/f/4eN3HA/%E7%9B%92%E5%AD%90.png'},
   {key:'rel',label:'人际关系',emoji:'💬',img:''},
   {key:'rivals',label:'劲敌',emoji:'👥',img:''},
-  {key:'breeding',label:'繁育',emoji:'🥚',img:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',isz:20},
-  {key:'pokedex',label:'图鉴',emoji:'📖',img:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png'},
+  {key:'breeding',label:'繁育',emoji:'🥚',img:'https://img.baibai.cv/f/ZVn1UV/%E7%B9%81%E8%82%B2.png',isz:20},
+  {key:'pokedex',label:'图鉴',emoji:'📖',img:'https://img.baibai.cv/f/1dNbu2/%E5%9B%BE%E9%89%B4.png'},
   {key:'badge',label:'徽章盒',emoji:'🏅',img:''},
   {key:'map',label:'地图',emoji:'🗺️',img:''},
   {key:'settings',label:'设置',emoji:'⚙️',img:''}
@@ -2789,6 +2795,18 @@ function ballEnName(c){var b=BALL_EN[c.ball]||c.ballEn||'';return String(b).toLo
 var BERRY_CN={'樱子果':'cheri-berry','零余果':'chesto-berry','桃桃果':'pecha-berry','莓莓果':'rawst-berry','利木果':'aspear-berry','苹野果':'leppa-berry','橙橙果':'oran-berry','柿仔果':'persim-berry','木子果':'lum-berry','文柚果':'sitrus-berry','勿花果':'figy-berry','异奇果':'wiki-berry','芒芒果':'mago-berry','乐芭果':'aguav-berry','芭亚果':'iapapa-berry','蔓莓果':'razz-berry','墨莓果':'bluk-berry','蕉香果':'nanab-berry','西梨果':'wepear-berry','凰梨果':'pinap-berry','榴石果':'pomeg-berry','藻根果':'kelpsy-berry','比巴果':'qualot-berry','哈密果':'hondew-berry','葡萄果':'grepa-berry','茄番果':'tamato-berry','玉黍果':'cornn-berry','岳竹果':'magost-berry','茸丹果':'rabuta-berry','檬柠果':'nomel-berry','刺角果':'spelon-berry','霹霹果':'pamtre-berry','刺耳果':'watmel-berry','巧可果':'durin-berry','千香果':'belue-berry','烛木果':'occa-berry','罗子果':'passho-berry','番荔果':'wacan-berry','莲蒲果':'rindo-berry','苦通果':'yache-berry','腰木果':'chople-berry','通通果':'kebia-berry','福禄果':'shuca-berry','扁樱果':'coba-berry','草蚕果':'payapa-berry','佛柑果':'tanga-berry','莓榴果':'charti-berry','刺梨果':'kasib-berry','蜜腰果':'haban-berry','灯浆果':'colbur-berry','枝荔果':'babiri-berry','香罗果':'chilan-berry','释陀果':'liechi-berry','奇秘果':'ganlon-berry','沙鳞果':'salac-berry','龙火果':'petaya-berry','杏仔果':'apicot-berry','兰萨果':'lansat-berry','星桃果':'starf-berry','谜芝果':'enigma-berry','奇拉果':'micle-berry','嘉珍果':'custap-berry','雾莲果':'jaboca-berry','洛玫果':'rowap-berry','亚开果':'roseli-berry','香藻果':'kee-berry','玛瑙果':'maranga-berry'};
 var BERRY_BASE={};
 for(var b in BERRY_CN){BERRY_BASE[BERRY_CN[b].replace(/-berry$/,'')]=1;}
+var PKM_ITEM_SEREBII_BASE='https://www.serebii.net/itemdex/sprites/';
+var pkmItemSource='serebii';
+try{var _isrc=localStorage.getItem('pk_item_source');pkmItemSource=(_isrc==='52poke')?'52poke':'serebii';}catch(e){}
+function serebiiItemSlug(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'');}
+function serebiiItemSlugAlt(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'.');}
+function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?PKM_ITEM_SEREBII_BASE+s+'.png':'';}
+function itemSlugOf(name,iconField){
+  var n=String(name||'');
+  var s=String(iconField||'').trim();
+  if(!s){s=itemIconName(n);}
+  return serebiiItemSlug(s);
+}
 function itemIconName(name){
   var n=String(name||'');
   if(ITEM_ICON[n])return ITEM_ICON[n];
@@ -2805,14 +2823,14 @@ function itemIconName(name){
   return '';
 }
 var ITEM_IMG={
-  'Mega手镯':'https://media.52poke.com/wiki/7/70/Bag_%E8%B6%85%E7%BA%A7%E6%89%8B%E9%95%AF_Sprite.png',
-  'Z强力手环':'https://media.52poke.com/wiki/8/85/%EF%BC%BA%E5%BC%BA%E5%8A%9B%E6%89%8B%E7%8E%AF.png',
-  'Z手环':'https://img.baibai.cv/f/ZrDmSV/IMG_20260829_202216.png',
-  '洛托姆手机':'https://media.52poke.com/wiki/a/ab/%E6%89%8B%E6%9C%BA%E6%B4%9B%E6%89%98%E5%A7%86_SV.png',
-  '太晶珠':'https://media.52poke.com/wiki/d/d0/%E5%A4%AA%E6%99%B6%E7%8F%A0_SV.png',
-  '钥石':'https://media.52poke.com/wiki/2/2e/%E9%92%A5%E7%9F%B3_ZA.png',
-  '极巨腕带':'https://media.52poke.com/wiki/1/14/%E6%A5%B5%E5%B7%A8%E8%85%95%E5%B8%B6_%E7%B9%AA%E5%9C%96_SWSH.png',
-  '宝可梦图鉴':'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png'
+  'Mega手镯':'https://img.baibai.cv/f/8RNLcz/Mega%E6%89%8B%E9%95%AF.png',
+  'Z强力手环':'https://img.baibai.cv/f/Mrq8Ty/Z%E5%BC%BA%E5%8A%9B%E6%89%8B%E7%8E%AF.png',
+  'Z手环':'https://img.baibai.cv/f/GnNWTo/Z%E6%89%8B%E7%8E%AF.png',
+  '洛托姆手机':'https://img.baibai.cv/f/EbNahX/%E6%B4%9B%E6%89%98%E5%A7%86%E6%89%8B%E6%9C%BA.png',
+  '太晶珠':'https://img.baibai.cv/f/o5LbuO/%E5%A4%AA%E6%99%B6%E7%8F%A0.png',
+  '钥石':'https://img.baibai.cv/f/NrK6Ig/%E9%92%A5%E7%9F%B3.png',
+  '极巨腕带':'https://img.baibai.cv/f/xLb5TM/%E6%9E%81%E5%B7%A8%E8%85%95%E5%B8%A6.png',
+  '宝可梦图鉴':'https://img.baibai.cv/f/1dNbu2/%E5%9B%BE%E9%89%B4.png'
 };
 var ITEM_TEXT={'宝可梦图鉴':'宝可梦图鉴'};
 function itemImgOf(name){
@@ -2895,6 +2913,8 @@ function psItemUrl(slug,kind){
 }
 function itemImgErr(el){
   var src=String(el.getAttribute('src')||'');
+  var fb=el.getAttribute('data-fallback');
+  if(fb&&fb!==src){el.setAttribute('src',fb);el.removeAttribute('data-fallback');return;}
   var isPS=(src.indexOf('pokesprite')>=0);
   var all=isPS?PS_MIRRORS:PA_MIRRORS;
   var cur=-1,rel='';
@@ -3690,7 +3710,7 @@ function openNearbyPage(){pageOverlayPopout(false);pageOverlay.innerHTML='<div c
 
 function bagCategories(){var cats=[{key:'道具',label:'道具',items:[]},{key:'精灵球',label:'精灵球',items:[]},{key:'重要物品',label:'重要物品',items:[]}];var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var c=cats.find(function(x){return x.key===it.类型;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
 var activeBag='道具';
-function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0||it.name.indexOf('招式学习器')>=0);var tmMove=isTM?tmMoveName(it.name):'';var icon;if(tmMove){var iconSlug=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');icon=iconSlug?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconSlug,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder tm-wiki" data-tm="'+esc(tmMove)+'">?</span></span>';}else if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var ov=itemImgOf(it.name);if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=tmMove?' data-tm="'+esc(tmMove)+'" style="cursor:pointer"':((!isTM&&itemClickEnabled)?' data-item="'+esc(it.name)+'" style="cursor:pointer"':'');return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
+function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0||it.name.indexOf('招式学习器')>=0);var tmMove=isTM?tmMoveName(it.name):'';var icon;if(tmMove){var iconSlug=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');icon=iconSlug?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconSlug,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder tm-wiki" data-tm="'+esc(tmMove)+'">?</span></span>';}else if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else if(pkmItemSource==='serebii'){var ov2=itemImgOf(it.name);if(ov2!==undefined){icon=ov2?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov2)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{var iraw=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');if(!iraw){iraw=itemIconName(it.name);}var iu=iraw?serebiiItemUrl(iraw):'';var ialt=iraw?(PKM_ITEM_SEREBII_BASE+serebiiItemSlugAlt(iraw)+'.png'):'';if(ialt===iu)ialt='';icon=iu?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(iu)+'"'+(ialt?' data-fallback="'+esc(ialt)+'"':'')+' onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-item-en="'+esc(it.icon||'')+'" data-cls="item-icon">?</span></span>';}}else{var ov=itemImgOf(it.name);if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=tmMove?' data-tm="'+esc(tmMove)+'" style="cursor:pointer"':((!isTM&&itemClickEnabled)?' data-item="'+esc(it.name)+'" style="cursor:pointer"':'');return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
 function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return frame('背包','<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
 
 var MAPS_DATA=[
@@ -4691,7 +4711,7 @@ function bindMapViewer(wrap){
 
 
 var activeBox='1';var nearbyOpen=false;var foldState={};function foldHTML(key,label,fn){var open=!!foldState[key];return '<div class="fold-box"><div class="fold-head" data-fold="'+key+'"><span>'+label+'</span><span class="fold-arrow">'+(open?'▾':'▸')+'</span></div>'+(open?'<div class="fold-body">'+fn()+'</div>':'')+'</div>';}function bagPlainHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return '<div class="fold-inner"><div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div></div>';}function relPlainHTML(){var rel=stat_data.人际关系||{};var ks=Object.keys(rel);if(!ks.length)return '<div class="fold-inner"><div class="empty">暂无</div></div>';return '<div class="fold-inner">'+ks.map(function(k){var val=rel[k];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name">'+esc(k)+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('')+'</div>';}
-function quickHTML(){var Q=[['box','q-box','https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png','盒子'],['pokedex','q-pokedex','https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png','图鉴'],['breeding','q-breeding','https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png','繁育'],['typechart','q-typechart','⚡','克制表'],['map','q-map','🗺️','地图']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" referrerpolicy="origin" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="https://img.baibai.cv/f/3o2qte/1788188339193.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'box-icon');return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
+function quickHTML(){var Q=[['box','q-box','https://img.baibai.cv/f/4eN3HA/%E7%9B%92%E5%AD%90.png','盒子'],['pokedex','q-pokedex','https://img.baibai.cv/f/1dNbu2/%E5%9B%BE%E9%89%B4.png','图鉴'],['breeding','q-breeding','https://img.baibai.cv/f/ZVn1UV/%E7%B9%81%E8%82%B2.png','繁育'],['typechart','q-typechart','⚡','克制表'],['map','q-map','🗺️','地图']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" referrerpolicy="origin" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="https://img.baibai.cv/f/3o2qte/1788188339193.png" style="width:20px;height:20px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'box-icon');return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
 
 function tasksHTML(){var t=stat_data.任务||{},html='';if(t.主线)html+='<div class="task-item"><span class="task-tag main">主线</span><div class="task-text">'+esc(t.主线)+'</div></div>';if(t.传说)html+='<div class="task-item"><span class="task-tag legend">传说</span><div class="task-text">'+esc(t.传说)+'</div></div>';if(t.支线)html+='<div class="task-item"><span class="task-tag random">支线</span><div class="task-text">'+esc(t.支线).split(/[；;\n]/).join('<br>')+'</br></div></div>';if(!html)html='<div class="empty">暂无任务</div>';return frameP('任务',html);}
 function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){return esc(String(v||'')).split(/[；;]/).join('<br>');}if(w.附近遭遇)html+='<div class="event-item"><span class="event-type">📍 附近遭遇</span><p>'+ln(w.附近遭遇)+'</p></div>';if(w.地区新闻)html+='<div class="event-item"><span class="event-type">📰 地区新闻</span><p>'+ln(w.地区新闻)+'</p></div>';if(w.区域动态)html+='<div class="event-item"><span class="event-type">🌍 区域动态</span><p>'+ln(w.区域动态)+'</p></div>';if(!html)html='<div class="empty">暂无世界事件</div>';return '<div class="info-frame world-frame plain-frame"><div class="info-inner"><div class="info-title">世界动态</div>'+html+'</div></div>';}
@@ -6158,7 +6178,7 @@ function fetchItem(name,enName,cb){
   if(!name){cb&&cb(null);return;}
   var _diy=diyGet('item',name);
   if(_diy){cb&&cb(_diy);return;}
-  if(ITEM_TEXT[name]){var _d={name:name,text:ITEM_TEXT[name],img:ITEM_IMG[name]||''};itemCache[name]=_d;cb&&cb(_d);return;}
+  if(ITEM_TEXT[name]){var _img=(pkmItemSource==='serebii'&&itemSlugOf(name,''))?serebiiItemUrl(itemSlugOf(name,'')):(ITEM_IMG[name]||'');var _d={name:name,text:ITEM_TEXT[name],img:_img};itemCache[name]=_d;cb&&cb(_d);return;}
   if(itemCache[name]){cb&&cb(itemCache[name]);return;}
   var _c=lsGet('pk_item_'+name,null);if(_c){itemCache[name]=_c;cb&&cb(_c);return;}
   var cands=itemCands(name);
@@ -6227,6 +6247,7 @@ function itemCleanTarget(v){
 function fetchItemSprite(name,enName,cb){
   if(typeof enName==='function'){cb=enName;enName='';}
   if(!name){cb&&cb('');return;}
+  if(pkmItemSource==='serebii'){var _ov=itemImgOf(name);if(_ov!==undefined){cb&&cb(_ov);return;}var _slug=itemSlugOf(name,enName);var _u=_slug?serebiiItemUrl(_slug):'';cb&&cb(_u);return;}
   if(itemSpriteCache[name]){cb&&cb(itemSpriteCache[name]);return;}
   var _c=lsGet('pk_itemimg_'+name,'');if(_c){itemSpriteCache[name]=_c;cb&&cb(_c);return;}
   var _diy=diyGet('item',name);
@@ -6383,7 +6404,7 @@ function typeChartHTML(){
   h+='<div style="display:flex;gap:6px;margin-bottom:8px"><select id="tc-def-1" style="'+selStyle+'">'+opts+'</select><select id="tc-def-2" style="'+selStyle+'">'+opts+'</select></div>';
   h+='<div id="tc-result"><div class="empty">选择防御方属性后，自动显示克制它的属性</div></div>';
   h+='<div class="set-title" style="margin-left:0;margin-top:6px">完整克制表</div>';
-  h+='<div style="text-align:center"><img src="https://s1.52poke.com/wiki/thumb/8/8a/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png/601px-%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png?20200201130327" referrerpolicy="origin" data-tc-big="https://s1.52poke.com/wiki/thumb/8/8a/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png/601px-%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8_SWSH.png?20200201130327" style="max-width:100%;height:auto;border-radius:6px;cursor:zoom-in" onerror="this.style.display=\'none\'"><div class="dim" style="font-size:.72rem;margin-top:4px">点击图片放大查看</div></div>';
+  h+='<div style="text-align:center"><img src="https://img.baibai.cv/f/e2jdhn/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8.png" referrerpolicy="origin" data-tc-big="https://img.baibai.cv/f/e2jdhn/%E5%B1%9E%E6%80%A7%E7%9B%B8%E5%85%8B%E8%A1%A8.png" style="max-width:100%;height:auto;border-radius:6px;cursor:zoom-in" onerror="this.style.display=\'none\'"><div class="dim" style="font-size:.72rem;margin-top:4px">点击图片放大查看</div></div>';
   return frameP('属性克制表',h);
 }
 function typeColor(t){t=t2s(String(t||'').trim());return TYPE_COLORS[t]||TYPE_COLORS[TYPE_CN[t]]||'#888';}
@@ -6517,15 +6538,15 @@ function bindRandomMode(container){
   randomModeSyncUI();
 }
 var ICON_CFG=[
-  {id:'q-box',label:'快捷·盒子',src:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png',def:22},
-  {id:'q-pokedex',label:'快捷·图鉴',src:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png',def:16},
-  {id:'q-breeding',label:'快捷·繁育',src:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',def:16},
+  {id:'q-box',label:'快捷·盒子',src:'https://img.baibai.cv/f/4eN3HA/%E7%9B%92%E5%AD%90.png',def:22},
+  {id:'q-pokedex',label:'快捷·图鉴',src:'https://img.baibai.cv/f/1dNbu2/%E5%9B%BE%E9%89%B4.png',def:16},
+  {id:'q-breeding',label:'快捷·繁育',src:'https://img.baibai.cv/f/ZVn1UV/%E7%B9%81%E8%82%B2.png',def:16},
   {id:'q-typechart',label:'快捷·克制表',emoji:'⚡',def:15},
 {id:'q-map',label:'快捷·地图',emoji:'🗺️',def:15},
   {id:'m-bag',label:'菜单·背包',src:'https://img.baibai.cv/f/3o2qte/1788188339193.png',def:30},
-  {id:'m-box',label:'菜单·盒子',src:'https://media.52poke.com/wiki/d/dd/Bag_%E5%AE%9D%E5%8F%AF%E6%A2%A6%E7%9B%92_Sprite.png',def:30},
-  {id:'m-breeding',label:'菜单·繁育',src:'https://media.52poke.com/wiki/1/1e/Spr_6x_Egg.png',def:20},
-  {id:'m-pokedex',label:'菜单·图鉴',src:'https://media.52poke.com/wiki/2/2d/%E5%AF%B6%E5%8F%AF%E5%A4%A2%E5%9C%96%E9%91%91_LPLE.png',def:30},
+  {id:'m-box',label:'菜单·盒子',src:'https://img.baibai.cv/f/4eN3HA/%E7%9B%92%E5%AD%90.png',def:30},
+  {id:'m-breeding',label:'菜单·繁育',src:'https://img.baibai.cv/f/ZVn1UV/%E7%B9%81%E8%82%B2.png',def:20},
+  {id:'m-pokedex',label:'菜单·图鉴',src:'https://img.baibai.cv/f/1dNbu2/%E5%9B%BE%E9%89%B4.png',def:30},
   {id:'m-rel',label:'菜单·人际关系',emoji:'💬',def:22},
   {id:'m-rivals',label:'菜单·劲敌',emoji:'👥',def:22},
   {id:'m-badge',label:'菜单·徽章盒',emoji:'🏅',def:22},
@@ -6978,7 +6999,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos（高清HOME动图，35ms/帧，可调px/原图）</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown（像素小动图，35ms不生效）</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">道具图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-item-source" value="serebii"'+('serebii'===pkmItemSource?' checked':'')+' data-item-source="serebii">Serebii ItemDex</label><label class="set-opt"><input type="radio" name="pk-item-source" value="52poke"'+('52poke'===pkmItemSource?' checked':'')+' data-item-source="52poke">52poke 神奇宝贝百科</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -7762,6 +7783,7 @@ if(iho){iho.addEventListener('click',function(e){e.stopPropagation();openInlineH
 var ppo=pageOverlay.querySelector('[data-pokeos-px-open]');
 if(ppo){ppo.addEventListener('click',function(e){e.stopPropagation();openPokeosPx();});}
 pageOverlay.querySelectorAll('input[data-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmSource=r.getAttribute('data-source');try{localStorage.setItem('pk_source',pkmSource);}catch(e){}pokeosPxClearSpriteCache();render();openPage('settings');}});});
+pageOverlay.querySelectorAll('input[data-item-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmItemSource=r.getAttribute('data-item-source');try{localStorage.setItem('pk_item_source',pkmItemSource);}catch(e){}render();openPage('settings');}});});
 var fio=pageOverlay.querySelector('[data-fab-img-open]');
 if(fio){fio.addEventListener('click',function(e){e.stopPropagation();openFabImg();});}
 var pku=pageOverlay.querySelector('[data-pk-check-update]');
