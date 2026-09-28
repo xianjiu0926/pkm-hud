@@ -3,9 +3,13 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.7.7';
+var PK_VER='2.8.0';
 /*PK_NOTICE_BEGIN
-优化
+v2.8.0
+图鉴新增状态筛选：全部 / 已捕捉 / 已见过 / 未见过
+· 按捕捉状态快速过滤，找"还差哪只"更方便
+· 与搜索框、地区 Tab、缩略图/列表模式叠加生效
+· 按钮选中配色与图鉴格子一致：绿=已捕捉、蓝=已见过、灰=未见过
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -558,6 +562,13 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dex-tabs-scroll::-webkit-scrollbar{display:none}'+
 '.dex-tabs-grid{display:grid;grid-template-columns:repeat(7,max-content);gap:4px;width:max-content}'+
 '.dex-thumb-btn{padding:0 6px;font-size:.68rem;line-height:1.5;font-family:inherit;border:1px solid var(--frame);background:rgba(43,74,111,.7);color:#fff;border-radius:4px;cursor:pointer;float:right;margin-left:6px}'+
+'.dex-filter-bar{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;padding-left:8%}'+
+'.dex-filter-btn{padding:3px 9px;font-size:.72rem;line-height:1.5;font-family:inherit;border:1px solid var(--frame);background:rgba(43,74,111,.5);color:var(--dim);border-radius:4px;cursor:pointer}'+
+'.dex-filter-btn:hover{filter:brightness(1.2)}'+
+'.dex-filter-btn.active{color:#fff;background:rgba(43,74,111,.92);border-color:#7cc4f8}'+
+'.dex-filter-btn[data-f="caught"].active{background:rgba(50,205,50,.25);border-color:rgba(50,205,50,.7);color:#d5ffd5}'+
+'.dex-filter-btn[data-f="seen"].active{background:rgba(170,204,255,.25);border-color:rgba(170,204,255,.6);color:#e6f0ff}'+
+'.dex-filter-btn[data-f="unknown"].active{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35);color:#e8e8e8}'+
 '.item-badge{height:1em;width:auto;image-rendering:pixelated;object-fit:contain;flex-shrink:0;transform:scale(1.5);transform-origin:center}'+
 '.info-title{margin-left:8%}'+
 '.info-row.cmd,.info-row:last-child,.task-item:last-child,.event-item:last-child{padding-right:7%}'+
@@ -5007,25 +5018,26 @@ html+='<div class="dex-cell '+cls+'" data-id="'+esc(ndex)+'" data-rdex="'+esc(id
   g.innerHTML=html;
 }
 var dexTimer=null;
-function dexSearch(){
-  hudScope.clearTimeout(dexTimer);
-  dexTimer=hudScope.setTimeout(function(){
+function dexApplyFilter(){
   var q=document.getElementById('dex-search-input');
   var v=q?q.value.trim():'';
   var cells=document.querySelectorAll('#pokedex-grid .dex-cell');
   for(var i=0;i<cells.length;i++){
     var c=cells[i];
-    if(!v){c.style.display='';continue;}
-    var nm=c.getAttribute('data-name')||'';
-var id=c.getAttribute('data-id')||'';
-var rd=c.getAttribute('data-rdex')||'';
-if(nm&&(nm.indexOf(v)>=0||id.indexOf(v)>=0||rd.indexOf(v)>=0)){
-      c.style.display='';
-    }else{
-      c.style.display='none';
+    var okF=(dexFilter==='all')||c.classList.contains(dexFilter);
+    var okS=true;
+    if(v){
+      var nm=c.getAttribute('data-name')||'';
+      var id=c.getAttribute('data-id')||'';
+      var rd=c.getAttribute('data-rdex')||'';
+      okS=!!(nm&&(nm.indexOf(v)>=0||id.indexOf(v)>=0||rd.indexOf(v)>=0));
     }
+    c.style.display=(okF&&okS)?'':'none';
   }
-  },150);
+}
+function dexSearch(){
+  hudScope.clearTimeout(dexTimer);
+  dexTimer=hudScope.setTimeout(dexApplyFilter,150);
 }
 var REGIONAL_DEX={'关都':'宝可梦列表（按关都图鉴编号）','城都':'宝可梦列表（按城都图鉴编号）','丰缘':'宝可梦列表（按丰缘图鉴编号）','神奥':'宝可梦列表（按神奥图鉴编号）','合众':'宝可梦列表（按新合众图鉴编号）','卡洛斯':'宝可梦列表（按卡洛斯图鉴编号）','阿罗拉':'宝可梦列表（按新阿罗拉图鉴编号）','伽勒尔':'宝可梦列表（按伽勒尔图鉴编号）','铠岛':'宝可梦列表（按铠岛图鉴编号）','王冠雪原':'宝可梦列表（按王冠雪原图鉴编号）','帕底亚':'宝可梦列表（按帕底亚图鉴编号）','北上乡':'宝可梦列表（按北上图鉴编号）','蓝莓学院':'宝可梦列表（按蓝莓图鉴编号）'};
 var LOC_REGION={
@@ -5061,6 +5073,7 @@ function regionFromLocation(loc){
   for(var k2 in LOC_REGION){if(s.indexOf(k2)>=0)return LOC_REGION[k2];}
   return '';
 }
+var dexFilter='all';
 var dexRegion='全国';
 var dexRegionCache={};
 function parseRegionalDex(wt){
@@ -5128,13 +5141,18 @@ function renderDexRegion(){
     renderDexGrid(list,null,sSet,owned);
     var c2=document.getElementById('dex-count');
     if(c2)c2.innerHTML=dexCountHTML(list,owned,sSet);
+    dexApplyFilter();
   });
+}
+function dexFilterHTML(){
+  var opts=[['all','全部'],['caught','已捕捉'],['seen','已见过'],['unknown','未见过']];
+  return '<div class="dex-filter-bar">'+opts.map(function(o){return '<button class="dex-filter-btn'+(dexFilter===o[0]?' active':'')+'" data-dexfilter="'+o[0]+'" data-f="'+o[0]+'">'+o[1]+'</button>';}).join('')+'</div>';
 }
 function pokedexHTML(){
   var on=dexThumbsEnabled();
   var toggle='<button class="dex-thumb-btn" data-dex-thumb>'+(on?'🖼️ 缩略图':'📃 仅列表')+'</button>';
   var gridCls='pokedex'+(on?'':' list-only');
-  var html=frame('图鉴 '+toggle,dexRegionTabsHTML()+'<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号" autocomplete="off"></div><div id="dex-count"><div class="dex-count">加载中…</div></div><div class="'+gridCls+'" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
+  var html=frame('图鉴 '+toggle,dexRegionTabsHTML()+'<div class="dex-search"><input id="dex-search-input" placeholder="搜索宝可梦名或编号" autocomplete="off"></div>'+dexFilterHTML()+'<div id="dex-count"><div class="dex-count">加载中…</div></div><div class="'+gridCls+'" id="pokedex-grid"><div class="empty">图鉴加载中...</div></div>');
   hudScope.setTimeout(function(){renderDexRegion();},0);
   return html;
 }
@@ -7419,6 +7437,7 @@ var bs=pageOverlay.querySelector('#box-select');if(bs){bs.addEventListener('chan
   var si=pageOverlay.querySelector('#dex-search-input');
 if(si){si.addEventListener('input',dexSearch);}
 pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(b){b.addEventListener('click',function(){dexRegion=b.getAttribute('data-dexregion');pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(x){x.classList.toggle('active',x===b);});renderDexRegion();});});
+pageOverlay.querySelectorAll('[data-dexfilter]').forEach(function(b){b.addEventListener('click',function(){dexFilter=b.getAttribute('data-dexfilter');pageOverlay.querySelectorAll('[data-dexfilter]').forEach(function(x){x.classList.toggle('active',x===b);});dexApplyFilter();});});
 var dt=pageOverlay.querySelector('[data-dex-thumb]');
 if(dt){dt.addEventListener('click',function(e){e.stopPropagation();dexThumbsToggle();});}
   pageOverlay.querySelectorAll('input[data-clear]').forEach(function(r){r.addEventListener('change',function(){if(r.checked)clearTarget=r.getAttribute('data-clear');});});
