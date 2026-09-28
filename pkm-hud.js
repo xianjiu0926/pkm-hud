@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.7.6';
+var PK_VER='2.7.7';
 /*PK_NOTICE_BEGIN
-优化详细效果显示
+优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3181,8 +3181,19 @@ function pkmPokeosIconUrls(icon,shiny){
   var dex=PKM_EN_DEX[p.base];if(!dex)return null;
   var suf=p.suf?('-'+(PKM_SUFFIX_FIX[p.suf]||p.suf)):'';
   if(dex===25&&p.suf&&PKM_PIKA_CAP[p.suf]){suf='-'+PKM_PIKA_CAP[p.suf];}
-  var gif=pkWrapPokeos('animated/'+(shiny?'shiny/':'')+dex+suf+'.gif',true);
-  var png=pkWrapPokeos('render/'+(shiny?'shiny/':'')+dex+suf+'.png',false);
+  var gifPath='animated/'+(shiny?'shiny/':'')+dex+suf+'.gif';
+  var pngPath='render/'+(shiny?'shiny/':'')+dex+suf+'.png';
+  if(p.suf==='f'||p.suf==='female'){
+    // 雌性性别形态（如 爱管侍♀=indeedee-f）：pokeos 动图在 female/ 子目录，render 用 {dex}-female.png
+    gifPath='animated/'+(shiny?'shiny/':'')+'female/'+dex+'.gif';
+    pngPath='render/'+(shiny?'shiny/':'')+dex+'-female.png';
+  }else if(p.suf==='m'||p.suf==='male'){
+    // 雄性即默认形态，无需后缀
+    gifPath='animated/'+(shiny?'shiny/':'')+dex+'.gif';
+    pngPath='render/'+(shiny?'shiny/':'')+dex+'.png';
+  }
+  var gif=pkWrapPokeos(gifPath,true);
+  var png=pkWrapPokeos(pngPath,false);
   return {gif:gif,png:png};
 }
 function resolvePkmIconShowdown(el,icon,shiny){
