@@ -3,13 +3,14 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.8.3';
+var PK_VER='2.8.4';
 /*PK_NOTICE_BEGIN
-v2.8.3
-图鉴缩略图优化，修复一口气下载大量图片导致的内存占用过高
-· 缩略图改用 128px 压缩小图，不再直连原图；即使全局开「原图」，图鉴预览也强制压缩
-· 改为真·懒加载：只有滚动到视口附近才下载，不再一次性请求全部宝可梦
-· 关闭图鉴会自动清空已加载图片并释放内存；重新打开仍秒开，收集进度不受影响
+v2.8.4
+设置里「缓存占用」可点击，新增缓存占用明细
+· 运行诊断 → 缓存占用 变成可点击，点开能看到各类缓存分别占了多少：道具图、精灵图、招式、特性、图鉴列表、形态ID、附近属性等
+· 顶部显示总计，并带一条彩色占比条，一眼看出哪个占大头
+· 地图图片、DIY 图片按真实文件大小统计；文字类缓存按字节数估算
+· 弹窗里有「重新扫描」按钮，清理完缓存后可以实时刷新统计
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -376,7 +377,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.info-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(170,204,255,.25);font-size:clamp(.78rem,2.6vw,.88rem);color:var(--text)}'+
 '.info-row:last-child{border-bottom:none}'+
 '.info-row .k{color:var(--dim);flex-shrink:0;font-weight:600}'+
-'.info-row .v{text-align:right;word-break:break-word}'+'.cmd-panel{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin-bottom:10px;padding:0 10px 8px}'+'.cmd-panel>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none}'+'.cmd-panel>summary::-webkit-details-marker{display:none}'+'.src-fold{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin:8px 0 10px;padding:0 10px 8px}'+'.src-fold>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none;color:var(--text)}'+'.src-fold>summary::-webkit-details-marker{display:none}'+'.cmd-note{font-size:.7rem;color:var(--dim);line-height:1.5;padding-bottom:6px}'+'.cmd-row{display:flex;gap:6px;align-items:center;padding:3px 0}'+'.cmd-btn{flex:1;min-width:0;text-align:left;padding:6px 10px;font-family:inherit;font-size:.8rem;color:var(--text);background:rgba(43,74,111,.6);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+'.cmd-btn:hover{filter:brightness(1.2)}'+'.cmd-tip{flex:0 0 30px;padding:6px 0;font-family:inherit;font-size:.8rem;font-weight:800;color:var(--dim);background:rgba(170,204,255,.12);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+
+'.info-row .v{text-align:right;word-break:break-word}'+'.info-row-click{cursor:pointer;border-radius:4px;transition:background .15s}'+'.info-row-click:hover{background:rgba(170,204,255,.10)}'+'.cu-total{display:flex;justify-content:space-between;gap:10px;padding:6px 0 4px;font-size:.9rem;font-weight:800;color:var(--text)}'+'.cu-bar{height:7px;border-radius:4px;background:rgba(170,204,255,.15);overflow:hidden;margin:6px 0 10px}'+'.cu-bar>i{display:block;height:100%}'+'.cmd-panel{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin-bottom:10px;padding:0 10px 8px}'+'.cmd-panel>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none}'+'.cmd-panel>summary::-webkit-details-marker{display:none}'+'.src-fold{border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.22);margin:8px 0 10px;padding:0 10px 8px}'+'.src-fold>summary{cursor:pointer;font-size:.82rem;font-weight:800;padding:7px 0;list-style:none;color:var(--text)}'+'.src-fold>summary::-webkit-details-marker{display:none}'+'.cmd-note{font-size:.7rem;color:var(--dim);line-height:1.5;padding-bottom:6px}'+'.cmd-row{display:flex;gap:6px;align-items:center;padding:3px 0}'+'.cmd-btn{flex:1;min-width:0;text-align:left;padding:6px 10px;font-family:inherit;font-size:.8rem;color:var(--text);background:rgba(43,74,111,.6);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+'.cmd-btn:hover{filter:brightness(1.2)}'+'.cmd-tip{flex:0 0 30px;padding:6px 0;font-family:inherit;font-size:.8rem;font-weight:800;color:var(--dim);background:rgba(170,204,255,.12);border:1px solid var(--frame);border-radius:4px;cursor:pointer}'+
 '.info-row.cmd{justify-content:space-between;gap:10px;padding-right:clamp(10px,2.5vw,14px)}'+
 '.info-row.cmd .v{text-align:right}'+
 '.info-row.block{flex-direction:column;align-items:flex-start;gap:2px}'+
@@ -6831,7 +6832,7 @@ function diagHTML(){
   var d=diagInfo(),r=d.runtime||{},ok=(d.scripts===1&&d.styles===1),errs=r.errors||[],last=errs.length?errs[errs.length-1]:null,h='';
   h+='<div class="info-row"><span class="k">HUD脚本份数</span><span class="v">'+d.scripts+'（正常1）</span></div>';
   h+='<div class="info-row"><span class="k">HUD样式注入</span><span class="v">'+d.styles+'（正常1）</span></div>';
-  h+='<div class="info-row"><span class="k">缓存占用</span><span class="v">'+esc(d.cache)+'</span></div>';
+  h+='<div class="info-row info-row-click" data-cache-usage title="点击查看缓存明细"><span class="k">缓存占用</span><span class="v">'+esc(d.cache)+' 🔍</span></div>';
   h+='<div class="info-row"><span class="k">生命周期</span><span class="v">计时器 '+r.timers+' · 轮询 '+r.intervals+' · Observer '+r.observers+'</span></div>';
   h+='<div class="info-row"><span class="k">网络请求</span><span class="v">当前 '+r.activeRequests+' · 峰值 '+r.maxActiveRequests+'</span></div>';
   h+='<div class="info-row"><span class="k">索引</span><span class="v">精灵 '+r.locationIndex+' · DIY '+r.diyIndex+' · Rev '+esc(r.stateRevision||'-')+'</span></div>';
@@ -6840,6 +6841,127 @@ function diagHTML(){
   h+='<div class="info-row"><span class="k">诊断结论</span><span class="v" style="color:'+(ok?'#4ade80':'#f87171')+'">'+(ok?'✅ 运行结构正常':'⚠️ 检测到重复脚本/样式')+'</span></div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-small" data-diag-refresh>🔍 重新检测</button><button class="btn-small" data-diag-copy>📋 复制诊断</button><button class="btn-small" data-diag-clear>🧹 清错误日志</button></div>';
   return h;
+}
+function hudFmtBytes(n){
+  n=Math.max(0,Number(n)||0);
+  if(n<1024)return n+' B';
+  if(n<1048576)return (n/1024).toFixed(1)+' KB';
+  if(n<1073741824)return (n/1048576).toFixed(1)+' MB';
+  return (n/1073741824).toFixed(2)+' GB';
+}
+function hudUtf8Bytes(s){
+  s=String(s==null?'':s);
+  if(!s)return 0;
+  try{var E=WIN.TextEncoder||(typeof TextEncoder!=='undefined'?TextEncoder:null);if(E)return new E().encode(s).length;}catch(e){}
+  var b=0;
+  for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);if(c<0x80)b+=1;else if(c<0x800)b+=2;else if(c>=0xd800&&c<=0xdbff){b+=4;i++;}else b+=3;}
+  return b;
+}
+function hudCacheValBytes(v){
+  var s;
+  if(typeof v==='string')s=v;
+  else{try{s=JSON.stringify(v);}catch(e){s=String(v);}}
+  return hudUtf8Bytes(s);
+}
+var HUD_CACHE_USAGE_ORDER=['sprite','item','mv','pm','ab','dex','fid','nearby','other','map','diy','seen','legacy','settings'];
+var HUD_CACHE_USAGE_LABELS={sprite:'精灵图缓存',item:'道具缓存（含道具图）',mv:'招式缓存',pm:'宝可梦预览缓存',ab:'特性缓存',dex:'图鉴列表',fid:'形态ID',nearby:'附近属性缓存',other:'其它数据缓存',map:'地图图片缓存',diy:'DIY 图片库',seen:'图鉴收集进度',legacy:'本地残留缓存',settings:'设置与其它数据'};
+function hudCacheUsageItems(){
+  var buckets={};HUD_CACHE_USAGE_ORDER.forEach(function(k){buckets[k]={name:HUD_CACHE_USAGE_LABELS[k],count:0,bytes:0};});
+  var memKeys=Object.keys(hudCacheMem||{});
+  for(var i=0;i<memKeys.length;i++){
+    var k=memKeys[i],b=hudCacheValBytes(hudCacheMem[k]),key='other';
+    if(/^pk_(sprite_|icon_|slug_|ndex_|ps_|psf_)/.test(k))key='sprite';
+    else if(/^pk_item_/.test(k)||k==='pk_itemlist'||/^pk_itemimg_/.test(k))key='item';
+    else if(/^pk_mv_/.test(k))key='mv';
+    else if(/^pk_pm_/.test(k))key='pm';
+    else if(/^pk_ab_/.test(k)||k==='pk_abilist')key='ab';
+    else if(k==='pk_dexlist')key='dex';
+    else if(/^pk_fid_/.test(k))key='fid';
+    else if(/^nbtype_/.test(k))key='nearby';
+    buckets[key].count++;buckets[key].bytes+=b;
+  }
+  try{
+    for(var li=0;li<localStorage.length;li++){
+      var lk=localStorage.key(li);if(!lk)continue;
+      if(lk.indexOf('pk_')!==0&&lk.indexOf('nbtype_')!==0)continue;
+      var raw=localStorage.getItem(lk);var lb=hudUtf8Bytes(raw||'');var lkey;
+      if(/^pk_seen_/.test(lk)||/^pk_seenfull2_/.test(lk))lkey='seen';
+      else if(/^nbtype_/.test(lk))lkey='nearby';
+      else if(/^pk_dexlist4_/.test(lk)||lk==='pk_dexlist')lkey='dex';
+      else if(hudIsCacheKey(lk))lkey='legacy';
+      else lkey='settings';
+      buckets[lkey].count++;buckets[lkey].bytes+=lb;
+    }
+  }catch(e){}
+  return buckets;
+}
+function hudCacheUsageSnapshot(){
+  var buckets=hudCacheUsageItems();
+  function scanStore(dbP,storeName){
+    return dbP().then(function(db){
+      return new Promise(function(res){
+        var rows=[],tx=null,done=false,tm=0;
+        function finish(){if(done)return;done=true;if(tm)WIN.clearTimeout(tm);res(rows);}
+        try{
+          tx=db.transaction(storeName,'readonly');
+          var rq=tx.objectStore(storeName).openCursor();
+          tm=WIN.setTimeout(finish,8000);
+          rq.onsuccess=function(){var c=rq.result;if(!c){finish();return;}var v=c.value||{};rows.push({size:Number(v.size||(v.b&&v.b.size)||(v.blob&&v.blob.size)||0)});c.continue();};
+          rq.onerror=finish;tx.onabort=finish;
+        }catch(e){finish();}
+      });
+    }).catch(function(){return [];});
+  }
+  return Promise.all([scanStore(_mapImgDb,'img'),scanStore(hudDiyAssetDb,'assets')]).then(function(r){
+    var mapRows=r[0]||[],diyRows=r[1]||[],mapBytes=0,diyBytes=0,i;
+    for(i=0;i<mapRows.length;i++)mapBytes+=mapRows[i].size||0;
+    for(i=0;i<diyRows.length;i++)diyBytes+=diyRows[i].size||0;
+    buckets.map.count=mapRows.length;buckets.map.bytes=mapBytes;
+    buckets.diy.count=diyRows.length;buckets.diy.bytes=diyBytes;
+    return buckets;
+  });
+}
+function renderCacheUsage(buckets){
+  var total=0,i,key;
+  for(i=0;i<HUD_CACHE_USAGE_ORDER.length;i++)total+=buckets[HUD_CACHE_USAGE_ORDER[i]].bytes||0;
+  var rows=[];
+  for(i=0;i<HUD_CACHE_USAGE_ORDER.length;i++){
+    key=HUD_CACHE_USAGE_ORDER[i];var c=buckets[key];
+    if(c&&c.count>0)rows.push('<div class="row"><span class="k">'+esc(c.name)+'</span><span class="v">'+c.count+' 项 · '+hudFmtBytes(c.bytes)+'</span></div>');
+  }
+  var list=rows.length?rows.join(''):'<div class="row"><span class="v dim">暂无缓存</span></div>';
+  var bar='';
+  if(total>0){
+    var colors=['#7cc4f8','#8b5cf6','#4ade80','#fbbf24','#f472b6','#38bdf8','#a3e635','#fb923c','#94a3b8','#f87171','#c084fc'];
+    var grads=[],acc=0;
+    for(i=0;i<HUD_CACHE_USAGE_ORDER.length;i++){
+      key=HUD_CACHE_USAGE_ORDER[i];var cc=buckets[key];
+      if(!cc||cc.bytes<=0)continue;
+      var pct=Math.round(cc.bytes/total*1000)/10;
+      var from=acc,to=acc+pct;
+      grads.push(colors[i%colors.length]+' '+from+'% '+to+'%');
+      acc=to;
+    }
+    bar='<div class="cu-bar"><i style="background:linear-gradient(90deg,'+grads.join(',')+')"></i></div>';
+  }
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">📊 缓存占用明细</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
+    '<div class="cu-total"><span>总计</span><span>'+hudFmtBytes(total)+'</span></div>'+bar+
+    list+
+    '<div class="dim" style="font-size:.72rem;margin-top:10px;line-height:1.6">文字类缓存按文本字节数估算，地图/DIY 图片为实际文件大小；可在「设置 → 清理缓存」按类别清理。</div>'+
+    '<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-cache-usage-refresh>🔄 重新扫描</button></div>'+
+    '</div></div>';
+}
+function openCacheUsage(){
+  if(!overlay)return;
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">📊 缓存占用明细</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row"><span class="v dim">正在扫描缓存…</span></div></div></div>';
+  overlay.classList.add('open');
+  hudCacheUsageSnapshot().then(function(buckets){
+    if(!overlay.classList.contains('open'))return;
+    renderCacheUsage(buckets);
+  }).catch(function(){
+    if(!overlay.classList.contains('open'))return;
+    overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">📊 缓存占用明细</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row"><span class="v">扫描失败，请重试。</span></div><div class="action-btns"><button class="act-btn" data-cache-usage-refresh>🔄 重试</button></div></div></div>';
+  });
 }
 function settingsHTML(){
   var opts=[['mv','招式缓存'],['pm','宝可梦预览缓存'],['sprite','队伍精灵图缓存'],['ab','特性缓存'],['dex','图鉴列表'],['fid','形态ID'],['item','道具缓存'],['seen','图鉴收集进度'],['all','全部缓存']];
@@ -7519,6 +7641,8 @@ var dcp=pageOverlay.querySelector('[data-diag-copy]');
 if(dcp){dcp.addEventListener('click',function(e){e.stopPropagation();var txt='PKM HUD Diagnostics v'+PK_VER+'\n'+JSON.stringify(hudDiagSnapshot(),null,2);diyCopyText(txt,function(ok){if(ok)dcp.textContent='✔ 已复制';});});}
 var dcl=pageOverlay.querySelector('[data-diag-clear]');
 if(dcl){dcl.addEventListener('click',function(e){e.stopPropagation();hudDiag.errors.length=0;hudDiag.events.length=0;hudDiag.counters.errors=0;openPage('settings');});}
+var cu=pageOverlay.querySelector('[data-cache-usage]');
+if(cu){cu.addEventListener('click',function(e){e.stopPropagation();openCacheUsage();});}
 var mvw=pageOverlay.querySelector('[data-mapwrap]');
 if(mvw){bindMapViewer(mvw);}
 var mapPadToggle=pageOverlay.querySelector('[data-map-pad-toggle]');
@@ -8198,6 +8322,7 @@ var nt=e.target.closest('[data-nature]');if(nt){e.stopPropagation();showNatureIn
 var st=e.target.closest('[data-shiny-toggle]');if(st){e.stopPropagation();if(curPkm){curPkmShiny=!curPkmShiny;renderPkmForm(curPkmForm);}return;}
     var fm=e.target.closest('[data-form]');if(fm){e.stopPropagation();renderPkmForm(parseInt(fm.getAttribute('data-form'),10));return;}
 var cc=e.target.closest('[data-clear-confirm]');if(cc){e.stopPropagation();confirmClearModal();return;}
+var cur=e.target.closest('[data-cache-usage-refresh]');if(cur){e.stopPropagation();openCacheUsage();return;}
 var pdu=e.target.closest('[data-notice-update]');if(pdu){e.stopPropagation();overlay.classList.remove('open');pkDoUpdate();return;}
 var pkc=e.target.closest('[data-pk-copy-content]');if(pkc){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc.textContent=ok?'✔ 已复制':'复制失败';});}else{pkc.textContent='无内容';}return;}
 var pkc2=e.target.closest('[data-pk-copy-content-close]');if(pkc2){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc2.textContent=ok?'✔ 已复制':'复制失败';hudScope.setTimeout(function(){overlay.classList.remove('open');clearBack();},400);});}else{pkc2.textContent='无内容';}return;}
