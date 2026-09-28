@@ -3,13 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.8.0';
+var PK_VER='2.8.1';
 /*PK_NOTICE_BEGIN
-v2.8.0
-图鉴新增状态筛选：全部 / 已捕捉 / 已见过 / 未见过
-· 按捕捉状态快速过滤，找"还差哪只"更方便
-· 与搜索框、地区 Tab、缩略图/列表模式叠加生效
-· 按钮选中配色与图鉴格子一致：绿=已捕捉、蓝=已见过、灰=未见过
+优化显示
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -562,8 +558,9 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dex-tabs-scroll::-webkit-scrollbar{display:none}'+
 '.dex-tabs-grid{display:grid;grid-template-columns:repeat(7,max-content);gap:4px;width:max-content}'+
 '.dex-thumb-btn{padding:0 6px;font-size:.68rem;line-height:1.5;font-family:inherit;border:1px solid var(--frame);background:rgba(43,74,111,.7);color:#fff;border-radius:4px;cursor:pointer;float:right;margin-left:6px}'+
-'.dex-filter-bar{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;padding-left:8%}'+
-'.dex-filter-btn{padding:3px 9px;font-size:.72rem;line-height:1.5;font-family:inherit;border:1px solid var(--frame);background:rgba(43,74,111,.5);color:var(--dim);border-radius:4px;cursor:pointer}'+
+'.dex-filter-bar{display:flex;flex-wrap:nowrap;gap:4px;margin-bottom:6px;padding-left:8%;padding-right:4%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}'+
+'.dex-filter-bar::-webkit-scrollbar{display:none}'+
+'.dex-filter-btn{flex:0 0 auto;white-space:nowrap;padding:3px 9px;font-size:.72rem;line-height:1.5;font-family:inherit;border:1px solid var(--frame);background:rgba(43,74,111,.5);color:var(--dim);border-radius:4px;cursor:pointer}'+
 '.dex-filter-btn:hover{filter:brightness(1.2)}'+
 '.dex-filter-btn.active{color:#fff;background:rgba(43,74,111,.92);border-color:#7cc4f8}'+
 '.dex-filter-btn[data-f="caught"].active{background:rgba(50,205,50,.25);border-color:rgba(50,205,50,.7);color:#d5ffd5}'+
