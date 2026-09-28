@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.8.5';
+var PK_VER='2.8.6';
 /*PK_NOTICE_BEGIN
 优化
 PK_NOTICE_END*/
@@ -4813,6 +4813,12 @@ function descFromHtml(doc){
   return '';
 }
 function effFromHtml(doc){
+  function clean(el){
+    var c=el.cloneNode(true);
+    var sups=c.querySelectorAll?c.querySelectorAll('sup'):[];
+    for(var s=0;s<sups.length;s++){try{sups[s].remove();}catch(e){}}
+    return (c.innerText||c.textContent||'').replace(/\s+/g,' ').trim();
+  }
   var hs=doc.querySelectorAll('h2');
   for(var i=0;i<hs.length;i++){
     var h=hs[i];
@@ -4829,11 +4835,11 @@ function effFromHtml(doc){
       if(tag==='table'){
         node.querySelectorAll('tr').forEach(function(tr){
           var cells=[];
-          tr.querySelectorAll('th,td').forEach(function(td){cells.push((td.innerText||td.textContent||'').replace(/\s+/g,' ').trim());});
+          tr.querySelectorAll('th,td').forEach(function(td){cells.push(clean(td));});
           if(cells.length)parts.push(cells.join('：'));
         });
       }else{
-        var t=(node.innerText||node.textContent||'').replace(/\s+/g,' ').trim();
+        var t=clean(node);
         if(t)parts.push(t);
       }
       node=node.nextElementSibling;
