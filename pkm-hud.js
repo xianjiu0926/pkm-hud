@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.7.5';
+var PK_VER='2.7.6';
 /*PK_NOTICE_BEGIN
-优化了poke的重定向，查不到会查Poké，图更全了
+优化详细效果显示
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5838,7 +5838,7 @@ function itemDetailFromHtml(doc){
   function hLvl(el){return parseInt((el.tagName||'h2').toLowerCase().replace('h',''),10);}
   var all=doc.querySelectorAll('h1,h2,h3,h4,h5,h6');
   var idx=-1,lvl=0;
-  var wants=['效果','游戏中'];
+  var wants=['效果','使用效果','游戏中'];
   for(var pass=0;pass<wants.length&&idx<0;pass++){
     for(var i=0;i<all.length;i++){
       if(hLvl(all[i])===2&&nodeText(all[i])===wants[pass]){idx=i;lvl=2;break;}
@@ -5846,7 +5846,8 @@ function itemDetailFromHtml(doc){
   }
   if(idx<0){
     for(var j=0;j<all.length;j++){
-      if(nodeText(all[j])==='效果'){idx=j;lvl=hLvl(all[j]);break;}
+      var _ht=nodeText(all[j]);
+      if(_ht==='效果'||/效果$/.test(_ht)){idx=j;lvl=hLvl(all[j]);break;}
     }
   }
   if(idx<0)return '';
@@ -5869,6 +5870,20 @@ function itemDetailFromHtml(doc){
       continue;
     }
     if(t2==='style'||t2==='script'){node=node.nextElementSibling;continue;}
+    if(t2==='table'){
+      var trs=node.querySelectorAll('tr');
+      for(var ri=0;ri<trs.length;ri++){
+        var cells=trs[ri].querySelectorAll('th,td');
+        var parts=[];
+        for(var ci=0;ci<cells.length;ci++){
+          var ct=nodeText(cells[ci]);
+          if(ct)parts.push(ct);
+        }
+        if(parts.length)keep.push(parts.join(' | '));
+      }
+      node=node.nextElementSibling;
+      continue;
+    }
     var lis=[];
     var lisHost=null;
     if(t2==='ul'||t2==='ol')lisHost=node;
@@ -5894,8 +5909,8 @@ function itemWikiLineClean(s){
   return String(s||'')
     .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g,'')
     .replace(/<ref[^/>]*\/>/g,'')
-    .replace(/\{\{\s*i\s*\|([^}|]+)\}\}/g,'$1')
-    .replace(/\{\{\s*frac\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\}\}/g,'$1/$2')
+    .replace(/\{\{\s*(?:i|m|a|p|pkmn)\s*\|([^}|]+)\}\}/g,'$1')
+    .replace(/\{\{\s*frac\s*\|\s*([^|}]+)\s*\|\s*([^|}]+)\s*\}\}/g,'$1/$2')
     .replace(/\{\{\s*MSP\s*\|[^}]*\}\}\s*/g,'')
     .replace(/\{\{[^}]*\}\}/g,'')
     .replace(/\u005B\u005B(?:[^\u005D|]*\|)?([^\u005D]*)\u005D\u005D/g,'$1')
@@ -5911,7 +5926,7 @@ function itemDetailFromWiki(wt){
     if(hm)heads.push({i:i,lvl:hm[1].length,txt:hm[2].trim()});
   }
   var start=-1,lvl=0;
-  var wants=['效果','游戏中'];
+  var wants=['效果','使用效果','游戏中'];
   for(var p=0;p<wants.length&&start<0;p++){
     for(var h=0;h<heads.length;h++){
       if(heads[h].lvl===2&&heads[h].txt===wants[p]){start=heads[h].i;lvl=heads[h].lvl;break;}
@@ -5919,18 +5934,64 @@ function itemDetailFromWiki(wt){
   }
   if(start<0){
     for(var h2=0;h2<heads.length;h2++){
-      if(heads[h2].txt==='效果'){start=heads[h2].i;lvl=heads[h2].lvl;break;}
+      if(heads[h2].txt==='效果'||/效果$/.test(heads[h2].txt)){start=heads[h2].i;lvl=heads[h2].lvl;break;}
     }
   }
   if(start<0)return '';
   var out=[];
+  var inTable=false,rowCells=null;
+  function flushRow(){
+    if(rowCells&&rowCells.length)out.push(rowCells.join(' | '));
+    rowCells=null;
+  }
+  function wikiCell(s){
+    var c=String(s||'').trim().replace(/^[!|]\s*/,'');
+    var idx=c.indexOf('|');
+    if(idx>=0){
+      var pre=c.slice(0,idx);
+      if(/[=:]/.test(pre)||/^(?:class|style|colspan|rowspan|align|width|height|scope|bgcolor|title)\b/i.test(pre))c=c.slice(idx+1);
+    }
+    return itemWikiLineClean(c);
+  }
   for(var i=start+1;i<lines.length;i++){
     var line=lines[i].trim();
     var hm=line.match(/^(={2,6})\s*(.+?)\s*\1\s*$/);
     if(hm){
       var hlvl=hm[1].length;
+      flushRow();
       if(hlvl<=lvl)break;
       out.push(hm[2].trim());
+      continue;
+    }
+    if(/^\{\|/.test(line)){inTable=true;rowCells=[];continue;}
+    if(inTable){
+      if(/^\|\}/.test(line)){flushRow();inTable=false;continue;}
+      if(/^\|-/.test(line)){flushRow();rowCells=[];continue;}
+      if(line.indexOf('*')===0){
+        flushRow();
+        var rawLine=line.replace(/^\*+\s*/,'');
+        var t=itemWikiLineClean(rawLine);
+        if(t)out.push('- '+t);
+        continue;
+      }
+      if(/^!/.test(line)){
+        var hcells=line.split(/\s*!!\s*/);
+        if(rowCells===null)rowCells=[];
+        for(var hc=0;hc<hcells.length;hc++){
+          var ct=wikiCell(hcells[hc]);
+          if(ct)rowCells.push(ct);
+        }
+        continue;
+      }
+      if(/^\|/.test(line)){
+        var dcells=line.split(/\s*\|\|\s*/);
+        if(rowCells===null)rowCells=[];
+        for(var dc=0;dc<dcells.length;dc++){
+          var ct2=wikiCell(dcells[dc]);
+          if(ct2)rowCells.push(ct2);
+        }
+        continue;
+      }
       continue;
     }
     if(line.indexOf('*')===0){
@@ -5939,6 +6000,7 @@ function itemDetailFromWiki(wt){
       if(t)out.push('- '+t);
     }
   }
+  flushRow();
   return out.join('\n');
 }
 function parseItemDetail(wt,html){
