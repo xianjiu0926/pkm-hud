@@ -3,9 +3,13 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.8.1';
+var PK_VER='2.8.3';
 /*PK_NOTICE_BEGIN
-优化显示
+v2.8.3
+图鉴缩略图优化，修复一口气下载大量图片导致的内存占用过高
+· 缩略图改用 128px 压缩小图，不再直连原图；即使全局开「原图」，图鉴预览也强制压缩
+· 改为真·懒加载：只有滚动到视口附近才下载，不再一次性请求全部宝可梦
+· 关闭图鉴会自动清空已加载图片并释放内存；重新打开仍秒开，收集进度不受影响
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4976,10 +4980,53 @@ function fetchDex(cb){
     })
     .catch(function(){dexLoading=false;var cbs=dexCbs;dexCbs=[];for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}if(cb)cb(null);});
 }
+var PKM_DEX_THUMB_W=128;
 function dexCellImgUrl(ndex){
   var n=parseInt(ndex,10);
   if(!n||n<=0)return '';
-  return 'https://'+PKM_POKEOS_S3+'render/'+n+'.png';
+  // 缩略图强制走压缩代理并缩小到 128px，避免直接拉原图（单张可能数 MB，1025 张会爆内存）。
+  // 即使全局开了「原图」也照样压缩，因为图鉴预览不是看高清大图的地方。
+  return PKM_POKEOS_PROXY+encodeURIComponent(PKM_POKEOS_S3+'render/'+n+'.png')+'&w='+PKM_DEX_THUMB_W;
+}
+var dexLazyObs=null;
+function dexLoadImg(img){
+  var u=img.getAttribute('data-dexsrc');
+  if(!u)return;
+  img.removeAttribute('data-dexsrc');
+  img.onerror=function(){try{this.style.display='none';}catch(e){}};
+  img.src=u;
+}
+function setupDexLazy(){
+  var g=document.getElementById('pokedex-grid');
+  if(!g)return;
+  if(dexLazyObs){try{dexLazyObs.disconnect();}catch(e){}dexLazyObs=null;}
+  var imgs=g.querySelectorAll('img[data-dexsrc]');
+  if(!imgs.length)return;
+  var Obs=WIN.IntersectionObserver||(typeof IntersectionObserver!=='undefined'?IntersectionObserver:null);
+  if(!Obs){
+    for(var i=0;i<imgs.length;i++)dexLoadImg(imgs[i]);
+    return;
+  }
+  var obs=new Obs(function(entries){
+    for(var i=0;i<entries.length;i++){
+      var en=entries[i];
+      if(en.isIntersecting){dexLoadImg(en.target);obs.unobserve(en.target);}
+    }
+  },{root:g,rootMargin:'400px'});
+  hudScope.observe(obs);
+  dexLazyObs=obs;
+  for(var j=0;j<imgs.length;j++)obs.observe(imgs[j]);
+}
+function clearDexGrid(){
+  if(dexLazyObs){try{dexLazyObs.disconnect();}catch(e){}dexLazyObs=null;}
+  var g=document.getElementById('pokedex-grid');
+  if(!g)return;
+  var imgs=g.querySelectorAll('img');
+  for(var i=0;i<imgs.length;i++){
+    var im=imgs[i];
+    try{im.removeAttribute('src');im.removeAttribute('srcset');im.removeAttribute('data-dexsrc');}catch(e){}
+  }
+  g.innerHTML='';
 }
 function dexThumbsEnabled(){try{return localStorage.getItem('pk_dex_thumbs')!=='0';}catch(e){return true;}}
 function dexThumbsToggle(){
@@ -5009,10 +5056,11 @@ var cls=caught?'caught':(seen?'seen':'unknown');
 var label=known?name:'？？？';
 var attr=known?' data-name="'+esc(bn)+'"':' data-noclick="1"';
 var imgHtml='';
-if(showThumbs){var img=dexCellImgUrl(ndex);if(img){var sil=(label==='？？？')?' style="filter:brightness(0) opacity(.45) !important"':'';imgHtml='<span class="dex-img"><img loading="lazy" decoding="async" src="'+esc(img)+'" referrerpolicy="origin" alt="" onerror="this.style.display=\'none\'"'+sil+'></span>';}}
+if(showThumbs){var img=dexCellImgUrl(ndex);if(img){var sil=(label==='？？？')?' style="filter:brightness(0) opacity(.45) !important"':'';imgHtml='<span class="dex-img"><img decoding="async" data-dexsrc="'+esc(img)+'" referrerpolicy="origin" alt=""'+sil+'></span>';}}
 html+='<div class="dex-cell '+cls+'" data-id="'+esc(ndex)+'" data-rdex="'+esc(id)+'"'+attr+'><span class="dex-no">#'+esc(id)+'</span>'+imgHtml+'<span class="dex-name">'+esc(label)+'</span></div>';
   });
   g.innerHTML=html;
+  setupDexLazy();
 }
 var dexTimer=null;
 function dexApplyFilter(){
@@ -8084,6 +8132,7 @@ if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-widt
   pageOverlay.classList.remove('open');
   pageOverlayPopout(false);
   currentPageKey='';
+  clearDexGrid();
   if(quickMapFromFab){
   quickMapFromFab=false;
   var _win=document.getElementById('pkm-hud-win');
