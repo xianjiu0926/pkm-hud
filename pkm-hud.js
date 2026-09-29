@@ -4999,7 +4999,9 @@ function dexLoadImg(img){
   if(!u)return;
   img.removeAttribute('data-dexsrc');
   var cell=img.closest?img.closest('.dex-cell'):null;
-  var ndex=(cell&&!cell.classList.contains('unknown'))?(cell.getAttribute('data-id')||''):'';
+  var ndexRaw=(cell&&!cell.classList.contains('unknown'))?(cell.getAttribute('data-id')||''):'';
+  var ndexN=parseInt(ndexRaw,10);
+  var ndex=(ndexN&&ndexN>0)?String(ndexN):'';
   img.onerror=function(){try{this.style.display='none';}catch(e){}};
   if(ndex){var c=dexThumbGet(ndex);if(c){img.src=c;return;}}
   if(ndex){img.addEventListener('load',function(){dexThumbFetch(ndex,u);},{once:true});}
