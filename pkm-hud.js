@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.19';
+var PK_VER='2.10.20';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -2793,6 +2793,7 @@ for(var b in BERRY_CN){BERRY_BASE[BERRY_CN[b].replace(/-berry$/,'')]=1;}
 var PKM_ITEM_SEREBII_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/item-sprites/';
 var pkmItemSource='serebii';
 function toHalfWidth(s){return String(s==null?'':s).replace(/[！-～]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-65248);});}
+function normItemName(s){return toHalfWidth(String(s==null?'':s)).replace(/[\s\u3000]+/g,'');}
 function serebiiItemSlug(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'');}
 function serebiiItemSlugAlt(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'.');}
 function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?PKM_ITEM_SEREBII_BASE+s+'.png':'';}
@@ -2831,7 +2832,7 @@ var ITEM_TEXT={'宝可梦图鉴':'宝可梦图鉴'};
 function itemImgOf(name){
   if(!name)return undefined;
   var n=String(name);
-  var hn=toHalfWidth(n);
+  var hn=normItemName(n);
   if(ITEM_IMG[hn]!==undefined)return ITEM_IMG[hn];
   if(ITEM_IMG[n]!==undefined)return ITEM_IMG[n];
   var ks=Object.keys(ITEM_IMG).sort(function(a,b){return b.length-a.length;});
@@ -4823,7 +4824,7 @@ function pkmDbBuildIndex(data,fields){
       if(v===undefined||v===null||v==='')continue;
       var k=String(v);if(!idx[k])idx[k]=data[i];
       if(fields[f]==='en'||fields[f]==='jp'){var lk=k.toLowerCase();if(!idx[lk])idx[lk]=data[i];}
-      var hw=toHalfWidth(k);if(hw!==k&&!idx[hw])idx[hw]=data[i];
+      var hw=normItemName(k);if(hw!==k&&!idx[hw])idx[hw]=data[i];
     }
   }
   return idx;
@@ -4858,7 +4859,7 @@ function pkmDbLookup(kind,name){
   var n=String(name==null?'':name).trim();if(!n)return null;
   if(store.idx[n])return store.idx[n];
   var low=n.toLowerCase();if(store.idx[low])return store.idx[low];
-  var hw=toHalfWidth(n);if(hw!==n&&store.idx[hw])return store.idx[hw];
+  var hw=normItemName(n);if(hw!==n&&store.idx[hw])return store.idx[hw];
   return null;
 }
 function fetchMove(name,cb){
