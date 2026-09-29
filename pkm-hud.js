@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.13';
+var PK_VER='2.10.14';
 /*PK_NOTICE_BEGIN
-v2.10.13
-图鉴缩略图改为直接读取仓库原图，不再经过图片代理二次压缩。
+v2.10.14
+图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4949,7 +4949,8 @@ function dexCellImgUrl(ndex){
   if(!n||n<=0)return '';
   var slug=PKM_DEX_EN[n];
   if(!slug)return '';
-  return pkmRepoUrl('static','pokeos',slug,false);
+  var full=pkmRepoUrl('static','pokeos',slug,false);
+  return PKM_POKEOS_PROXY+encodeURIComponent(full)+'&w='+PKM_POKEOS_W;
 }
 var dexLazyObs=null;
 var dexThumbCache={},dexThumbFetching={};
@@ -4974,7 +4975,7 @@ function dexThumbFetch(ndex,url){
     hudFetch(url,{timeout:20000})
       .then(function(r){return r.ok?r.blob():Promise.reject();})
       .then(function(blob){
-        if(!blob||blob.size>250000){done();return;}
+        if(!blob||blob.size>80000){done();return;}
         var reader=new FileReader();
         reader.onload=function(){dexThumbSet(ndex,String(reader.result||''));done();};
         reader.onerror=function(){done();};
