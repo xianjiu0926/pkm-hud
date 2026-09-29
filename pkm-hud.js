@@ -3,10 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.2';
+var PK_VER='2.10.3';
 /*PK_NOTICE_BEGIN
-v2.10.2
-优化
+v2.10.3
+修复：道具携带到宝可梦后图标丢失、变成问号的问题（卸下、丢弃后同样会丢失）。
+原因是携带/卸下时英文 slug 没有被保留，重新生成背包条目时图标字段被清空。
+现在携带、卸下、丢弃回滚都会保留道具英文 slug，图标不再丢失。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7698,11 +7700,21 @@ function getBagCount(name){
   var it=stat_data.背包[name];
   return it ? (parseInt(it.数量,10)||0) : 0;
 }
-function addBagItem(name,count){
+function bagItemIconOf(name,fallbackEn){
+  var it=(stat_data&&stat_data.背包)?stat_data.背包[name]:null;
+  var s=(it&&it.图标)?String(it.图标).trim():'';
+  if(!s&&fallbackEn)s=String(fallbackEn).trim();
+  if(!s)s=itemIconName(name);
+  return s;
+}
+function addBagItem(name,count,icon){
   count=count||1;
   var it=stat_data.背包[name];
-  if(!it) stat_data.背包[name]={类型:'道具',数量:count,图标:''};
-  else it.数量=(parseInt(it.数量,10)||0)+count;
+  if(!it) stat_data.背包[name]={类型:'道具',数量:count,图标:bagItemIconOf(name,icon)};
+  else{
+    it.数量=(parseInt(it.数量,10)||0)+count;
+    if(!it.图标&&icon){it.图标=String(icon).trim();}
+  }
 }
 function removeBagItem(name,count){
   count=count||1;
@@ -7760,10 +7772,12 @@ function equipPkm(c,itemName){
   var beforeItemEn=p.携带道具英文||'';
 
   var old=p.携带道具;
-  if(old && old!=='无') addBagItem(old,1);
+  var oldIcon=bagItemIconOf(old,beforeItemEn);
+  if(old && old!=='无') addBagItem(old,1,oldIcon);
+  var newIcon=bagItemIconOf(itemName,'');
   removeBagItem(itemName,1);
   p.携带道具=itemName;
-  p.携带道具英文='';
+  p.携带道具英文=newIcon;
   var oldItem=old;
 
   hudSend('请让《'+p.名字+'》携带《'+itemName+'》'+(oldItem && oldItem!=='无' ? '；请先卸下原道具《'+oldItem+'》并放回背包':'')+'，并更新状态栏。', function(){
@@ -7786,7 +7800,7 @@ function unequipPkmByCard(c){
   var beforeItem=old;
   var beforeItemEn=p.携带道具英文||'';
 
-  addBagItem(old,1);
+  addBagItem(old,1,bagItemIconOf(old,beforeItemEn));
   p.携带道具='无';
   p.携带道具英文='';
   var oldItem=old;
@@ -7803,10 +7817,11 @@ function unequipPkmByCard(c){
 function discardBagItem(name,count){
   count=count||1;
   if(getBagCount(name)<=0){ hudMsg('背包里没有该道具'); return; }
+  var keepIcon=bagItemIconOf(name,'');
   removeBagItem(name,count);
   var cnt=count;
   hudSend('请丢弃背包中的《'+name+'》×'+cnt+'，并更新状态栏。', function(){
-  addBagItem(name,cnt);
+  addBagItem(name,cnt,keepIcon);
 }, '丢弃背包中的'+name+'×'+cnt+'。');
   render(); resizeFrame();
   hudMsg('已丢弃《'+name+'》×'+cnt);
