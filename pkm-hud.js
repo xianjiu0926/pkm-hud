@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.18';
+var PK_VER='2.10.19';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -2792,6 +2792,7 @@ var BERRY_BASE={};
 for(var b in BERRY_CN){BERRY_BASE[BERRY_CN[b].replace(/-berry$/,'')]=1;}
 var PKM_ITEM_SEREBII_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/item-sprites/';
 var pkmItemSource='serebii';
+function toHalfWidth(s){return String(s==null?'':s).replace(/[！-～]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-65248);});}
 function serebiiItemSlug(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'');}
 function serebiiItemSlugAlt(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'.');}
 function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?PKM_ITEM_SEREBII_BASE+s+'.png':'';}
@@ -2829,10 +2830,16 @@ var ITEM_IMG={
 var ITEM_TEXT={'宝可梦图鉴':'宝可梦图鉴'};
 function itemImgOf(name){
   if(!name)return undefined;
-  if(ITEM_IMG[name]!==undefined)return ITEM_IMG[name];
+  var n=String(name);
+  var hn=toHalfWidth(n);
+  if(ITEM_IMG[hn]!==undefined)return ITEM_IMG[hn];
+  if(ITEM_IMG[n]!==undefined)return ITEM_IMG[n];
   var ks=Object.keys(ITEM_IMG).sort(function(a,b){return b.length-a.length;});
   for(var i=0;i<ks.length;i++){
-    if(ITEM_IMG[ks[i]]&&name.indexOf(ks[i])>=0)return ITEM_IMG[ks[i]];
+    if(ITEM_IMG[ks[i]]&&hn.indexOf(ks[i])>=0)return ITEM_IMG[ks[i]];
+  }
+  for(var j=0;j<ks.length;j++){
+    if(ITEM_IMG[ks[j]]&&n.indexOf(ks[j])>=0)return ITEM_IMG[ks[j]];
   }
   return undefined;
 }
@@ -4816,6 +4823,7 @@ function pkmDbBuildIndex(data,fields){
       if(v===undefined||v===null||v==='')continue;
       var k=String(v);if(!idx[k])idx[k]=data[i];
       if(fields[f]==='en'||fields[f]==='jp'){var lk=k.toLowerCase();if(!idx[lk])idx[lk]=data[i];}
+      var hw=toHalfWidth(k);if(hw!==k&&!idx[hw])idx[hw]=data[i];
     }
   }
   return idx;
@@ -4850,6 +4858,7 @@ function pkmDbLookup(kind,name){
   var n=String(name==null?'':name).trim();if(!n)return null;
   if(store.idx[n])return store.idx[n];
   var low=n.toLowerCase();if(store.idx[low])return store.idx[low];
+  var hw=toHalfWidth(n);if(hw!==n&&store.idx[hw])return store.idx[hw];
   return null;
 }
 function fetchMove(name,cb){
