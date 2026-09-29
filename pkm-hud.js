@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.26';
+var PK_VER='2.10.27';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -4921,41 +4921,29 @@ function showMoveInfo(name,type,cat){
   });
 }
 var dexCache=null,dexLoading=false,dexCbs=[];
-function parseDex(wt){
-  var list=[],seen={};
-  var re=/\{\{\s*Rdexe\s*\|\s*(\d+)\s*\|\s*([^|]+)/g,m;
-  while((m=re.exec(wt))!==null){
-    var id=('000'+m[1].trim()).slice(-4);
-    var name=m[2].trim();
-    if(seen[id]){
-      if(name.indexOf('（')<0&&seen[id].indexOf('（')>=0){
-        for(var i=0;i<list.length;i++){if(list[i].id===id){list[i].name=name;seen[id]=name;break;}}
-      }
-      continue;
-    }
-    seen[id]=name;
-    list.push({id:id,name:name});
-  }
-  return list;
-}
 function fetchDex(cb){
   if(dexCache){cb&&cb(dexCache);return;}
   var _d=lsGet('pk_dexlist',null);if(_d&&_d.length){dexCache=_d;cb&&cb(dexCache);return;}
   if(dexLoading){cb&&dexCbs.push(cb);return;}
   dexLoading=true;
-  var url='https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent('宝可梦列表（按全国图鉴编号）/简单版')+'&format=json&prop=wikitext&origin=*';
-  hudFetch(url)
-    .then(function(r){return r.ok?r.json():Promise.reject();})
-    .then(function(j){
-      var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-      var list=wt?parseDex(wt):null;
-      dexCache=list;dexLoading=false;
-      if(list&&list.length){lsSet('pk_dexlist',list);}
-      var cbs=dexCbs;dexCbs=[];
-      for(var i=0;i<cbs.length;i++){try{cbs[i](list);}catch(e){}}
-      if(cb)cb(list);
-    })
-    .catch(function(){dexLoading=false;var cbs=dexCbs;dexCbs=[];for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}if(cb)cb(null);});
+  pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+    var data=store&&store.data?store.data:[];
+    var list=[],seen={};
+    for(var i=0;i<data.length;i++){
+      var d=data[i];
+      var no=String(d.no||'');
+      if(!no)continue;
+      var id=('000'+no).slice(-4);
+      if(seen[id])continue;
+      seen[id]=1;
+      list.push({id:id,name:String(d.name||'').trim()});
+    }
+    dexCache=list;dexLoading=false;
+    if(list.length){lsSet('pk_dexlist',list);}
+    var cbs=dexCbs;dexCbs=[];
+    for(var i=0;i<cbs.length;i++){try{cbs[i](list);}catch(e){}}
+    if(cb)cb(list);
+  });
 }
 var PKM_DEX_EN=(function(){var r={};for(var _k in PKM_EN_DEX){r[PKM_EN_DEX[_k]]=_k;}return r;})();
 function dexCellImgUrl(ndex){
