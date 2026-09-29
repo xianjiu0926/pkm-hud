@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.21';
+var PK_VER='2.10.22';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -6106,9 +6106,25 @@ function itemCleanTarget(v){
     .replace(/\s+/g,'_')
     .replace(/^_+|_+$/g,'');
 }
+var itemEnCache={};
+function itemEnOf(name,cb){
+  var n=String(name||'').trim();
+  if(!n){cb&&cb('');return;}
+  if(itemEnCache[n]!==undefined){cb&&cb(itemEnCache[n]);return;}
+  pkmDbLoad('item','items.json',['name','en'],function(store){
+    var hit=store&&pkmDbLookup('item',n);
+    var en=hit?hit.en:'';
+    itemEnCache[n]=en;
+    cb&&cb(en);
+  });
+}
 function fetchItemSprite(name,enName,cb){
   if(typeof enName==='function'){cb=enName;enName='';}
   if(!name){cb&&cb('');return;}
+  if(!enName){itemEnOf(name,function(en){_fetchItemSprite(name,en||'',cb);});return;}
+  _fetchItemSprite(name,enName,cb);
+}
+function _fetchItemSprite(name,enName,cb){
   if(pkmItemSource==='serebii'){var _ov=itemImgOf(name);if(_ov!==undefined){cb&&cb(_ov);return;}var _slug=itemSlugOf(name,enName);var _u=_slug?serebiiItemUrl(_slug):'';cb&&cb(_u);return;}
   if(itemSpriteCache[name]){cb&&cb(itemSpriteCache[name]);return;}
   var _c=lsGet('pk_itemimg_'+name,'');if(_c){itemSpriteCache[name]=_c;cb&&cb(_c);return;}
