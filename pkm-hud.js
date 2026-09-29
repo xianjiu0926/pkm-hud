@@ -3,8 +3,20 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.9.0';
+var PK_VER='2.10.0';
 /*PK_NOTICE_BEGIN
+v2.10.0
+精灵图源切换为 GitHub 数据仓库（xianjiu0926/Pokemon），本地四级兜底
+· 设置「精灵图源」仍可切 pokeos / showdown
+· 优先选中源动图 → 另一源动图 → 选中源静图 → 另一源静图，逐级兜底
+· 文件名统一英文 slug（基础 bulbasaur、形态 venusaur-mega 等）
+· 道具图源固定为仓库 item-sprites，移除 Serebii/52poke 切换
+· 图鉴缩略图（128px 代理缩图）与大图固定用 PokeOS 静态图
+v2.9.1
+特性/招式/道具效果改从 GitHub 数据仓库（xianjiu0926/Pokemon）抓取，已移除 52poke 效果抓取
+· 特性：简介＋详细效果来自 abilities.json
+· 招式：属性/分类/威力/命中/描述/效果来自 moves.json
+· 道具：说明＋效果来自 items.json，Serebii 图标按英文名直拼
 v2.9.0
 设置新增「道具图源」：Serebii ItemDex / 52poke 二选一
 · Serebii ItemDex：默认，英文图源，可直接外链，覆盖全世代＋朱紫/传说Z-A
@@ -2795,9 +2807,8 @@ function ballEnName(c){var b=BALL_EN[c.ball]||c.ballEn||'';return String(b).toLo
 var BERRY_CN={'樱子果':'cheri-berry','零余果':'chesto-berry','桃桃果':'pecha-berry','莓莓果':'rawst-berry','利木果':'aspear-berry','苹野果':'leppa-berry','橙橙果':'oran-berry','柿仔果':'persim-berry','木子果':'lum-berry','文柚果':'sitrus-berry','勿花果':'figy-berry','异奇果':'wiki-berry','芒芒果':'mago-berry','乐芭果':'aguav-berry','芭亚果':'iapapa-berry','蔓莓果':'razz-berry','墨莓果':'bluk-berry','蕉香果':'nanab-berry','西梨果':'wepear-berry','凰梨果':'pinap-berry','榴石果':'pomeg-berry','藻根果':'kelpsy-berry','比巴果':'qualot-berry','哈密果':'hondew-berry','葡萄果':'grepa-berry','茄番果':'tamato-berry','玉黍果':'cornn-berry','岳竹果':'magost-berry','茸丹果':'rabuta-berry','檬柠果':'nomel-berry','刺角果':'spelon-berry','霹霹果':'pamtre-berry','刺耳果':'watmel-berry','巧可果':'durin-berry','千香果':'belue-berry','烛木果':'occa-berry','罗子果':'passho-berry','番荔果':'wacan-berry','莲蒲果':'rindo-berry','苦通果':'yache-berry','腰木果':'chople-berry','通通果':'kebia-berry','福禄果':'shuca-berry','扁樱果':'coba-berry','草蚕果':'payapa-berry','佛柑果':'tanga-berry','莓榴果':'charti-berry','刺梨果':'kasib-berry','蜜腰果':'haban-berry','灯浆果':'colbur-berry','枝荔果':'babiri-berry','香罗果':'chilan-berry','释陀果':'liechi-berry','奇秘果':'ganlon-berry','沙鳞果':'salac-berry','龙火果':'petaya-berry','杏仔果':'apicot-berry','兰萨果':'lansat-berry','星桃果':'starf-berry','谜芝果':'enigma-berry','奇拉果':'micle-berry','嘉珍果':'custap-berry','雾莲果':'jaboca-berry','洛玫果':'rowap-berry','亚开果':'roseli-berry','香藻果':'kee-berry','玛瑙果':'maranga-berry'};
 var BERRY_BASE={};
 for(var b in BERRY_CN){BERRY_BASE[BERRY_CN[b].replace(/-berry$/,'')]=1;}
-var PKM_ITEM_SEREBII_BASE='https://www.serebii.net/itemdex/sprites/';
+var PKM_ITEM_SEREBII_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/item-sprites/';
 var pkmItemSource='serebii';
-try{var _isrc=localStorage.getItem('pk_item_source');pkmItemSource=(_isrc==='52poke')?'52poke':'serebii';}catch(e){}
 function serebiiItemSlug(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'');}
 function serebiiItemSlugAlt(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'.');}
 function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?PKM_ITEM_SEREBII_BASE+s+'.png':'';}
@@ -3136,14 +3147,7 @@ function pkWrapPokeos(sub,anim){
   if(pkPokeosOrig())return 'https://'+PKM_POKEOS_S3+sub;
   var q='&w='+PKM_POKEOS_W+(anim?'&n=-1&delay='+PKM_POKEOS_DELAY:'');
   return PKM_POKEOS_PROXY+encodeURIComponent(PKM_POKEOS_S3+sub)+q;
-}
-function pkmPokeosUrl(dex,shiny){
-  var n=parseInt(dex,10);
-  if(!n||n<=0)return '';
-  return pkWrapPokeos('animated/'+(shiny?'shiny/':'')+n+'.gif',true);
-}
-
-function pkmFormParse(name){
+}function pkmFormParse(name){
   var t=String(name||'').trim(),form='';
   if(/^(超极巨化|超极巨)/.test(t)){form='-gmax';t=t.replace(/^(超极巨化|超极巨)/,'');}
   else if(/^(原始回归|原始)/.test(t)){form='-mega';t=t.replace(/^(原始回归|原始)/,'');}
@@ -3171,91 +3175,39 @@ function pkmFormParse(name){
   return {base:base,form:form};
 }
 
-function pkmPokeosFormUrl(dex,form,shiny){
-  var n=parseInt(dex,10);if(!n||n<=0)return '';
-  if(form&&form.charAt(0)!=='-')return '';
-  return pkWrapPokeos('animated/'+(shiny?'shiny/':'')+n+(form||'')+'.gif',true);
-}
-
-function pkmPokeosPngUrl(dex,form,shiny){
-  var n=parseInt(dex,10);if(!n||n<=0)return '';
-  if(form&&form.charAt(0)!=='-')return '';
-  return pkWrapPokeos('render/'+(shiny?'shiny/':'')+n+(form||'')+'.png',false);
-}
-
-function pkmGmaxUrl(slug,shiny){
-  return 'https://play.pokemonshowdown.com/sprites/'+(shiny?'ani-shiny/':'ani/')+slug+'-gmax.gif';
-}
-
-var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleon":5,"charizard":6,"squirtle":7,"wartortle":8,"blastoise":9,"caterpie":10,"metapod":11,"butterfree":12,"weedle":13,"kakuna":14,"beedrill":15,"pidgey":16,"pidgeotto":17,"pidgeot":18,"rattata":19,"raticate":20,"spearow":21,"fearow":22,"ekans":23,"arbok":24,"pikachu":25,"raichu":26,"sandshrew":27,"sandslash":28,"nidoranf":29,"nidorina":30,"nidoqueen":31,"nidoranm":32,"nidorino":33,"nidoking":34,"clefairy":35,"clefable":36,"vulpix":37,"ninetales":38,"jigglypuff":39,"wigglytuff":40,"zubat":41,"golbat":42,"oddish":43,"gloom":44,"vileplume":45,"paras":46,"parasect":47,"venonat":48,"venomoth":49,"diglett":50,"dugtrio":51,"meowth":52,"persian":53,"psyduck":54,"golduck":55,"mankey":56,"primeape":57,"growlithe":58,"arcanine":59,"poliwag":60,"poliwhirl":61,"poliwrath":62,"abra":63,"kadabra":64,"alakazam":65,"machop":66,"machoke":67,"machamp":68,"bellsprout":69,"weepinbell":70,"victreebel":71,"tentacool":72,"tentacruel":73,"geodude":74,"graveler":75,"golem":76,"ponyta":77,"rapidash":78,"slowpoke":79,"slowbro":80,"magnemite":81,"magneton":82,"farfetchd":83,"doduo":84,"dodrio":85,"seel":86,"dewgong":87,"grimer":88,"muk":89,"shellder":90,"cloyster":91,"gastly":92,"haunter":93,"gengar":94,"onix":95,"drowzee":96,"hypno":97,"krabby":98,"kingler":99,"voltorb":100,"electrode":101,"exeggcute":102,"exeggutor":103,"cubone":104,"marowak":105,"hitmonlee":106,"hitmonchan":107,"lickitung":108,"koffing":109,"weezing":110,"rhyhorn":111,"rhydon":112,"chansey":113,"tangela":114,"kangaskhan":115,"horsea":116,"seadra":117,"goldeen":118,"seaking":119,"staryu":120,"starmie":121,"mrmime":122,"scyther":123,"jynx":124,"electabuzz":125,"magmar":126,"pinsir":127,"tauros":128,"magikarp":129,"gyarados":130,"lapras":131,"ditto":132,"eevee":133,"vaporeon":134,"jolteon":135,"flareon":136,"porygon":137,"omanyte":138,"omastar":139,"kabuto":140,"kabutops":141,"aerodactyl":142,"snorlax":143,"articuno":144,"zapdos":145,"moltres":146,"dratini":147,"dragonair":148,"dragonite":149,"mewtwo":150,"mew":151,"chikorita":152,"bayleef":153,"meganium":154,"cyndaquil":155,"quilava":156,"typhlosion":157,"totodile":158,"croconaw":159,"feraligatr":160,"sentret":161,"furret":162,"hoothoot":163,"noctowl":164,"ledyba":165,"ledian":166,"spinarak":167,"ariados":168,"crobat":169,"chinchou":170,"lanturn":171,"pichu":172,"cleffa":173,"igglybuff":174,"togepi":175,"togetic":176,"natu":177,"xatu":178,"mareep":179,"flaaffy":180,"ampharos":181,"bellossom":182,"marill":183,"azumarill":184,"sudowoodo":185,"politoed":186,"hoppip":187,"skiploom":188,"jumpluff":189,"aipom":190,"sunkern":191,"sunflora":192,"yanma":193,"wooper":194,"quagsire":195,"espeon":196,"umbreon":197,"murkrow":198,"slowking":199,"misdreavus":200,"unown":201,"wobbuffet":202,"girafarig":203,"pineco":204,"forretress":205,"dunsparce":206,"gligar":207,"steelix":208,"snubbull":209,"granbull":210,"qwilfish":211,"scizor":212,"shuckle":213,"heracross":214,"sneasel":215,"teddiursa":216,"ursaring":217,"slugma":218,"magcargo":219,"swinub":220,"piloswine":221,"corsola":222,"remoraid":223,"octillery":224,"delibird":225,"mantine":226,"skarmory":227,"houndour":228,"houndoom":229,"kingdra":230,"phanpy":231,"donphan":232,"porygon2":233,"stantler":234,"smeargle":235,"tyrogue":236,"hitmontop":237,"smoochum":238,"elekid":239,"magby":240,"miltank":241,"blissey":242,"raikou":243,"entei":244,"suicune":245,"larvitar":246,"pupitar":247,"tyranitar":248,"lugia":249,"hooh":250,"celebi":251,"treecko":252,"grovyle":253,"sceptile":254,"torchic":255,"combusken":256,"blaziken":257,"mudkip":258,"marshtomp":259,"swampert":260,"poochyena":261,"mightyena":262,"zigzagoon":263,"linoone":264,"wurmple":265,"silcoon":266,"beautifly":267,"cascoon":268,"dustox":269,"lotad":270,"lombre":271,"ludicolo":272,"seedot":273,"nuzleaf":274,"shiftry":275,"taillow":276,"swellow":277,"wingull":278,"pelipper":279,"ralts":280,"kirlia":281,"gardevoir":282,"surskit":283,"masquerain":284,"shroomish":285,"breloom":286,"slakoth":287,"vigoroth":288,"slaking":289,"nincada":290,"ninjask":291,"shedinja":292,"whismur":293,"loudred":294,"exploud":295,"makuhita":296,"hariyama":297,"azurill":298,"nosepass":299,"skitty":300,"delcatty":301,"sableye":302,"mawile":303,"aron":304,"lairon":305,"aggron":306,"meditite":307,"medicham":308,"electrike":309,"manectric":310,"plusle":311,"minun":312,"volbeat":313,"illumise":314,"roselia":315,"gulpin":316,"swalot":317,"carvanha":318,"sharpedo":319,"wailmer":320,"wailord":321,"numel":322,"camerupt":323,"torkoal":324,"spoink":325,"grumpig":326,"spinda":327,"trapinch":328,"vibrava":329,"flygon":330,"cacnea":331,"cacturne":332,"swablu":333,"altaria":334,"zangoose":335,"seviper":336,"lunatone":337,"solrock":338,"barboach":339,"whiscash":340,"corphish":341,"crawdaunt":342,"baltoy":343,"claydol":344,"lileep":345,"cradily":346,"anorith":347,"armaldo":348,"feebas":349,"milotic":350,"castform":351,"kecleon":352,"shuppet":353,"banette":354,"duskull":355,"dusclops":356,"tropius":357,"chimecho":358,"absol":359,"wynaut":360,"snorunt":361,"glalie":362,"spheal":363,"sealeo":364,"walrein":365,"clamperl":366,"huntail":367,"gorebyss":368,"relicanth":369,"luvdisc":370,"bagon":371,"shelgon":372,"salamence":373,"beldum":374,"metang":375,"metagross":376,"regirock":377,"regice":378,"registeel":379,"latias":380,"latios":381,"kyogre":382,"groudon":383,"rayquaza":384,"jirachi":385,"deoxys":386,"turtwig":387,"grotle":388,"torterra":389,"chimchar":390,"monferno":391,"infernape":392,"piplup":393,"prinplup":394,"empoleon":395,"starly":396,"staravia":397,"staraptor":398,"bidoof":399,"bibarel":400,"kricketot":401,"kricketune":402,"shinx":403,"luxio":404,"luxray":405,"budew":406,"roserade":407,"cranidos":408,"rampardos":409,"shieldon":410,"bastiodon":411,"burmy":412,"wormadam":413,"mothim":414,"combee":415,"vespiquen":416,"pachirisu":417,"buizel":418,"floatzel":419,"cherubi":420,"cherrim":421,"shellos":422,"gastrodon":423,"ambipom":424,"drifloon":425,"drifblim":426,"buneary":427,"lopunny":428,"mismagius":429,"honchkrow":430,"glameow":431,"purugly":432,"chingling":433,"stunky":434,"skuntank":435,"bronzor":436,"bronzong":437,"bonsly":438,"mimejr":439,"happiny":440,"chatot":441,"spiritomb":442,"gible":443,"gabite":444,"garchomp":445,"munchlax":446,"riolu":447,"lucario":448,"hippopotas":449,"hippowdon":450,"skorupi":451,"drapion":452,"croagunk":453,"toxicroak":454,"carnivine":455,"finneon":456,"lumineon":457,"mantyke":458,"snover":459,"abomasnow":460,"weavile":461,"magnezone":462,"lickilicky":463,"rhyperior":464,"tangrowth":465,"electivire":466,"magmortar":467,"togekiss":468,"yanmega":469,"leafeon":470,"glaceon":471,"gliscor":472,"mamoswine":473,"porygonz":474,"gallade":475,"probopass":476,"dusknoir":477,"froslass":478,"rotom":479,"uxie":480,"mesprit":481,"azelf":482,"dialga":483,"palkia":484,"heatran":485,"regigigas":486,"giratina":487,"cresselia":488,"phione":489,"manaphy":490,"darkrai":491,"shaymin":492,"arceus":493,"victini":494,"snivy":495,"servine":496,"serperior":497,"tepig":498,"pignite":499,"emboar":500,"oshawott":501,"dewott":502,"samurott":503,"patrat":504,"watchog":505,"lillipup":506,"herdier":507,"stoutland":508,"purrloin":509,"liepard":510,"pansage":511,"simisage":512,"pansear":513,"simisear":514,"panpour":515,"simipour":516,"munna":517,"musharna":518,"pidove":519,"tranquill":520,"unfezant":521,"blitzle":522,"zebstrika":523,"roggenrola":524,"boldore":525,"gigalith":526,"woobat":527,"swoobat":528,"drilbur":529,"excadrill":530,"audino":531,"timburr":532,"gurdurr":533,"conkeldurr":534,"tympole":535,"palpitoad":536,"seismitoad":537,"throh":538,"sawk":539,"sewaddle":540,"swadloon":541,"leavanny":542,"venipede":543,"whirlipede":544,"scolipede":545,"cottonee":546,"whimsicott":547,"petilil":548,"lilligant":549,"basculin":550,"sandile":551,"krokorok":552,"krookodile":553,"darumaka":554,"darmanitan":555,"maractus":556,"dwebble":557,"crustle":558,"scraggy":559,"scrafty":560,"sigilyph":561,"yamask":562,"cofagrigus":563,"tirtouga":564,"carracosta":565,"archen":566,"archeops":567,"trubbish":568,"garbodor":569,"zorua":570,"zoroark":571,"minccino":572,"cinccino":573,"gothita":574,"gothorita":575,"gothitelle":576,"solosis":577,"duosion":578,"reuniclus":579,"ducklett":580,"swanna":581,"vanillite":582,"vanillish":583,"vanilluxe":584,"deerling":585,"sawsbuck":586,"emolga":587,"karrablast":588,"escavalier":589,"foongus":590,"amoonguss":591,"frillish":592,"jellicent":593,"alomomola":594,"joltik":595,"galvantula":596,"ferroseed":597,"ferrothorn":598,"klink":599,"klang":600,"klinklang":601,"tynamo":602,"eelektrik":603,"eelektross":604,"elgyem":605,"beheeyem":606,"litwick":607,"lampent":608,"chandelure":609,"axew":610,"fraxure":611,"haxorus":612,"cubchoo":613,"beartic":614,"cryogonal":615,"shelmet":616,"accelgor":617,"stunfisk":618,"mienfoo":619,"mienshao":620,"druddigon":621,"golett":622,"golurk":623,"pawniard":624,"bisharp":625,"bouffalant":626,"rufflet":627,"braviary":628,"vullaby":629,"mandibuzz":630,"heatmor":631,"durant":632,"deino":633,"zweilous":634,"hydreigon":635,"larvesta":636,"volcarona":637,"cobalion":638,"terrakion":639,"virizion":640,"tornadus":641,"thundurus":642,"reshiram":643,"zekrom":644,"landorus":645,"kyurem":646,"keldeo":647,"meloetta":648,"genesect":649,"chespin":650,"quilladin":651,"chesnaught":652,"fennekin":653,"braixen":654,"delphox":655,"froakie":656,"frogadier":657,"greninja":658,"bunnelby":659,"diggersby":660,"fletchling":661,"fletchinder":662,"talonflame":663,"scatterbug":664,"spewpa":665,"vivillon":666,"litleo":667,"pyroar":668,"flabebe":669,"floette":670,"florges":671,"skiddo":672,"gogoat":673,"pancham":674,"pangoro":675,"furfrou":676,"espurr":677,"meowstic":678,"honedge":679,"doublade":680,"aegislash":681,"spritzee":682,"aromatisse":683,"swirlix":684,"slurpuff":685,"inkay":686,"malamar":687,"binacle":688,"barbaracle":689,"skrelp":690,"dragalge":691,"clauncher":692,"clawitzer":693,"helioptile":694,"heliolisk":695,"tyrunt":696,"tyrantrum":697,"amaura":698,"aurorus":699,"sylveon":700,"hawlucha":701,"dedenne":702,"carbink":703,"goomy":704,"sliggoo":705,"goodra":706,"klefki":707,"phantump":708,"trevenant":709,"pumpkaboo":710,"gourgeist":711,"bergmite":712,"avalugg":713,"noibat":714,"noivern":715,"xerneas":716,"yveltal":717,"zygarde":718,"diancie":719,"hoopa":720,"volcanion":721,"rowlet":722,"dartrix":723,"decidueye":724,"litten":725,"torracat":726,"incineroar":727,"popplio":728,"brionne":729,"primarina":730,"pikipek":731,"trumbeak":732,"toucannon":733,"yungoos":734,"gumshoos":735,"grubbin":736,"charjabug":737,"vikavolt":738,"crabrawler":739,"crabominable":740,"oricorio":741,"cutiefly":742,"ribombee":743,"rockruff":744,"lycanroc":745,"wishiwashi":746,"mareanie":747,"toxapex":748,"mudbray":749,"mudsdale":750,"dewpider":751,"araquanid":752,"fomantis":753,"lurantis":754,"morelull":755,"shiinotic":756,"salandit":757,"salazzle":758,"stufful":759,"bewear":760,"bounsweet":761,"steenee":762,"tsareena":763,"comfey":764,"oranguru":765,"passimian":766,"wimpod":767,"golisopod":768,"sandygast":769,"palossand":770,"pyukumuku":771,"typenull":772,"silvally":773,"minior":774,"komala":775,"turtonator":776,"togedemaru":777,"mimikyu":778,"bruxish":779,"drampa":780,"dhelmise":781,"jangmoo":782,"hakamoo":783,"kommoo":784,"tapukoko":785,"tapulele":786,"tapubulu":787,"tapufini":788,"cosmog":789,"cosmoem":790,"solgaleo":791,"lunala":792,"nihilego":793,"buzzwole":794,"pheromosa":795,"xurkitree":796,"celesteela":797,"kartana":798,"guzzlord":799,"necrozma":800,"magearna":801,"marshadow":802,"poipole":803,"naganadel":804,"stakataka":805,"blacephalon":806,"zeraora":807,"meltan":808,"melmetal":809,"grookey":810,"thwackey":811,"rillaboom":812,"scorbunny":813,"raboot":814,"cinderace":815,"sobble":816,"drizzile":817,"inteleon":818,"skwovet":819,"greedent":820,"rookidee":821,"corvisquire":822,"corviknight":823,"blipbug":824,"dottler":825,"orbeetle":826,"nickit":827,"thievul":828,"gossifleur":829,"eldegoss":830,"wooloo":831,"dubwool":832,"chewtle":833,"drednaw":834,"yamper":835,"boltund":836,"rolycoly":837,"carkol":838,"coalossal":839,"applin":840,"flapple":841,"appletun":842,"silicobra":843,"sandaconda":844,"cramorant":845,"arrokuda":846,"barraskewda":847,"toxel":848,"toxtricity":849,"sizzlipede":850,"centiskorch":851,"clobbopus":852,"grapploct":853,"sinistea":854,"polteageist":855,"hatenna":856,"hattrem":857,"hatterene":858,"impidimp":859,"morgrem":860,"grimmsnarl":861,"obstagoon":862,"perrserker":863,"cursola":864,"sirfetchd":865,"mrrime":866,"runerigus":867,"milcery":868,"alcremie":869,"falinks":870,"pincurchin":871,"snom":872,"frosmoth":873,"stonjourner":874,"eiscue":875,"indeedee":876,"morpeko":877,"cufant":878,"copperajah":879,"dracozolt":880,"arctozolt":881,"dracovish":882,"arctovish":883,"duraludon":884,"dreepy":885,"drakloak":886,"dragapult":887,"zacian":888,"zamazenta":889,"eternatus":890,"kubfu":891,"urshifu":892,"zarude":893,"regieleki":894,"regidrago":895,"glastrier":896,"spectrier":897,"calyrex":898,"wyrdeer":899,"kleavor":900,"ursaluna":901,"basculegion":902,"sneasler":903,"overqwil":904,"enamorus":905,"sprigatito":906,"floragato":907,"meowscarada":908,"fuecoco":909,"crocalor":910,"skeledirge":911,"quaxly":912,"quaxwell":913,"quaquaval":914,"lechonk":915,"oinkologne":916,"tarountula":917,"spidops":918,"nymble":919,"lokix":920,"pawmi":921,"pawmo":922,"pawmot":923,"tandemaus":924,"maushold":925,"fidough":926,"dachsbun":927,"smoliv":928,"dolliv":929,"arboliva":930,"squawkabilly":931,"nacli":932,"naclstack":933,"garganacl":934,"charcadet":935,"armarouge":936,"ceruledge":937,"tadbulb":938,"bellibolt":939,"wattrel":940,"kilowattrel":941,"maschiff":942,"mabosstiff":943,"shroodle":944,"grafaiai":945,"bramblin":946,"brambleghast":947,"toedscool":948,"toedscruel":949,"klawf":950,"capsakid":951,"scovillain":952,"rellor":953,"rabsca":954,"flittle":955,"espathra":956,"tinkatink":957,"tinkatuff":958,"tinkaton":959,"wiglett":960,"wugtrio":961,"bombirdier":962,"finizen":963,"palafin":964,"varoom":965,"revavroom":966,"cyclizar":967,"orthworm":968,"glimmet":969,"glimmora":970,"greavard":971,"houndstone":972,"flamigo":973,"cetoddle":974,"cetitan":975,"veluza":976,"dondozo":977,"tatsugiri":978,"annihilape":979,"clodsire":980,"farigiraf":981,"dudunsparce":982,"kingambit":983,"greattusk":984,"screamtail":985,"brutebonnet":986,"fluttermane":987,"slitherwing":988,"sandyshocks":989,"irontreads":990,"ironbundle":991,"ironhands":992,"ironjugulis":993,"ironmoth":994,"ironthorns":995,"frigibax":996,"arctibax":997,"baxcalibur":998,"gimmighoul":999,"gholdengo":1000,"wochien":1001,"chienpao":1002,"tinglu":1003,"chiyu":1004,"roaringmoon":1005,"ironvaliant":1006,"koraidon":1007,"miraidon":1008,"walkingwake":1009,"ironleaves":1010,"dipplin":1011,"poltchageist":1012,"sinistcha":1013,"okidogi":1014,"munkidori":1015,"fezandipiti":1016,"ogerpon":1017,"archaludon":1018,"hydrapple":1019,"gougingfire":1020,"ragingbolt":1021,"ironboulder":1022,"ironcrown":1023,"terapagos":1024,"pecharunt":1025};
-
-var PKM_SUFFIX_FIX={'megax':'mega-x','megay':'mega-y','megaz':'mega-z','primal':'mega','dawnwings':'dawn','duskmane':'dusk','alola':'regional-a','galar':'regional-g','hisui':'regional-h','paldea':'regional-p','rapidstrike':'rapid-strike','singlestrike':'single-strike'};
-
-var PKM_PIKA_CAP={'original':'original-cap','hoenn':'hoenn-cap','sinnoh':'sinnoh-cap','unova':'unova-cap','kalos':'kalos-cap','alola':'alola-cap','partner':'partner-cap','world':'world-cap'};
-function pkmIconParse(icon){
-  var f=String(icon||'').trim().toLowerCase().replace(/\.gif$/,'');
-  if(!/^[a-z0-9-]+$/.test(f)||!f)return null;
-  if(PKM_EN_DEX[f]!==undefined)return {base:f,suf:''};
-  var noHyphen=f.replace(/-/g,'');
-  if(noHyphen!==f&&PKM_EN_DEX[noHyphen]!==undefined)return {base:noHyphen,suf:''};
-  var i=f.indexOf('-');
-  if(i<=0)return null;
-  var base=f.slice(0,i),suf=f.slice(i+1);
-  if(PKM_EN_DEX[base]===undefined)return null;
-  return {base:base,suf:suf};
-}
-function pkmPokeosIconUrls(icon,shiny){
-  var p=pkmIconParse(icon);if(!p)return null;
-  var dex=PKM_EN_DEX[p.base];if(!dex)return null;
-  var suf=p.suf?('-'+(PKM_SUFFIX_FIX[p.suf]||p.suf)):'';
-  if(dex===25&&p.suf&&PKM_PIKA_CAP[p.suf]){suf='-'+PKM_PIKA_CAP[p.suf];}
-  var gifPath='animated/'+(shiny?'shiny/':'')+dex+suf+'.gif';
-  var pngPath='render/'+(shiny?'shiny/':'')+dex+suf+'.png';
-  if(p.suf==='f'||p.suf==='female'){
-    // 雌性性别形态（如 爱管侍♀=indeedee-f）：pokeos 动图在 female/ 子目录，render 用 {dex}-female.png
-    gifPath='animated/'+(shiny?'shiny/':'')+'female/'+dex+'.gif';
-    pngPath='render/'+(shiny?'shiny/':'')+dex+'-female.png';
-  }else if(p.suf==='m'||p.suf==='male'){
-    // 雄性即默认形态，无需后缀
-    gifPath='animated/'+(shiny?'shiny/':'')+dex+'.gif';
-    pngPath='render/'+(shiny?'shiny/':'')+dex+'.png';
+var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleon":5,"charizard":6,"squirtle":7,"wartortle":8,"blastoise":9,"caterpie":10,"metapod":11,"butterfree":12,"weedle":13,"kakuna":14,"beedrill":15,"pidgey":16,"pidgeotto":17,"pidgeot":18,"rattata":19,"raticate":20,"spearow":21,"fearow":22,"ekans":23,"arbok":24,"pikachu":25,"raichu":26,"sandshrew":27,"sandslash":28,"nidoranf":29,"nidorina":30,"nidoqueen":31,"nidoranm":32,"nidorino":33,"nidoking":34,"clefairy":35,"clefable":36,"vulpix":37,"ninetales":38,"jigglypuff":39,"wigglytuff":40,"zubat":41,"golbat":42,"oddish":43,"gloom":44,"vileplume":45,"paras":46,"parasect":47,"venonat":48,"venomoth":49,"diglett":50,"dugtrio":51,"meowth":52,"persian":53,"psyduck":54,"golduck":55,"mankey":56,"primeape":57,"growlithe":58,"arcanine":59,"poliwag":60,"poliwhirl":61,"poliwrath":62,"abra":63,"kadabra":64,"alakazam":65,"machop":66,"machoke":67,"machamp":68,"bellsprout":69,"weepinbell":70,"victreebel":71,"tentacool":72,"tentacruel":73,"geodude":74,"graveler":75,"golem":76,"ponyta":77,"rapidash":78,"slowpoke":79,"slowbro":80,"magnemite":81,"magneton":82,"farfetchd":83,"doduo":84,"dodrio":85,"seel":86,"dewgong":87,"grimer":88,"muk":89,"shellder":90,"cloyster":91,"gastly":92,"haunter":93,"gengar":94,"onix":95,"drowzee":96,"hypno":97,"krabby":98,"kingler":99,"voltorb":100,"electrode":101,"exeggcute":102,"exeggutor":103,"cubone":104,"marowak":105,"hitmonlee":106,"hitmonchan":107,"lickitung":108,"koffing":109,"weezing":110,"rhyhorn":111,"rhydon":112,"chansey":113,"tangela":114,"kangaskhan":115,"horsea":116,"seadra":117,"goldeen":118,"seaking":119,"staryu":120,"starmie":121,"mrmime":122,"scyther":123,"jynx":124,"electabuzz":125,"magmar":126,"pinsir":127,"tauros":128,"magikarp":129,"gyarados":130,"lapras":131,"ditto":132,"eevee":133,"vaporeon":134,"jolteon":135,"flareon":136,"porygon":137,"omanyte":138,"omastar":139,"kabuto":140,"kabutops":141,"aerodactyl":142,"snorlax":143,"articuno":144,"zapdos":145,"moltres":146,"dratini":147,"dragonair":148,"dragonite":149,"mewtwo":150,"mew":151,"chikorita":152,"bayleef":153,"meganium":154,"cyndaquil":155,"quilava":156,"typhlosion":157,"totodile":158,"croconaw":159,"feraligatr":160,"sentret":161,"furret":162,"hoothoot":163,"noctowl":164,"ledyba":165,"ledian":166,"spinarak":167,"ariados":168,"crobat":169,"chinchou":170,"lanturn":171,"pichu":172,"cleffa":173,"igglybuff":174,"togepi":175,"togetic":176,"natu":177,"xatu":178,"mareep":179,"flaaffy":180,"ampharos":181,"bellossom":182,"marill":183,"azumarill":184,"sudowoodo":185,"politoed":186,"hoppip":187,"skiploom":188,"jumpluff":189,"aipom":190,"sunkern":191,"sunflora":192,"yanma":193,"wooper":194,"quagsire":195,"espeon":196,"umbreon":197,"murkrow":198,"slowking":199,"misdreavus":200,"unown":201,"wobbuffet":202,"girafarig":203,"pineco":204,"forretress":205,"dunsparce":206,"gligar":207,"steelix":208,"snubbull":209,"granbull":210,"qwilfish":211,"scizor":212,"shuckle":213,"heracross":214,"sneasel":215,"teddiursa":216,"ursaring":217,"slugma":218,"magcargo":219,"swinub":220,"piloswine":221,"corsola":222,"remoraid":223,"octillery":224,"delibird":225,"mantine":226,"skarmory":227,"houndour":228,"houndoom":229,"kingdra":230,"phanpy":231,"donphan":232,"porygon2":233,"stantler":234,"smeargle":235,"tyrogue":236,"hitmontop":237,"smoochum":238,"elekid":239,"magby":240,"miltank":241,"blissey":242,"raikou":243,"entei":244,"suicune":245,"larvitar":246,"pupitar":247,"tyranitar":248,"lugia":249,"hooh":250,"celebi":251,"treecko":252,"grovyle":253,"sceptile":254,"torchic":255,"combusken":256,"blaziken":257,"mudkip":258,"marshtomp":259,"swampert":260,"poochyena":261,"mightyena":262,"zigzagoon":263,"linoone":264,"wurmple":265,"silcoon":266,"beautifly":267,"cascoon":268,"dustox":269,"lotad":270,"lombre":271,"ludicolo":272,"seedot":273,"nuzleaf":274,"shiftry":275,"taillow":276,"swellow":277,"wingull":278,"pelipper":279,"ralts":280,"kirlia":281,"gardevoir":282,"surskit":283,"masquerain":284,"shroomish":285,"breloom":286,"slakoth":287,"vigoroth":288,"slaking":289,"nincada":290,"ninjask":291,"shedinja":292,"whismur":293,"loudred":294,"exploud":295,"makuhita":296,"hariyama":297,"azurill":298,"nosepass":299,"skitty":300,"delcatty":301,"sableye":302,"mawile":303,"aron":304,"lairon":305,"aggron":306,"meditite":307,"medicham":308,"electrike":309,"manectric":310,"plusle":311,"minun":312,"volbeat":313,"illumise":314,"roselia":315,"gulpin":316,"swalot":317,"carvanha":318,"sharpedo":319,"wailmer":320,"wailord":321,"numel":322,"camerupt":323,"torkoal":324,"spoink":325,"grumpig":326,"spinda":327,"trapinch":328,"vibrava":329,"flygon":330,"cacnea":331,"cacturne":332,"swablu":333,"altaria":334,"zangoose":335,"seviper":336,"lunatone":337,"solrock":338,"barboach":339,"whiscash":340,"corphish":341,"crawdaunt":342,"baltoy":343,"claydol":344,"lileep":345,"cradily":346,"anorith":347,"armaldo":348,"feebas":349,"milotic":350,"castform":351,"kecleon":352,"shuppet":353,"banette":354,"duskull":355,"dusclops":356,"tropius":357,"chimecho":358,"absol":359,"wynaut":360,"snorunt":361,"glalie":362,"spheal":363,"sealeo":364,"walrein":365,"clamperl":366,"huntail":367,"gorebyss":368,"relicanth":369,"luvdisc":370,"bagon":371,"shelgon":372,"salamence":373,"beldum":374,"metang":375,"metagross":376,"regirock":377,"regice":378,"registeel":379,"latias":380,"latios":381,"kyogre":382,"groudon":383,"rayquaza":384,"jirachi":385,"deoxys":386,"turtwig":387,"grotle":388,"torterra":389,"chimchar":390,"monferno":391,"infernape":392,"piplup":393,"prinplup":394,"empoleon":395,"starly":396,"staravia":397,"staraptor":398,"bidoof":399,"bibarel":400,"kricketot":401,"kricketune":402,"shinx":403,"luxio":404,"luxray":405,"budew":406,"roserade":407,"cranidos":408,"rampardos":409,"shieldon":410,"bastiodon":411,"burmy":412,"wormadam":413,"mothim":414,"combee":415,"vespiquen":416,"pachirisu":417,"buizel":418,"floatzel":419,"cherubi":420,"cherrim":421,"shellos":422,"gastrodon":423,"ambipom":424,"drifloon":425,"drifblim":426,"buneary":427,"lopunny":428,"mismagius":429,"honchkrow":430,"glameow":431,"purugly":432,"chingling":433,"stunky":434,"skuntank":435,"bronzor":436,"bronzong":437,"bonsly":438,"mimejr":439,"happiny":440,"chatot":441,"spiritomb":442,"gible":443,"gabite":444,"garchomp":445,"munchlax":446,"riolu":447,"lucario":448,"hippopotas":449,"hippowdon":450,"skorupi":451,"drapion":452,"croagunk":453,"toxicroak":454,"carnivine":455,"finneon":456,"lumineon":457,"mantyke":458,"snover":459,"abomasnow":460,"weavile":461,"magnezone":462,"lickilicky":463,"rhyperior":464,"tangrowth":465,"electivire":466,"magmortar":467,"togekiss":468,"yanmega":469,"leafeon":470,"glaceon":471,"gliscor":472,"mamoswine":473,"porygonz":474,"gallade":475,"probopass":476,"dusknoir":477,"froslass":478,"rotom":479,"uxie":480,"mesprit":481,"azelf":482,"dialga":483,"palkia":484,"heatran":485,"regigigas":486,"giratina":487,"cresselia":488,"phione":489,"manaphy":490,"darkrai":491,"shaymin":492,"arceus":493,"victini":494,"snivy":495,"servine":496,"serperior":497,"tepig":498,"pignite":499,"emboar":500,"oshawott":501,"dewott":502,"samurott":503,"patrat":504,"watchog":505,"lillipup":506,"herdier":507,"stoutland":508,"purrloin":509,"liepard":510,"pansage":511,"simisage":512,"pansear":513,"simisear":514,"panpour":515,"simipour":516,"munna":517,"musharna":518,"pidove":519,"tranquill":520,"unfezant":521,"blitzle":522,"zebstrika":523,"roggenrola":524,"boldore":525,"gigalith":526,"woobat":527,"swoobat":528,"drilbur":529,"excadrill":530,"audino":531,"timburr":532,"gurdurr":533,"conkeldurr":534,"tympole":535,"palpitoad":536,"seismitoad":537,"throh":538,"sawk":539,"sewaddle":540,"swadloon":541,"leavanny":542,"venipede":543,"whirlipede":544,"scolipede":545,"cottonee":546,"whimsicott":547,"petilil":548,"lilligant":549,"basculin":550,"sandile":551,"krokorok":552,"krookodile":553,"darumaka":554,"darmanitan":555,"maractus":556,"dwebble":557,"crustle":558,"scraggy":559,"scrafty":560,"sigilyph":561,"yamask":562,"cofagrigus":563,"tirtouga":564,"carracosta":565,"archen":566,"archeops":567,"trubbish":568,"garbodor":569,"zorua":570,"zoroark":571,"minccino":572,"cinccino":573,"gothita":574,"gothorita":575,"gothitelle":576,"solosis":577,"duosion":578,"reuniclus":579,"ducklett":580,"swanna":581,"vanillite":582,"vanillish":583,"vanilluxe":584,"deerling":585,"sawsbuck":586,"emolga":587,"karrablast":588,"escavalier":589,"foongus":590,"amoonguss":591,"frillish":592,"jellicent":593,"alomomola":594,"joltik":595,"galvantula":596,"ferroseed":597,"ferrothorn":598,"klink":599,"klang":600,"klinklang":601,"tynamo":602,"eelektrik":603,"eelektross":604,"elgyem":605,"beheeyem":606,"litwick":607,"lampent":608,"chandelure":609,"axew":610,"fraxure":611,"haxorus":612,"cubchoo":613,"beartic":614,"cryogonal":615,"shelmet":616,"accelgor":617,"stunfisk":618,"mienfoo":619,"mienshao":620,"druddigon":621,"golett":622,"golurk":623,"pawniard":624,"bisharp":625,"bouffalant":626,"rufflet":627,"braviary":628,"vullaby":629,"mandibuzz":630,"heatmor":631,"durant":632,"deino":633,"zweilous":634,"hydreigon":635,"larvesta":636,"volcarona":637,"cobalion":638,"terrakion":639,"virizion":640,"tornadus":641,"thundurus":642,"reshiram":643,"zekrom":644,"landorus":645,"kyurem":646,"keldeo":647,"meloetta":648,"genesect":649,"chespin":650,"quilladin":651,"chesnaught":652,"fennekin":653,"braixen":654,"delphox":655,"froakie":656,"frogadier":657,"greninja":658,"bunnelby":659,"diggersby":660,"fletchling":661,"fletchinder":662,"talonflame":663,"scatterbug":664,"spewpa":665,"vivillon":666,"litleo":667,"pyroar":668,"flabebe":669,"floette":670,"florges":671,"skiddo":672,"gogoat":673,"pancham":674,"pangoro":675,"furfrou":676,"espurr":677,"meowstic":678,"honedge":679,"doublade":680,"aegislash":681,"spritzee":682,"aromatisse":683,"swirlix":684,"slurpuff":685,"inkay":686,"malamar":687,"binacle":688,"barbaracle":689,"skrelp":690,"dragalge":691,"clauncher":692,"clawitzer":693,"helioptile":694,"heliolisk":695,"tyrunt":696,"tyrantrum":697,"amaura":698,"aurorus":699,"sylveon":700,"hawlucha":701,"dedenne":702,"carbink":703,"goomy":704,"sliggoo":705,"goodra":706,"klefki":707,"phantump":708,"trevenant":709,"pumpkaboo":710,"gourgeist":711,"bergmite":712,"avalugg":713,"noibat":714,"noivern":715,"xerneas":716,"yveltal":717,"zygarde":718,"diancie":719,"hoopa":720,"volcanion":721,"rowlet":722,"dartrix":723,"decidueye":724,"litten":725,"torracat":726,"incineroar":727,"popplio":728,"brionne":729,"primarina":730,"pikipek":731,"trumbeak":732,"toucannon":733,"yungoos":734,"gumshoos":735,"grubbin":736,"charjabug":737,"vikavolt":738,"crabrawler":739,"crabominable":740,"oricorio":741,"cutiefly":742,"ribombee":743,"rockruff":744,"lycanroc":745,"wishiwashi":746,"mareanie":747,"toxapex":748,"mudbray":749,"mudsdale":750,"dewpider":751,"araquanid":752,"fomantis":753,"lurantis":754,"morelull":755,"shiinotic":756,"salandit":757,"salazzle":758,"stufful":759,"bewear":760,"bounsweet":761,"steenee":762,"tsareena":763,"comfey":764,"oranguru":765,"passimian":766,"wimpod":767,"golisopod":768,"sandygast":769,"palossand":770,"pyukumuku":771,"typenull":772,"silvally":773,"minior":774,"komala":775,"turtonator":776,"togedemaru":777,"mimikyu":778,"bruxish":779,"drampa":780,"dhelmise":781,"jangmoo":782,"hakamoo":783,"kommoo":784,"tapukoko":785,"tapulele":786,"tapubulu":787,"tapufini":788,"cosmog":789,"cosmoem":790,"solgaleo":791,"lunala":792,"nihilego":793,"buzzwole":794,"pheromosa":795,"xurkitree":796,"celesteela":797,"kartana":798,"guzzlord":799,"necrozma":800,"magearna":801,"marshadow":802,"poipole":803,"naganadel":804,"stakataka":805,"blacephalon":806,"zeraora":807,"meltan":808,"melmetal":809,"grookey":810,"thwackey":811,"rillaboom":812,"scorbunny":813,"raboot":814,"cinderace":815,"sobble":816,"drizzile":817,"inteleon":818,"skwovet":819,"greedent":820,"rookidee":821,"corvisquire":822,"corviknight":823,"blipbug":824,"dottler":825,"orbeetle":826,"nickit":827,"thievul":828,"gossifleur":829,"eldegoss":830,"wooloo":831,"dubwool":832,"chewtle":833,"drednaw":834,"yamper":835,"boltund":836,"rolycoly":837,"carkol":838,"coalossal":839,"applin":840,"flapple":841,"appletun":842,"silicobra":843,"sandaconda":844,"cramorant":845,"arrokuda":846,"barraskewda":847,"toxel":848,"toxtricity":849,"sizzlipede":850,"centiskorch":851,"clobbopus":852,"grapploct":853,"sinistea":854,"polteageist":855,"hatenna":856,"hattrem":857,"hatterene":858,"impidimp":859,"morgrem":860,"grimmsnarl":861,"obstagoon":862,"perrserker":863,"cursola":864,"sirfetchd":865,"mrrime":866,"runerigus":867,"milcery":868,"alcremie":869,"falinks":870,"pincurchin":871,"snom":872,"frosmoth":873,"stonjourner":874,"eiscue":875,"indeedee":876,"morpeko":877,"cufant":878,"copperajah":879,"dracozolt":880,"arctozolt":881,"dracovish":882,"arctovish":883,"duraludon":884,"dreepy":885,"drakloak":886,"dragapult":887,"zacian":888,"zamazenta":889,"eternatus":890,"kubfu":891,"urshifu":892,"zarude":893,"regieleki":894,"regidrago":895,"glastrier":896,"spectrier":897,"calyrex":898,"wyrdeer":899,"kleavor":900,"ursaluna":901,"basculegion":902,"sneasler":903,"overqwil":904,"enamorus":905,"sprigatito":906,"floragato":907,"meowscarada":908,"fuecoco":909,"crocalor":910,"skeledirge":911,"quaxly":912,"quaxwell":913,"quaquaval":914,"lechonk":915,"oinkologne":916,"tarountula":917,"spidops":918,"nymble":919,"lokix":920,"pawmi":921,"pawmo":922,"pawmot":923,"tandemaus":924,"maushold":925,"fidough":926,"dachsbun":927,"smoliv":928,"dolliv":929,"arboliva":930,"squawkabilly":931,"nacli":932,"naclstack":933,"garganacl":934,"charcadet":935,"armarouge":936,"ceruledge":937,"tadbulb":938,"bellibolt":939,"wattrel":940,"kilowattrel":941,"maschiff":942,"mabosstiff":943,"shroodle":944,"grafaiai":945,"bramblin":946,"brambleghast":947,"toedscool":948,"toedscruel":949,"klawf":950,"capsakid":951,"scovillain":952,"rellor":953,"rabsca":954,"flittle":955,"espathra":956,"tinkatink":957,"tinkatuff":958,"tinkaton":959,"wiglett":960,"wugtrio":961,"bombirdier":962,"finizen":963,"palafin":964,"varoom":965,"revavroom":966,"cyclizar":967,"orthworm":968,"glimmet":969,"glimmora":970,"greavard":971,"houndstone":972,"flamigo":973,"cetoddle":974,"cetitan":975,"veluza":976,"dondozo":977,"tatsugiri":978,"annihilape":979,"clodsire":980,"farigiraf":981,"dudunsparce":982,"kingambit":983,"greattusk":984,"screamtail":985,"brutebonnet":986,"fluttermane":987,"slitherwing":988,"sandyshocks":989,"irontreads":990,"ironbundle":991,"ironhands":992,"ironjugulis":993,"ironmoth":994,"ironthorns":995,"frigibax":996,"arctibax":997,"baxcalibur":998,"gimmighoul":999,"gholdengo":1000,"wochien":1001,"chienpao":1002,"tinglu":1003,"chiyu":1004,"roaringmoon":1005,"ironvaliant":1006,"koraidon":1007,"miraidon":1008,"walkingwake":1009,"ironleaves":1010,"dipplin":1011,"poltchageist":1012,"sinistcha":1013,"okidogi":1014,"munkidori":1015,"fezandipiti":1016,"ogerpon":1017,"archaludon":1018,"hydrapple":1019,"gougingfire":1020,"ragingbolt":1021,"ironboulder":1022,"ironcrown":1023,"terapagos":1024,"pecharunt":1025};function resolvePkmIconRepo(el,icon,shiny){
+  var fn=String(icon||'').toLowerCase().replace(/\.(gif|png)$/,'');
+  if(!fn){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');return;}
+  fn=fn.replace(/-(regional-a|regional-g|regional-h|regional-p)$/,function(_,x){
+    return ({'regional-a':'-alola','regional-g':'-galar','regional-h':'-hisui','regional-p':'-paldea'})[x];
+  });
+  var sel=(pkmSource==='showdown')?'showdown':'pokeos';
+  var other=(sel==='showdown')?'pokeos':'showdown';
+  var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
+  function candsFor(src){
+    if(src==='pokeos'){return [fn];}
+    return slugCandidates(fn);
   }
-  var gif=pkWrapPokeos(gifPath,true);
-  var png=pkWrapPokeos(pngPath,false);
-  return {gif:gif,png:png};
-}
-function resolvePkmIconShowdown(el,icon,shiny){
-  var fn=String(icon||'').toLowerCase().replace(/\.gif$/,'');
-  var cands=slugCandidates(fixSlug(fn));
-  if(!cands.length)cands=[fn];
-  function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');}
+  var si=0,ci=0,cands=null;
+  function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');setCachedIcon(icon,shiny,u);}
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');}
-  function load(u,onErr){if(!u){onErr();return;}var im=noRefImg();im.onload=function(){apply(u);};im.onerror=onErr;im.src=u;}
-  var i=0;
   function next(){
-    if(i>=cands.length){fail();return;}
-    var s=cands[i++];
-    var ani='https://play.pokemonshowdown.com/sprites/'+(shiny?'ani-shiny/':'ani/')+s+'.gif';
-    var png='https://play.pokemonshowdown.com/sprites/'+(shiny?'gen5-shiny/':'gen5/')+s+'.png';
-    load(ani,function(){load(png,next);});
+    if(!cands||ci>=cands.length){ci=0;cands=null;si++;}
+    if(si>=order.length){fail();return;}
+    if(!cands){cands=candsFor(order[si][1]);}
+    var o=order[si];
+    var u=pkmRepoUrl(o[0],o[1],cands[ci],shiny);
+    ci++;
+    var im=noRefImg();
+    im.onload=function(){apply(u);};
+    im.onerror=next;
+    im.src=u;
   }
   next();
 }
 function resolvePkmIcon(el,icon,shiny){
-  if(pkmSource==='showdown'){resolvePkmIconShowdown(el,icon,shiny);return;}
-  resolvePkmIconPokeos(el,icon,shiny);
-}
-function resolvePkmIconPokeos(el,icon,shiny){
-  var r=pkmPokeosIconUrls(icon,shiny);
-  function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');setCachedIcon(icon,shiny,u);}
-  function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');}
-  if(!r){fail();return;}
-  function load(u,onErr){if(!u){onErr();return;}var im=noRefImg();im.onload=function(){apply(u);};im.onerror=onErr;im.src=u;}
-  load(r.gif,function(){load(r.png,function(){fail();});});
-}
-
-
-function hudSpriteProviders(){
+  resolvePkmIconRepo(el,icon,shiny);
+}function hudSpriteProviders(){
   var sb=String(PKM_SPRITE_BASE||'https://play.pokemonshowdown.com/sprites/');
   var pm=(PA_POKE_MIRRORS&&PA_POKE_MIRRORS.length)?PA_POKE_MIRRORS.slice():[
     'https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/',
@@ -3295,11 +3247,26 @@ function hudBuildPokemonSpriteUrls(opt){
   return {providerId:p.id,providerName:p.name,site:p.site||'',kind:p.kind||'',dynamic:!!p.dynamic,slug:primarySlug,pokemonApiId:id,normal:normal,shiny:shiny,normalCandidates:normalCandidates,shinyCandidates:shinyCandidates};
 }
 function noRefImg(){var im=new Image();try{im.referrerPolicy='no-referrer';}catch(e){}return im;}
-function resolvePkmBgShowdown(el,slug,shiny,name){
-  var cands=slugCandidates(fixSlug(slug));
-  var i=0;
-  var dexNo='';
-  if(name){var bn=baseName(String(name).trim());dexNo=(pkmDexCache[bn]||lsGet('pk_ndex_'+bn,''))||'';}
+var PKM_SPRITE_REPO_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/pokemon-sprites/';
+function pkmRepoFormSuf(f){
+  var m={'-regional-a':'-alola','-regional-g':'-galar','-regional-h':'-hisui','-regional-p':'-paldea'};
+  return (f in m)?m[f]:(f||'');
+}
+function pkmRepoUrl(kind,src,slug,shiny){
+  return PKM_SPRITE_REPO_BASE+kind+'/'+src+'/'+(shiny?'shiny':'normal')+'/'+slug+(kind==='animated'?'.gif':'.png');
+}
+function pkmSrcSlugs(src,slug,form){
+  if(src==='pokeos'){return [slug+form];}
+  var sf=String(form||'').replace('-mega-x','-megax').replace('-mega-y','-megay').replace('-mega-z','-megaz');
+  return slugCandidates(slug+sf);
+}
+function resolvePkmBgRepo(el,slug,shiny,name){
+  var p=name?pkmFormParse(name):{base:'',form:''};
+  var paSuf=pkmRepoFormSuf(p.form);
+  var sel=(pkmSource==='showdown')?'showdown':'pokeos';
+  var other=(sel==='showdown')?'pokeos':'showdown';
+  var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
+  var si=0,ci=0,cands=null;
   function apply(url){
     el.style.backgroundImage="url('"+url+"')";
     el.classList.remove('no-img');
@@ -3308,62 +3275,22 @@ function resolvePkmBgShowdown(el,slug,shiny,name){
     if(name){setCachedSprite(name,shiny,url);}
   }
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';}
-  function tryPokeApi(mi){
-    var n=parseInt(dexNo,10);
-    if(!n||mi>=PA_POKE_MIRRORS.length){fail();return;}
-    var u=PA_POKE_MIRRORS[mi]+(shiny?'shiny/':'')+n+'.png';
+  function next(){
+    if(!cands||ci>=cands.length){ci=0;cands=null;si++;}
+    if(si>=order.length){fail();return;}
+    if(!cands){cands=pkmSrcSlugs(order[si][1],slug,paSuf);}
+    var o=order[si];
+    var u=pkmRepoUrl(o[0],o[1],cands[ci],shiny);
+    ci++;
     var im=noRefImg();
     im.onload=function(){apply(u);};
-    im.onerror=function(){tryPokeApi(mi+1);};
+    im.onerror=next;
     im.src=u;
-  }
-  function next(){
-    if(i>=cands.length){tryPokeApi(0);return;}
-    var s=cands[i++];
-    var ani=PKM_SPRITE_BASE+(shiny?'ani-shiny/':'ani/')+s+'.gif';
-    var png=PKM_SPRITE_BASE+(shiny?'gen5-shiny/':'gen5/')+s+'.png';
-    var im=noRefImg();
-    im.onload=function(){apply(ani);};
-    im.onerror=function(){
-      var im2=noRefImg();
-      im2.onload=function(){apply(png);};
-      im2.onerror=next;
-      im2.src=png;
-    };
-    im.src=ani;
   }
   next();
-}
-function resolvePkmBg(el,slug,shiny,name){
-  if(pkmSource==='showdown'){resolvePkmBgShowdown(el,slug,shiny,name);return;}
-  resolvePkmBgPokeos(el,slug,shiny,name);
-}
-function resolvePkmBgPokeos(el,slug,shiny,name){
-  var p=name?pkmFormParse(name):{base:'',form:''};
-  var bn=p.base;
-  var dexNo=(bn?(pkmDexCache[bn]||lsGet('pk_ndex_'+bn,'')):'')||'';
-  function apply(url){
-    el.style.backgroundImage="url('"+url+"')";
-    el.classList.remove('no-img');
-    el.textContent='';
-    el.removeAttribute('data-pkm');
-    if(name){setCachedSprite(name,shiny,url);}
-  }
-  function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';}
-  
-  var gifUrl='',pngUrl='';
-  if(p.form){gifUrl=pkmPokeosFormUrl(dexNo,p.form,shiny);pngUrl=pkmPokeosPngUrl(dexNo,p.form,shiny);}
-  else{gifUrl=pkmPokeosUrl(dexNo,shiny);pngUrl=pkmPokeosPngUrl(dexNo,'',shiny);}
-  function load(u,onErr){
-    if(!u){onErr();return;}
-    var im=noRefImg();
-    im.onload=function(){apply(u);};
-    im.onerror=onErr;
-    im.src=u;
-  }
-  load(gifUrl,function(){load(pngUrl,function(){fail();});});
-}
-function pkImg(e,t){
+}function resolvePkmBg(el,slug,shiny,name){
+  resolvePkmBgRepo(el,slug,shiny,name);
+}function pkImg(e,t){
   if(!e)return '';
   var s=String(e).toLowerCase();
   var n=s;
@@ -3634,7 +3561,7 @@ function nearbyFetchTypes(name,en,cn,cb){
   if(!name&&!en){cb&&cb('','');return;}
   var cacheKey=nearbyTypeCacheKeyOf({名字:cn||name,英文名:en})||name;
   if(nearbyTypeCache[cacheKey]){var c=nearbyTypeCache[cacheKey];cb&&cb(c.type1,c.type2);return;}
-  var key='nbtype_v7_'+cacheKey;
+  var key='nbtype_v8_'+cacheKey;
   try{var raw=lsGet(key,'');if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){o={type1:String(o.type1||''),type2:String(o.type2||'')};nearbyTypeCache[cacheKey]=o;cb&&cb(o.type1,o.type2);return;}}}catch(e){}
   if(nearbyTypePending[cacheKey]){nearbyTypePending[cacheKey].push(cb);return;}
   nearbyTypePending[cacheKey]=cb?[cb]:[];
@@ -3660,7 +3587,18 @@ function nearbyFetchTypes(name,en,cn,cb){
   for(var z=0;z<tries.length;z++){var t=tries[z];if(t&&!seen[t]){seen[t]=1;uniq.push(t);}}
   var ti=0;
   function step(){if(ti>=uniq.length){fin('','');return;}viaName(uniq[ti++],step);}
-  step();
+  function viaRepo(next){
+    pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+      var hit=null;
+      var es=nearbyEnSlug(en);
+      if(es)hit=pkmDbLookup('dex',es);
+      if(!hit&&cn)hit=pkmDbLookup('dex',cn);
+      if(!hit&&name)hit=pkmDbLookup('dex',name);
+      if(hit&&hit.types&&hit.types.length){fin(nearbyCleanType(hit.types[0]),nearbyCleanType(hit.types[1]||''));}
+      else{next();}
+    });
+  }
+  viaRepo(step);
 }
 function resolveNearbyTypes(scope){
   var root=scope||document;if(!root.querySelectorAll)return;
@@ -4889,51 +4827,69 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   d.desc=t2s(d.desc||'');d.eff=t2s(d.eff||'');
   return d;
 }
+/* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
+var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
+var PKM_DB={abil:null,move:null,item:null},PKM_DB_LOADING={abil:false,move:false,item:false},PKM_DB_CBS={abil:[],move:[],item:[]};
+function pkmDbBuildIndex(data,fields){
+  var idx={};
+  for(var i=0;i<data.length;i++){
+    for(var f=0;f<fields.length;f++){
+      var v=data[i][fields[f]];
+      if(v===undefined||v===null||v==='')continue;
+      var k=String(v);if(!idx[k])idx[k]=data[i];
+      if(fields[f]==='en'||fields[f]==='jp'){var lk=k.toLowerCase();if(!idx[lk])idx[lk]=data[i];}
+    }
+  }
+  return idx;
+}
+function pkmDbLoad(kind,file,fields,cb){
+  var store=PKM_DB[kind];
+  if(store){cb&&cb(store);return;}
+  var _c=lsGet('pk_gh_'+kind,null);
+  if(_c&&_c.data&&_c.data.length){store={data:_c.data,idx:pkmDbBuildIndex(_c.data,fields)};PKM_DB[kind]=store;cb&&cb(store);return;}
+  if(PKM_DB_LOADING[kind]){cb&&PKM_DB_CBS[kind].push(cb);return;}
+  PKM_DB_LOADING[kind]=true;
+  hudFetch(PKM_DATA_BASE+file)
+    .then(function(r){return r.ok?r.json():Promise.reject(new Error('HTTP '+r.status));})
+    .then(function(j){
+      var data=(j&&j.data)||[];
+      var st={data:data,idx:pkmDbBuildIndex(data,fields)};
+      PKM_DB[kind]=st;PKM_DB_LOADING[kind]=false;
+      if(data.length){try{lsSet('pk_gh_'+kind,{data:data});}catch(e){}}
+      var cbs=PKM_DB_CBS[kind];PKM_DB_CBS[kind]=[];
+      for(var i=0;i<cbs.length;i++){try{cbs[i](st);}catch(e){}}
+      if(cb)cb(st);
+    })
+    .catch(function(){
+      PKM_DB_LOADING[kind]=false;
+      var cbs=PKM_DB_CBS[kind];PKM_DB_CBS[kind]=[];
+      for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}
+      if(cb)cb(null);
+    });
+}
+function pkmDbLookup(kind,name){
+  var store=PKM_DB[kind];if(!store)return null;
+  var n=String(name==null?'':name).trim();if(!n)return null;
+  if(store.idx[n])return store.idx[n];
+  var low=n.toLowerCase();if(store.idx[low])return store.idx[low];
+  return null;
+}
 function fetchMove(name,cb){
   if(!name){cb&&cb(null);return;}
   var _diy=diyGet('move',name);
   if(_diy){cb&&cb(_diy);return;}
   if(moveCache[name]&&moveCache[name].type!==undefined){cb&&cb(moveCache[name]);return;}
   var _c=lsGet('pk_mv_'+name,null);if(_c&&_c.type!==undefined){moveCache[name]=_c;cb&&cb(_c);return;}
-  if(moveLoading[name]){moveLoading[name].push(cb);return;}
-  moveLoading[name]=[];
-  if(cb)moveLoading[name].push(cb);
-  function done(d){
-    moveCache[name]=d||null;
-    if(d&&d.type){lsSet('pk_mv_'+name,d);}
-    var cbs=moveLoading[name]||[];
-    moveLoading[name]=null;
-    for(var i=0;i<cbs.length;i++){try{cbs[i](d);}catch(e){}}
-  }
-  function parsePage(page,onFail){
-    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=text|wikitext&variant=zh-hans&origin=*')
-      .then(function(r){return r.ok?r.json():Promise.reject();})
-      .then(function(j){
-        if(!j||!j.parse){onFail();return;}
-        var wt=(j.parse.wikitext&&j.parse.wikitext['*'])?j.parse.wikitext['*']:'';
-        var html=(j.parse.text&&j.parse.text['*'])?j.parse.text['*']:'';
-        var d=(wt||html)?parseMove(wt,html):null;
-        if(d&&d.type){done(d);}else{onFail();}
-      })
-      .catch(onFail);
-  }
-  function searchThen(){
-    hudFetch('https://wiki.52poke.com/api.php?action=query&list=search&srsearch='+encodeURIComponent(t2s(name)+' 招式')+'&srnamespace=0&srlimit=6&format=json&origin=*')
-      .then(function(r){return r.json();})
-      .then(function(j){
-        var rs=(j&&j.query&&j.query.search)||[];
-        var pick=null;
-        for(var i=0;i<rs.length;i++){
-          var t=String(rs[i]&&rs[i].title||'');
-          if(/（招式）$/.test(t)){pick=t;break;}
-        }
-        if(!pick&&rs[0])pick=rs[0].title;
-        if(pick){parsePage(pick,function(){done(null);});}
-        else{done(null);}
-      })
-      .catch(function(){done(null);});
-  }
-  parsePage(name+'（招式）',searchThen);
+  pkmDbLoad('move','moves.json',['name','en','jp'],function(store){
+    var hit=store&&pkmDbLookup('move',name);
+    if(hit){
+      var d={type:hit.type,cat:hit.cat,power:hit.power,acc:hit.acc,desc:hit.desc,eff:hit.effect};
+      moveCache[name]=d;
+      if(d.type!==undefined){try{lsSet('pk_mv_'+name,d);}catch(e){}}
+      cb&&cb(d);return;
+    }
+    cb&&cb(null);
+  });
 }
 function preloadMoves(skills){
   if(!skills)return;
@@ -5009,13 +4965,14 @@ function fetchDex(cb){
     })
     .catch(function(){dexLoading=false;var cbs=dexCbs;dexCbs=[];for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}if(cb)cb(null);});
 }
-var PKM_DEX_THUMB_W=128;
+var PKM_DEX_EN=(function(){var r={};for(var _k in PKM_EN_DEX){r[PKM_EN_DEX[_k]]=_k;}return r;})();
 function dexCellImgUrl(ndex){
   var n=parseInt(ndex,10);
   if(!n||n<=0)return '';
-  // 缩略图强制走压缩代理并缩小到 128px，避免直接拉原图（单张可能数 MB，1025 张会爆内存）。
-  // 即使全局开了「原图」也照样压缩，因为图鉴预览不是看高清大图的地方。
-  return PKM_POKEOS_PROXY+encodeURIComponent(PKM_POKEOS_S3+'render/'+n+'.png')+'&w='+PKM_DEX_THUMB_W;
+  var slug=PKM_DEX_EN[n];
+  if(!slug)return '';
+  var full=pkmRepoUrl('static','pokeos',slug,false);
+  return PKM_POKEOS_PROXY+encodeURIComponent(full)+'&w='+PKM_POKEOS_W;
 }
 var dexLazyObs=null;
 function dexLoadImg(img){
@@ -5357,8 +5314,9 @@ function pkmPreviewFallback(el){
     var fn=cur.split('/').pop();
     if(fn){el.src='https://wiki.52poke.com/wiki/Special:FilePath/'+fn;return;}
   }
-  if((cur.indexOf('pokeos')>=0||cur.indexOf('wsrv.nl')>=0)&&curPkmNdex){
-    var base='https://'+PKM_POKEOS_S3+'render/'+(curPkmShiny?'shiny/':'')+curPkmNdex+'.png';
+  if(curPkm&&curPkm.enname){
+    var _en=String(curPkm.enname).toLowerCase();
+    var base=pkmRepoUrl('static','pokeos',_en,curPkmShiny);
     if(base&&base!==cur){el.src=base;return;}
   }
   el.style.display='none';
@@ -5481,9 +5439,7 @@ if(big){
     }
     b.innerHTML=out||'<div class="empty">没有数据</div>';var lv=document.getElementById('pkm-lv');if(lv){bindPkmSlider(lv);}updatePkmStats();
   }
-}
-var HOME_CODE_OVERRIDE={'超级喷火龙X':'MX','超级喷火龙Y':'MY','超极巨化喷火龙':'GM','超级路卡利欧':'M','超级路卡利欧Z':'MZ','水井面具':'W','火灶面具':'H','础石面具':'C'};
-function dexStr(n){var s=String(n);while(s.length<3)s='0'+s;return s;}
+}function dexStr(n){var s=String(n);while(s.length<3)s='0'+s;return s;}
 function md5(str){
   function safeAdd(x,y){var lsw=(x&0xFFFF)+(y&0xFFFF);var msw=(x>>16)+(y>>16)+(lsw>>16);return (msw<<16)|(lsw&0xFFFF);}
   function bitRol(num,cnt){return (num<<cnt)|(num>>>(32-cnt));}
@@ -5521,63 +5477,32 @@ function md5(str){
     return [a,b,c,d];
   }
   return binl2hex(coreMD5(str2binl(str),str.length*8));
-}
-function homeImgUrl(ndex,code,shiny){
-  var fn='HOME_'+dexStr(ndex)+(code||'')+(shiny?'_s':'')+'.png';
-  var h=md5(fn);
-  return 'https://media.52poke.com/wiki/'+h.charAt(0)+'/'+h.substr(0,2)+'/'+fn;
-}
-var HOME_FORM_KEY={'mega-x':'MX','mega-y':'MY','mega-z':'MZ','mega':'M','gmax':'GM','primal':'P','ash':'A','dusk':'DM','dawn':'DW','ultra':'U','origin':'O','sky':'S','complete':'C','10':'T','50':'','attack':'A','defense':'D','speed':'S','black':'B','white':'W','crowned-sword':'C','crowned-shield':'C','ice':'I','shadow':'S','therian':'T','zen':'Z','school':'Sc','busted':'B','bloodmoon':'B','stellar':'S','hero':'H','alola':'A','galar':'G','hisui':'H','paldea':'P'};
-function homeFormCode(f){
-  if(!f)return '';
-  var fk=f.formKey||'';
-  var lb=f.label||'';
-  var nm=(f.name||'')+' '+(f.label||'');
-  if(HOME_CODE_OVERRIDE[lb])return HOME_CODE_OVERRIDE[lb];
-  if(fk==='galar'&&nm.indexOf('达摩')>=0&&nm.indexOf('模式')>=0)return 'GZ';
-  if(HOME_FORM_KEY[fk]!==undefined)return HOME_FORM_KEY[fk];
-  if(nm.indexOf('水井')>=0)return 'W';
-  if(nm.indexOf('火灶')>=0)return 'H';
-  if(nm.indexOf('础石')>=0)return 'C';
-  if(nm.indexOf('连击流')>=0)return 'R';
-  if(nm.indexOf('觉悟')>=0)return 'R';
-  if(nm.indexOf('太晶')>=0)return 'T';
-  if(nm.indexOf('橙花')>=0)return 'O';
-  if(nm.indexOf('蓝花')>=0)return 'B';
-  if(nm.indexOf('白花')>=0)return 'W';
-  if(nm.indexOf('黄花')>=0)return 'Y';
-  return '';
-}
-var PKM_POKEOS_FORM_SUFFIX={
-  'mega-x':'-mega-x','mega-y':'-mega-y','mega-z':'-mega-z','mega':'-mega','primal':'-mega',
+}var PKM_REPO_FORM_SUFFIX={
+  'mega-x':'-mega-x','mega-y':'-mega-y','mega-z':'-mega-z','mega':'-mega','primal':'-primal',
   'gmax':'-gmax','ash':'-ash','dusk':'-dusk','dawn':'-dawn','ultra':'-ultra','origin':'-origin',
   'sky':'-sky','complete':'-complete','10':'-10','50':'-50','attack':'-attack','defense':'-defense',
   'speed':'-speed','black':'-black','white':'-white','crowned-sword':'-crowned','crowned-shield':'-crowned',
   'ice':'-ice','shadow':'-shadow','therian':'-therian','zen':'-zen','school':'-school','busted':'-busted',
   'bloodmoon':'-bloodmoon','stellar':'-stellar','hero':'-hero',
-  'alola':'-regional-a','galar':'-regional-g','hisui':'-regional-h','paldea':'-regional-p'
+  'alola':'-alola','galar':'-galar','hisui':'-hisui','paldea':'-paldea'
 };
-function pokeosFormSuffixOf(f,nd){
-  if(!f)return '';
-  var fk=f.formKey||'';
-  var nm=((f.name||'')+' '+(f.label||'')).replace(/\s+/g,' ');
-  if(nm.indexOf('水井')>=0)return '-wellspring-mask';
-  if(nm.indexOf('火灶')>=0)return '-hearthflame-mask';
-  if(nm.indexOf('础石')>=0)return '-cornerstone-mask';
-  if(nm.indexOf('连击流')>=0)return '-rapid-strike';
-  if(nm.indexOf('觉悟')>=0)return '-resolute';
-  if(nd===877&&fk==='busted')return '-hangry';
-  if(PKM_POKEOS_FORM_SUFFIX[fk]!==undefined)return PKM_POKEOS_FORM_SUFFIX[fk];
-  return '';
-}
 function pickHomeImg(idx,shiny){
   var d=curPkm;
   var f=null;
   if(d){var forms=curPkmForms&&curPkmForms.length?curPkmForms:d.forms;f=forms[idx]||forms[0];}
-  var nd=curPkmNdex||(d?parseInt(d.ndex,10):0)||0;
-  if(!nd)return '';
-  var suf=pokeosFormSuffixOf(f,nd);
-  return 'https://'+PKM_POKEOS_S3+'render/'+(shiny?'shiny/':'')+nd+(suf||'')+'.png';
+  var en=(d&&d.enname)?String(d.enname).toLowerCase():'';
+  if(!en)return '';
+  var fk=(f&&f.formKey)||'';
+  var nm=((f&&f.name)||'')+' '+((f&&f.label)||'');
+  var suf='';
+  if(nm.indexOf('水井')>=0)suf='-wellspring-mask';
+  else if(nm.indexOf('火灶')>=0)suf='-hearthflame-mask';
+  else if(nm.indexOf('础石')>=0)suf='-cornerstone-mask';
+  else if(nm.indexOf('连击流')>=0)suf='-rapid-strike';
+  else if(nm.indexOf('觉悟')>=0)suf='-resolute';
+  else suf=PKM_REPO_FORM_SUFFIX[fk]||'';
+  var slug=en+suf;
+  return pkmRepoUrl('static','pokeos',slug,shiny);
 }
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
@@ -5709,39 +5634,16 @@ function fetchAbility(name,cb){
   var _diy=diyGet('ability',name);
   if(_diy){cb&&cb(_diy);return;}
   if(abiCache[name]){cb&&cb(abiCache[name]);return;}
-  var _c3=lsGet('pk_ab_'+name,null);if(_c3){abiCache[name]=_c3;cb&&cb(abiCache[name]);return;}
-  if(abiLoading[name]){abiLoading[name].push(cb);return;}
-  abiLoading[name]=[];
-  if(cb)abiLoading[name].push(cb);
-  function done(d){
-    abiCache[name]=d||null;
-    if(d&&d.text){lsSet('pk_ab_'+name,d);}
-    var cbs=abiLoading[name]||[];
-    abiLoading[name]=null;
-    for(var i=0;i<cbs.length;i++){try{cbs[i](d);}catch(e){}}
-  }
-  function parsePage(page,onFail){
-    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=wikitext|text&variant=zh-hans&origin=*')
-      .then(function(r){return r.ok?r.json():Promise.reject();})
-      .then(function(j){
-        var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-var html=(j&&j.parse&&j.parse.text)?j.parse.text['*']:'';
-if(wt){done(parseAbi(wt,html));}
-        else{onFail();}
-      })
-      .catch(onFail);
-  }
-  function searchThen(){
-    hudFetch('https://wiki.52poke.com/api.php?action=query&list=search&srsearch='+encodeURIComponent(t2s(abiKey(name)))+'&srnamespace=0&srlimit=3&format=json&origin=*')
-      .then(function(r){return r.json();})
-      .then(function(j){
-        var rs=(j&&j.query&&j.query.search)||[];
-        if(rs[0]){parsePage(rs[0].title,function(){done(null);});}
-        else{done(null);}
-      })
-      .catch(function(){done(null);});
-  }
-  parsePage(t2s(abiKey(name))+'（特性）',searchThen);
+  pkmDbLoad('abil','abilities.json',['name','en'],function(store){
+    var hit=(store&&pkmDbLookup('abil',abiKey(name)))||(store&&pkmDbLookup('abil',name));
+    if(hit){
+      var d={name:name,text:hit.desc||hit.effect||'',detail:hit.effect||''};
+      abiCache[name]=d;
+      if(d.text){try{lsSet('pk_ab_'+name,d);}catch(e){}}
+      cb&&cb(d);return;
+    }
+    cb&&cb(null);
+  });
 }
 function showAbilityInfo(name){
   subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body" id="abi-body"><div class="empty">特性数据加载中...</div></div></div>';
@@ -5879,24 +5781,6 @@ function itemEnCands(en){
   var titled=spaced.replace(/\b[a-z]/g,function(c){return c.toUpperCase();});
   if(out.indexOf(titled)<0)out.push(titled);
   return out;
-}
-function fetchItemList(cb){
-  if(itemListCache){cb&&cb(itemListCache);return;}
-  var _c=lsGet('pk_itemlist',null);if(_c){itemListCache=_c;cb&&cb(_c);return;}
-  if(itemListLoading){cb&&itemListCbs.push(cb);return;}
-  itemListLoading=true;
-  hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent('道具列表')+'&format=json&prop=wikitext&variant=zh-hans&origin=*')
-    .then(function(r){return r.ok?r.json():Promise.reject();})
-    .then(function(j){
-      var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-      var map=wt?parseItemList(wt):null;
-      itemListCache=map;itemListLoading=false;
-      if(map){lsSet('pk_itemlist',map);}
-      var cbs=itemListCbs;itemListCbs=[];
-      for(var i=0;i<cbs.length;i++){try{cbs[i](map);}catch(e){}}
-      if(cb)cb(map);
-    })
-    .catch(function(){itemListLoading=false;var cbs=itemListCbs;itemListCbs=[];for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}if(cb)cb(null);});
 }
 function itemDetailFromHtml(doc){
   function stripBad(el){
@@ -6151,70 +6035,24 @@ function parseItemPage(wt,html,skipIntro){
   }
   return d;
 }
-function fetchItemPage(cands,i,cb,skipIntro){
-  if(i>=cands.length){cb&&cb(null);return;}
-  var titles=itemPageTitles(cands[i]);
-  var ti=0;
-  function next(){
-    if(ti>=titles.length){fetchItemPage(cands,i+1,cb,skipIntro);return;}
-    var page=titles[ti++];
-    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=text|wikitext&variant=zh-hans&origin=*&redirects=1')
-      .then(function(r){return r.ok?r.json():Promise.reject();})
-      .then(function(j){
-        if(!j||!j.parse){next();return;}
-        var wt=(j.parse.wikitext&&j.parse.wikitext['*'])?j.parse.wikitext['*']:'';
-        var html=(j.parse.text&&j.parse.text['*'])?j.parse.text['*']:'';
-        var t=parseItemPage(wt,html,skipIntro);
-        var det=skipIntro?'':parseItemDetail(wt,html);
-        if(!skipIntro&&!det){t=parseItemPage(wt,html,true);}
-        if(t||det){cb&&cb({text:t,detail:det});}else{next();}
-      })
-      .catch(function(){next();});
-  }
-  next();
-}
 function fetchItem(name,enName,cb){
   if(typeof enName==='function'){cb=enName;enName='';}
   if(!name){cb&&cb(null);return;}
   var _diy=diyGet('item',name);
   if(_diy){cb&&cb(_diy);return;}
-  if(ITEM_TEXT[name]){var _img=(pkmItemSource==='serebii'&&itemSlugOf(name,''))?serebiiItemUrl(itemSlugOf(name,'')):(ITEM_IMG[name]||'');var _d={name:name,text:ITEM_TEXT[name],img:_img};itemCache[name]=_d;cb&&cb(_d);return;}
   if(itemCache[name]){cb&&cb(itemCache[name]);return;}
-  var _c=lsGet('pk_item_'+name,null);if(_c){itemCache[name]=_c;cb&&cb(_c);return;}
-  var cands=itemCands(name);
-  var bagEn=itemBagIconEn(name);
-  if(bagEn&&cands.indexOf(bagEn)<0)cands.push(bagEn);
-  var ens=itemEnCands(enName);
-  for(var x=0;x<ens.length;x++){if(cands.indexOf(ens[x])<0)cands.push(ens[x]);}
-  fetchItemList(function(raw){
-    var list=itemListMaps(raw);
-    var text='';
-    for(var i=0;i<cands.length;i++){if(list.cn[cands[i]]){text=list.cn[cands[i]];break;}}
-    if(!text){
-      for(var j=0;j<cands.length;j++){
-        var ek=enNorm(cands[j]);
-        if(list.en[ek]){var cn=list.en[ek];text=list.cn[cn];if(text)break;}
-      }
-    }
-    var pageCands=cands.slice();
-    for(var k=0;k<cands.length;k++){
-      var ck=cands[k];
-      if(list.cn2en[ck]&&pageCands.indexOf(list.cn2en[ck])<0)pageCands.push(list.cn2en[ck]);
-      var ek2=enNorm(ck);
-      if(list.en[ek2]&&pageCands.indexOf(list.en[ek2])<0)pageCands.push(list.en[ek2]);
-    }
-    var bagType='';
-    try{var _bit=stat_data.背包&&stat_data.背包[name];bagType=_bit&&_bit.类型?String(_bit.类型):'';}catch(e){}
-    var isKey=(bagType==='重要物品');
-    fetchItemPage(pageCands,0,function(obj){
-      var t2=obj?obj.text:'';
-      var det=obj?obj.detail:'';
-      var finalText=t2||text;
-      var d=(finalText||det)?{name:name,text:finalText,detail:det}:null;
+  pkmDbLoad('item','items.json',['name','en','jp'],function(store){
+    var hit=(store&&pkmDbLookup('item',itemKey(name)))||(store&&pkmDbLookup('item',name))||(store&&enName&&pkmDbLookup('item',enName));
+    if(hit){
+      var text=hit.desc||hit.effect||'';
+      var det=hit.effect||'';
+      var img=(pkmItemSource==='serebii'&&hit.en)?serebiiItemUrl(hit.en):'';
+      var d={name:name,text:text,detail:det,img:img};
       itemCache[name]=d;
-      if(d){lsSet('pk_item_'+name,d);}
-      cb&&cb(d);
-    },isKey);
+      if(d.text){try{lsSet('pk_item_'+name,d);}catch(e){}}
+      cb&&cb(d);return;
+    }
+    cb&&cb(null);
   });
 }
 function showItemInfo(name,back,enName){
@@ -6228,10 +6066,9 @@ function showItemInfo(name,back,enName){
     var b=document.getElementById('item-body');
     if(!b)return;
     if(!d||!d.text){b.innerHTML='<div class="empty">道具数据获取失败</div>';return;}
-    var _body=(d.img?'<div style="text-align:center;margin-bottom:8px">'+hudDiyImgTag(d.img,'referrerpolicy="origin" style="max-width:96px;max-height:96px;object-fit:contain;image-rendering:pixelated" onerror="this.remove()"')+'</div>':'')+'<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text||'').replace(/\n/g,'<br>')+'</span></div>';
+    var _body='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text||'').replace(/\n/g,'<br>')+'</span></div>';
     if(d.detail)_body+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>';
     b.innerHTML=_body;
-    if(d.img)hudResolvePkidbImages(b);
   });
 }
 function itemCleanTarget(v){
@@ -6999,7 +6836,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">pokeos</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">道具图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-item-source" value="serebii"'+('serebii'===pkmItemSource?' checked':'')+' data-item-source="serebii">Serebii ItemDex</label><label class="set-opt"><input type="radio" name="pk-item-source" value="52poke"'+('52poke'===pkmItemSource?' checked':'')+' data-item-source="52poke">52poke 神奇宝贝百科</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">PokeOS</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+(pkmSource==='pokeos'?'<button class="act-btn" data-pokeos-px-open>🖼️ 精灵图px</button>':'')+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📄 复制新版内容（更新没成功可自行复制）</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -7783,7 +7620,7 @@ if(iho){iho.addEventListener('click',function(e){e.stopPropagation();openInlineH
 var ppo=pageOverlay.querySelector('[data-pokeos-px-open]');
 if(ppo){ppo.addEventListener('click',function(e){e.stopPropagation();openPokeosPx();});}
 pageOverlay.querySelectorAll('input[data-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmSource=r.getAttribute('data-source');try{localStorage.setItem('pk_source',pkmSource);}catch(e){}pokeosPxClearSpriteCache();render();openPage('settings');}});});
-pageOverlay.querySelectorAll('input[data-item-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmItemSource=r.getAttribute('data-item-source');try{localStorage.setItem('pk_item_source',pkmItemSource);}catch(e){}render();openPage('settings');}});});
+
 var fio=pageOverlay.querySelector('[data-fab-img-open]');
 if(fio){fio.addEventListener('click',function(e){e.stopPropagation();openFabImg();});}
 var pku=pageOverlay.querySelector('[data-pk-check-update]');
