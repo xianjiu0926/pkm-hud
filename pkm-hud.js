@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.23';
+var PK_VER='2.10.24';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -5136,24 +5136,6 @@ function regionFromLocation(loc){
 var dexFilter='all';
 var dexRegion='全国';
 var dexRegionCache={};
-function parseRegionalDex(wt){
-  var list=[],seen={};
-  var typeSet={};
-  for(var ti=0;ti<TYPE_LIST.length;ti++){typeSet[TYPE_LIST[ti]]=1;}
-  var re=/\{\{\s*rdex(?:\/[A-Za-z]+)?\s*\|([^{}]+)\}\}/gi,m;
-  while((m=re.exec(wt))!==null){
-    var body=m[1].replace(/\u005B\u005B(?:[^\u005D|]*\|)?([^\u005D]*)\u005D\u005D/g,'$1');
-    var parts=body.split('|'),nums=[],name='';
-    for(var i=0;i<parts.length;i++){
-      var p=t2s(String(parts[i]).trim());
-      if(/^\d+$/.test(p)){nums.push(p);continue;}
-      if(!name&&p&&p.indexOf('形态')!==0&&!typeSet[p]&&!/^[A-Za-z]/.test(p)){name=p;}
-    }
-    var id=nums[0]||'',ndex=nums[nums.length-1]||id;
-    if(id&&name&&!seen[id+'|'+name]){seen[id+'|'+name]=1;list.push({id:id,ndex:ndex,name:name});}
-  }
-  return list;
-}
 var regionalDexCache={};
 function fetchRegionalDex(region,cb){
   if(!REGIONAL_DEX[region]){cb&&cb(null);return;}
