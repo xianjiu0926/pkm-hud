@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.7';
+var PK_VER='2.10.8';
 /*PK_NOTICE_BEGIN
-v2.10.7
-修复：形态宝可梦图片缺失时（如同人Mega、霸主形态等官方无图的形态）自动回退显示基础形态图片，不再显示问号。
+v2.10.8
+技能机/招式记录图标改为按属性显示（图源从 PokéSprite 改到本仓库 item-sprites，补齐18属性图标）。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -2902,6 +2902,7 @@ function psItemUrl(slug,kind){
   else if(cat==='mulch')s=s.replace(/-mulch$/,'');
   else if(cat==='apricorn')s=s.replace(/-apricorn$/,'');
   else if(cat==='berry')s=s.replace(/-berry$/,'');
+  if(cat==='tm'||cat==='tr'||cat==='hm')return PKM_ITEM_SEREBII_BASE+'tm-'+s+'.png';
   if(cat)return PS_MIRRORS[0]+(PS_ITEM_OUTLINE?'items-outline/':'items/')+cat+'/'+s+'.png';
   return PA_MIRRORS[0]+s+'.png';
 }
@@ -4815,7 +4816,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260929c';
+var PKM_DATA_REV='r20260929d';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
