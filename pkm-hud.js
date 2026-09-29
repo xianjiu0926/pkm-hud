@@ -6,7 +6,7 @@ var document=WIN.document;
 var PK_VER='2.10.9';
 /*PK_NOTICE_BEGIN
 v2.10.9
-修复厄诡椪面具形态图错位；宝可梦详情大图改用动图显示（原为静态图）。
+修复厄诡椪面具形态图错位（水井/火灶/础石三个面具的图片内容对不上）。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5490,7 +5490,7 @@ function pickHomeImg(idx,shiny){
   else if(nm.indexOf('觉悟')>=0)suf='-resolute';
   else suf=PKM_REPO_FORM_SUFFIX[fk]||'';
   var slug=en+suf;
-  return pkmRepoUrl('animated','pokeos',slug,shiny);
+  return pkmRepoUrl('static','pokeos',slug,shiny);
 }
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
