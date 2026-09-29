@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.4';
+var PK_VER='2.10.5';
 /*PK_NOTICE_BEGIN
-v2.10.4
-修复：道具/招式/特性等数据缓存（pk_gh_*）永不过期、且「清理缓存」清不掉，导致仓库数据更新后看不到新效果。
-现在加入数据版本号（PKM_DATA_REV），数据更新后会自动重新拉取；并把 pk_gh_* 补进清理缓存名单。
+v2.10.5
+数据：补齐招式效果（moves.json，61%→91%）；道具效果继续完善。
+功能：重要物品不再显示「详细效果」，只显示介绍（避免剧情/任务类文字刷屏）。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4813,7 +4813,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260929';
+var PKM_DATA_REV='r20260929b';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -6030,7 +6030,7 @@ function fetchItem(name,enName,cb){
     var hit=(store&&pkmDbLookup('item',itemKey(name)))||(store&&pkmDbLookup('item',name))||(store&&enName&&pkmDbLookup('item',enName));
     if(hit){
       var text=hit.desc||hit.effect||'';
-      var det=hit.effect||'';
+      var det=(hit.cat==='重要物品')?'':(hit.effect||'');
       var img=(pkmItemSource==='serebii'&&hit.en)?serebiiItemUrl(hit.en):'';
       var d={name:name,text:text,detail:det,img:img};
       itemCache[name]=d;
