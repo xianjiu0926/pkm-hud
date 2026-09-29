@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.10';
+var PK_VER='2.10.11';
 /*PK_NOTICE_BEGIN
-v2.10.10
-图鉴详情精灵图固定使用静图原图：与图鉴列表预览图一致，但显示高清原图（不经过压缩代理），不再显示动图。
+v2.10.11
+图鉴列表缓存已捕捉/已见过的精灵缩略图（加速二次打开）；图鉴详情大图不缓存、每次实时加载。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -178,7 +178,7 @@ function hudFetch(url,opt){
 
 
 var HUD_CACHE_DB='pk_hud_cache_v2',HUD_CACHE_STORE='kv',HUD_CACHE_TTL=90*24*60*60*1000,HUD_CACHE_MAX_ENTRIES=2500,hudCacheDbP=null,hudCacheMem=Object.create(null),hudCacheReady=false,hudCacheLastTouch=Object.create(null);
-function hudIsCacheKey(k){k=String(k||'');return /^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_mv_|pk_pm_|pk_ab_|pk_fid_|pk_item_|pk_itemimg_|pk_ps_|pk_psf_)/.test(k)||['pk_dexlist','pk_itemlist','pk_abilist'].indexOf(k)>=0;}
+function hudIsCacheKey(k){k=String(k||'');return /^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_dexthumb_|pk_mv_|pk_pm_|pk_ab_|pk_fid_|pk_item_|pk_itemimg_|pk_ps_|pk_psf_)/.test(k)||['pk_dexlist','pk_itemlist','pk_abilist'].indexOf(k)>=0;}
 function hudCacheDb(){if(hudCacheDbP)return hudCacheDbP;hudCacheDbP=new Promise(function(res,rej){try{var idb=WIN.indexedDB||window.indexedDB;if(!idb)throw new Error('IndexedDB 不可用');var rq=idb.open(HUD_CACHE_DB,1),done=false,tm=WIN.setTimeout(function(){if(done)return;done=true;hudCacheDbP=null;rej(new Error('HUD cache IndexedDB 打开超时'));},5000);rq.onupgradeneeded=function(){if(!rq.result.objectStoreNames.contains(HUD_CACHE_STORE))rq.result.createObjectStore(HUD_CACHE_STORE,{keyPath:'k'});};rq.onblocked=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudCacheDbP=null;rej(new Error('HUD cache IndexedDB 被阻塞'));};rq.onsuccess=function(){if(done){try{rq.result.close();}catch(e){}return;}done=true;WIN.clearTimeout(tm);var db=rq.result;db.onversionchange=function(){try{db.close();}catch(e){}hudCacheDbP=null;};res(db);};rq.onerror=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudCacheDbP=null;rej(rq.error||new Error('HUD cache IndexedDB 打开失败'));};}catch(e){hudCacheDbP=null;rej(e);}});return hudCacheDbP;}
 function hudCachePut(k,v){var now=Date.now();hudCacheMem[k]=v;hudCacheLastTouch[k]=now;return hudCacheDb().then(function(db){return new Promise(function(res,rej){var tx=db.transaction(HUD_CACHE_STORE,'readwrite');tx.objectStore(HUD_CACHE_STORE).put({k:k,v:v,t:now});var tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}rej(new Error('cache 写入超时'));},5000);tx.oncomplete=function(){WIN.clearTimeout(tm);res(true);};tx.onerror=tx.onabort=function(){WIN.clearTimeout(tm);rej(tx.error||new Error('cache 写入失败'));};});}).catch(function(e){hudDiagError('cache put',e);return false;});}
 function hudCacheTouch(k){var now=Date.now(),last=Number(hudCacheLastTouch[k]||0);if(!Object.prototype.hasOwnProperty.call(hudCacheMem,k)||now-last<6*60*60*1000)return;hudCacheLastTouch[k]=now;hudCachePut(k,hudCacheMem[k]);}
@@ -4963,11 +4963,46 @@ function dexCellImgUrl(ndex){
   return PKM_POKEOS_PROXY+encodeURIComponent(full)+'&w='+PKM_POKEOS_W;
 }
 var dexLazyObs=null;
+var dexThumbCache={},dexThumbFetching={};
+function dexThumbGet(ndex){
+  if(ndex==null)return '';
+  if(dexThumbCache[ndex]!==undefined)return dexThumbCache[ndex];
+  var v=lsGet('pk_dexthumb_'+ndex,'');
+  dexThumbCache[ndex]=v||'';
+  return dexThumbCache[ndex];
+}
+function dexThumbSet(ndex,dataUrl){
+  if(!ndex||!dataUrl)return;
+  dexThumbCache[ndex]=dataUrl;
+  try{lsSet('pk_dexthumb_'+ndex,dataUrl);}catch(e){}
+}
+function dexThumbFetch(ndex,url){
+  if(!ndex||!url)return;
+  if(dexThumbGet(ndex)||dexThumbFetching[ndex])return;
+  dexThumbFetching[ndex]=true;
+  function done(){dexThumbFetching[ndex]=false;}
+  try{
+    hudFetch(url,{timeout:20000})
+      .then(function(r){return r.ok?r.blob():Promise.reject();})
+      .then(function(blob){
+        if(!blob||blob.size>80000){done();return;}
+        var reader=new FileReader();
+        reader.onload=function(){dexThumbSet(ndex,String(reader.result||''));done();};
+        reader.onerror=function(){done();};
+        reader.readAsDataURL(blob);
+      })
+      .catch(function(){done();});
+  }catch(e){done();}
+}
 function dexLoadImg(img){
   var u=img.getAttribute('data-dexsrc');
   if(!u)return;
   img.removeAttribute('data-dexsrc');
+  var cell=img.closest?img.closest('.dex-cell'):null;
+  var ndex=(cell&&!cell.classList.contains('unknown'))?(cell.getAttribute('data-id')||''):'';
   img.onerror=function(){try{this.style.display='none';}catch(e){}};
+  if(ndex){var c=dexThumbGet(ndex);if(c){img.src=c;return;}}
+  if(ndex){img.addEventListener('load',function(){dexThumbFetch(ndex,u);},{once:true});}
   img.src=u;
 }
 function setupDexLazy(){
@@ -6613,8 +6648,8 @@ function pokeosPxStep(d){
   var v=document.getElementById('pokeos-px-val');if(v)v.textContent=PKM_POKEOS_W;
 }
 function pokeosPxClearSpriteCache(){
-  pkmSpriteCache={};pkmIconCache={};
-  try{for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&(k.indexOf('pk_sprite_')===0||k.indexOf('pk_icon_')===0)){localStorage.removeItem(k);}}}catch(e){}
+  pkmSpriteCache={};pkmIconCache={};dexThumbCache={};
+  try{for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&(k.indexOf('pk_sprite_')===0||k.indexOf('pk_icon_')===0||k.indexOf('pk_dexthumb_')===0)){localStorage.removeItem(k);}}}catch(e){}
 }
 function pokeosPxApply(){
   var el=document.getElementById('pokeos-px-num');
@@ -7204,15 +7239,15 @@ function doClear(target){
   try{
     if(target==='seen'){recordOwnedOnly();setDevUnlock(false);var dp=document.querySelector('#dev-panel');if(dp){dp.innerHTML=devPanelHTML();bindDevPanel();}return;}
     if(target==='sprite'){
-      pkmSpriteCache={};pkmIconCache={};pkmSlugCache={};pkmDexCache={};hudCacheDeletePrefixes(['pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_ps_','pk_psf_']);
-      var dels=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(/^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_ps_|pk_psf_)/).test(k))dels.push(k);}dels.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
+      pkmSpriteCache={};pkmIconCache={};pkmSlugCache={};pkmDexCache={};dexThumbCache={};hudCacheDeletePrefixes(['pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_dexthumb_','pk_ps_','pk_psf_']);
+      var dels=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(/^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_dexthumb_|pk_ps_|pk_psf_)/).test(k))dels.push(k);}dels.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
     }
     if(target==='item'){
       itemListCache=null;itemSpriteCache={};itemCache={};hudCacheDeletePrefixes(['pk_item_','pk_itemlist','pk_itemimg_','pk_gh_item']);
       var deli=[];for(var i2=0;i2<localStorage.length;i2++){var k2=localStorage.key(i2);if(k2&&(k2.indexOf('pk_item_')===0||k2==='pk_itemlist'||k2.indexOf('pk_itemimg_')===0||k2.indexOf('pk_gh_item')===0))deli.push(k2);}deli.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
     }
     var map={mv:'pk_mv_',pm:'pk_pm_',ab:'pk_ab_',dex:'pk_dexlist',fid:'pk_fid_'};
-    var pre=target==='all'?['pk_mv_','pk_pm_','pk_ab_','pk_dexlist','pk_fid_','pk_item_','pk_itemlist','pk_itemimg_','pk_gh_','pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_ps_','pk_psf_','pk_abilist','nbtype_']:[map[target]];
+    var pre=target==='all'?['pk_mv_','pk_pm_','pk_ab_','pk_dexlist','pk_fid_','pk_item_','pk_itemlist','pk_itemimg_','pk_gh_','pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_dexthumb_','pk_ps_','pk_psf_','pk_abilist','nbtype_']:[map[target]];
     hudCacheDeletePrefixes(pre.filter(Boolean));
     var del=[];
     for(var i=0;i<localStorage.length;i++){
