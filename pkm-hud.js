@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.5';
+var PK_VER='2.10.6';
 /*PK_NOTICE_BEGIN
-v2.10.5
-数据：补齐招式效果（moves.json，61%→91%）；道具效果继续完善。
-功能：重要物品不再显示「详细效果」，只显示介绍（避免剧情/任务类文字刷屏）。
+v2.10.6
+数据：招式效果补至100%、特性效果补至100%、道具效果补至83%（剩余为技能机/招式记录等无独立效果条目）。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4813,7 +4812,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260929b';
+var PKM_DATA_REV='r20260929c';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
