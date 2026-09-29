@@ -8,7 +8,7 @@ SillyTavern 宝可梦 HUD 脚本（单一文件 `pkm-hud.js`），文字/图片�
 
 ## 联系方式
 
-- 反馈 / 侵权申诉 / 合作：**3525442929@qq.com**
+- 反馈 / 侵权申诉 / 合作：**325780707+xianjiu0926@users.noreply.github.com**（GitHub 隐私转发邮箱）
 - 或直接在本仓库提 [Issue](https://github.com/xianjiu0926/pkm-hud/issues)
 
 ## 免责声明
