@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.6';
+var PK_VER='2.10.7';
 /*PK_NOTICE_BEGIN
-v2.10.6
-数据：招式效果补至100%、特性效果补至100%、道具效果补至83%（剩余为技能机/招式记录等无独立效果条目）。
+v2.10.7
+修复：形态宝可梦图片缺失时（如同人Mega、霸主形态等官方无图的形态）自动回退显示基础形态图片，不再显示问号。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3249,7 +3249,7 @@ function resolvePkmBgRepo(el,slug,shiny,name){
   var sel=(pkmSource==='showdown')?'showdown':'pokeos';
   var other=(sel==='showdown')?'pokeos':'showdown';
   var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
-  var si=0,ci=0,cands=null;
+  var si=0,ci=0,cands=null,useBase=false;
   function apply(url){
     el.style.backgroundImage="url('"+url+"')";
     el.classList.remove('no-img');
@@ -3260,8 +3260,11 @@ function resolvePkmBgRepo(el,slug,shiny,name){
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';}
   function next(){
     if(!cands||ci>=cands.length){ci=0;cands=null;si++;}
-    if(si>=order.length){fail();return;}
-    if(!cands){cands=pkmSrcSlugs(order[si][1],slug,paSuf);}
+    if(si>=order.length){
+      if(paSuf&&!useBase){useBase=true;si=0;ci=0;cands=null;}
+      else{fail();return;}
+    }
+    if(!cands){cands=pkmSrcSlugs(order[si][1],slug,useBase?'':paSuf);}
     var o=order[si];
     var u=pkmRepoUrl(o[0],o[1],cands[ci],shiny);
     ci++;
