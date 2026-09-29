@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.22';
+var PK_VER='2.10.23';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -1718,25 +1718,20 @@ function fetchAbiList(cb){
   var _c=lsGet('pk_abilist',null);if(_c&&_c.length){abiListCache=_c;cb&&cb(_c);return;}
   if(abiListLoading){cb&&abiListCbs.push(cb);return;}
   abiListLoading=true;
-  hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent('特性列表')+'&format=json&prop=links&variant=zh-hans&origin=*')
-    .then(function(r){return r.ok?r.json():Promise.reject();})
-    .then(function(j){
-      var links=(j&&j.parse&&j.parse.links)||[];
-      var list=[],seen={};
-      links.forEach(function(l){
-        var t=String(l&&l['*']||'').trim();
-        if(/（特性）$/.test(t)){
-          var name=t.replace(/（特性）$/,'');
-          if(name&&!seen[name]){seen[name]=1;list.push(name);}
-        }
-      });
-      abiListCache=list;abiListLoading=false;
-      if(list.length){lsSet('pk_abilist',list);}
-      var cbs=abiListCbs;abiListCbs=[];
-      for(var i=0;i<cbs.length;i++){try{cbs[i](list);}catch(e){}}
-      if(cb)cb(list);
-    })
-    .catch(function(){abiListLoading=false;var cbs=abiListCbs;abiListCbs=[];for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}if(cb)cb(null);});
+  pkmDbLoad('abil','abilities.json',['name'],function(store){
+    var data=store&&store.data?store.data:[];
+    var list=[],seen={};
+    for(var i=0;i<data.length;i++){
+      var n=String(data[i]&&data[i].name||'').trim();
+      if(n&&!seen[n]){seen[n]=1;list.push(n);}
+    }
+    list.sort();
+    abiListCache=list;abiListLoading=false;
+    if(list.length){lsSet('pk_abilist',list);}
+    var cbs=abiListCbs;abiListCbs=[];
+    for(var i=0;i<cbs.length;i++){try{cbs[i](list);}catch(e){}}
+    if(cb)cb(list);
+  });
 }
 var diyAbilityCat='';
 function diyAbilityWrapHTML(){
@@ -3081,7 +3076,16 @@ function fetchPkmSlug(name,cb){
       })
       .catch(function(){finish('');});
   }
-  parsePage(t2s(b),searchThen);
+  pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+    var hit=store&&pkmDbLookup('dex',b);
+    if(hit&&hit.en){
+      pkmDexCache[b]=String(hit.no);
+      lsSet('pk_ndex_'+b,String(hit.no));
+      finish(hit.en);
+      return;
+    }
+    parsePage(t2s(b),searchThen);
+  });
 }
 function resolvePkmImgs(scope){
   var els=(scope||document).querySelectorAll('.pk-img[data-pkm],.pk-img[data-icon]');
@@ -5150,14 +5154,15 @@ function parseRegionalDex(wt){
   }
   return list;
 }
+var regionalDexCache={};
 function fetchRegionalDex(region,cb){
-  var page=REGIONAL_DEX[region];
-  if(!page){cb&&cb(null);return;}
-  hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=wikitext&variant=zh-hans&origin=*')
+  if(!REGIONAL_DEX[region]){cb&&cb(null);return;}
+  if(regionalDexCache[region]){cb&&cb(regionalDexCache[region]);return;}
+  hudFetch(PKM_DATA_BASE+'regional-dex.json')
     .then(function(r){return r.ok?r.json():Promise.reject();})
     .then(function(j){
-      var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-      var list=wt?parseRegionalDex(wt):null;
+      for(var k in j){if(j[k]&&j[k].length)regionalDexCache[k]=j[k];}
+      var list=regionalDexCache[region];
       if(list&&list.length)cb&&cb(list);else cb&&cb(null);
     })
     .catch(function(){cb&&cb(null);});
@@ -5290,6 +5295,28 @@ var bs=bms.length?statsOf(bms[0]):{hp:'',atk:'',def:'',spa:'',spd:'',spe:''};
   }
   return d;
 }
+function genFileOf(no){
+  var n=parseInt(no,10);
+  if(n>=1&&n<=151)return 'gen-01.json';
+  if(n>=152&&n<=251)return 'gen-02.json';
+  if(n>=252&&n<=386)return 'gen-03.json';
+  if(n>=387&&n<=493)return 'gen-04.json';
+  if(n>=494&&n<=649)return 'gen-05.json';
+  if(n>=650&&n<=721)return 'gen-06.json';
+  if(n>=722&&n<=809)return 'gen-07.json';
+  if(n>=810&&n<=905)return 'gen-08.json';
+  if(n>=906&&n<=1025)return 'gen-09.json';
+  return 'gen-10.json';
+}
+function genToPkm(g){
+  var ab=g.abilities||[],ty=g.types||[],st=g.stats||{},eg=g.eggGroups||[];
+  return {name:g.name||'',enname:g.en||'',species:g.species||'',ndex:(g.no!=null?String(g.no):''),
+    egg1:eg[0]||'',egg2:eg[1]||'',catchrate:(g.catchRate!=null?String(g.catchRate):''),
+    forms:[{name:g.name||'',label:'普通',region:'',type1:ty[0]||'',type2:ty[1]||'',
+      ability1:ab[0]||'',ability2:ab[1]||'',abilityd:ab[2]||'',
+      height:(g.height!=null?String(g.height):''),weight:(g.weight!=null?String(g.weight):''),
+      stats:{hp:(st.hp!=null?String(st.hp):''),atk:(st.atk!=null?String(st.atk):''),def:(st.def!=null?String(st.def):''),spa:(st.spa!=null?String(st.spa):''),spd:(st.spd!=null?String(st.spd):''),spe:(st.spe!=null?String(st.spe):'')}}]};
+}
 function fetchPokemon(name,cb){
   if(!name){cb&&cb(null);return;}
   var key=name;
@@ -5329,7 +5356,20 @@ function fetchPokemon(name,cb){
       })
       .catch(function(){done(null);});
   }
-  parsePage(t2s(key),searchThen);
+  function localLookup(){
+    var b=pkmFormParse(key).base;
+    if(!b){parsePage(t2s(key),searchThen);return;}
+    pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+      var hit=store&&pkmDbLookup('dex',b);
+      if(!hit||!hit.no){parsePage(t2s(key),searchThen);return;}
+      var gf=genFileOf(hit.no);
+      pkmDbLoad('pkm_'+gf,gf,['en','name'],function(gstore){
+        var ghit=gstore&&(pkmDbLookup('pkm_'+gf,hit.en)||pkmDbLookup('pkm_'+gf,hit.name));
+        if(ghit){done(genToPkm(ghit));}else{parsePage(t2s(key),searchThen);}
+      });
+    });
+  }
+  localLookup();
 }
 var curPkm=null,curPkmForm=0,curPkmForms=[],curPkmShiny=false,curPkmNdex=0;
 function pkmPreviewFallback(el){
