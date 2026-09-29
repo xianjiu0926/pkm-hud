@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.15';
+var PK_VER='2.10.16';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -2618,7 +2618,7 @@ function diyView(type,name){
   if(obj.desc)body+='<div class="row block"><span class="k">外观描述</span><span class="v">'+esc(obj.desc).replace(/\n/g,'<br>')+'</span></div>';
 if(obj.chain&&obj.chain.length>1){body+='<div class="row block"><span class="k">进化链</span><span class="v">'+obj.chain.map(function(st,i){return esc((i+1)+'. '+st.name+'（属性：'+(st.types&&st.types.length?st.types.join('/'):'-')+'，特性：'+(st.ability||'-')+'，种族值：'+diyStatsText(st.stats)+'）'+(st.desc?('　外观描述：'+st.desc):'')+(st.evos&&st.evos.length?('　进化分支：'+st.evos.map(function(e){return (e.cond||'?')+'→'+(e.to||'?');}).join('、')):''));}).join('<br>')+'</span></div>';}
 }else if(type==='ability'){
-  body='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(obj.text||'-').replace(/\n/g,'<br>')+'</span></div>'+(obj.detail?'<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(obj.detail).replace(/\n/g,'<br>')+'</span></div>':'');
+  body='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(obj.text||'-').replace(/\n/g,'<br>')+'</span></div>'+((obj.detail&&obj.detail!==obj.text)?'<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(obj.detail).replace(/\n/g,'<br>')+'</span></div>':'');
 }else{
   if(obj.img){
     body='<div style="text-align:center;margin-bottom:8px"><img '+hudDiyImgAttrs(obj.img)+' style="max-width:96px;max-height:96px;object-fit:contain;image-rendering:pixelated" onerror="this.remove()"></div>';
@@ -4806,7 +4806,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260930';
+var PKM_DATA_REV='r20260930a';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -5667,7 +5667,7 @@ function showAbilityInfo(name){
     var b=document.getElementById('abi-body');
     if(!b)return;
     if(!d||!d.text){b.innerHTML='<div class="empty">特性数据获取失败</div>';return;}
-b.innerHTML='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text)+'</span></div>'+(d.detail?'<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>':'');
+b.innerHTML='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text)+'</span></div>'+((d.detail&&d.detail!==d.text)?'<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>':'');
   });
 }
 var itemCache={},itemLoading={},itemSpriteCache={};
@@ -6082,7 +6082,7 @@ function showItemInfo(name,back,enName){
     if(!b)return;
     if(!d||!d.text){b.innerHTML='<div class="empty">道具数据获取失败</div>';return;}
     var _body='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text||'').replace(/\n/g,'<br>')+'</span></div>';
-    if(d.detail)_body+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>';
+    if(d.detail&&d.detail!==d.text)_body+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>';
     b.innerHTML=_body;
   });
 }
