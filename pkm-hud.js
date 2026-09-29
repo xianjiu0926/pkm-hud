@@ -3,12 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.3';
+var PK_VER='2.10.4';
 /*PK_NOTICE_BEGIN
-v2.10.3
-修复：道具携带到宝可梦后图标丢失、变成问号的问题（卸下、丢弃后同样会丢失）。
-原因是携带/卸下时英文 slug 没有被保留，重新生成背包条目时图标字段被清空。
-现在携带、卸下、丢弃回滚都会保留道具英文 slug，图标不再丢失。
+v2.10.4
+修复：道具/招式/特性等数据缓存（pk_gh_*）永不过期、且「清理缓存」清不掉，导致仓库数据更新后看不到新效果。
+现在加入数据版本号（PKM_DATA_REV），数据更新后会自动重新拉取；并把 pk_gh_* 补进清理缓存名单。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4814,6 +4813,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
+var PKM_DATA_REV='r20260929';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -4831,7 +4831,7 @@ function pkmDbLoad(kind,file,fields,cb){
   var store=PKM_DB[kind];
   if(store){cb&&cb(store);return;}
   var _c=lsGet('pk_gh_'+kind,null);
-  if(_c&&_c.data&&_c.data.length){store={data:_c.data,idx:pkmDbBuildIndex(_c.data,fields)};PKM_DB[kind]=store;cb&&cb(store);return;}
+  if(_c&&_c.rev===PKM_DATA_REV&&_c.data&&_c.data.length){store={data:_c.data,idx:pkmDbBuildIndex(_c.data,fields)};PKM_DB[kind]=store;cb&&cb(store);return;}
   if(PKM_DB_LOADING[kind]){cb&&(PKM_DB_CBS[kind]=PKM_DB_CBS[kind]||[]).push(cb);return;}
   PKM_DB_LOADING[kind]=true;
   hudFetch(PKM_DATA_BASE+file)
@@ -4840,7 +4840,7 @@ function pkmDbLoad(kind,file,fields,cb){
       var data=(j&&j.data)||[];
       var st={data:data,idx:pkmDbBuildIndex(data,fields)};
       PKM_DB[kind]=st;PKM_DB_LOADING[kind]=false;
-      if(data.length){try{lsSet('pk_gh_'+kind,{data:data});}catch(e){}}
+      if(data.length){try{lsSet('pk_gh_'+kind,{rev:PKM_DATA_REV,data:data});}catch(e){}}
       var cbs=PKM_DB_CBS[kind]||[];PKM_DB_CBS[kind]=[];
       for(var i=0;i<cbs.length;i++){try{cbs[i](st);}catch(e){}}
       if(cb)cb(st);
@@ -7205,11 +7205,11 @@ function doClear(target){
       var dels=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(/^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_ps_|pk_psf_)/).test(k))dels.push(k);}dels.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
     }
     if(target==='item'){
-      itemListCache=null;itemSpriteCache={};itemCache={};hudCacheDeletePrefixes(['pk_item_','pk_itemlist','pk_itemimg_']);
-      var deli=[];for(var i2=0;i2<localStorage.length;i2++){var k2=localStorage.key(i2);if(k2&&(k2.indexOf('pk_item_')===0||k2==='pk_itemlist'||k2.indexOf('pk_itemimg_')===0))deli.push(k2);}deli.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
+      itemListCache=null;itemSpriteCache={};itemCache={};hudCacheDeletePrefixes(['pk_item_','pk_itemlist','pk_itemimg_','pk_gh_item']);
+      var deli=[];for(var i2=0;i2<localStorage.length;i2++){var k2=localStorage.key(i2);if(k2&&(k2.indexOf('pk_item_')===0||k2==='pk_itemlist'||k2.indexOf('pk_itemimg_')===0||k2.indexOf('pk_gh_item')===0))deli.push(k2);}deli.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
     }
     var map={mv:'pk_mv_',pm:'pk_pm_',ab:'pk_ab_',dex:'pk_dexlist',fid:'pk_fid_'};
-    var pre=target==='all'?['pk_mv_','pk_pm_','pk_ab_','pk_dexlist','pk_fid_','pk_item_','pk_itemlist','pk_itemimg_','pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_ps_','pk_psf_','pk_abilist','nbtype_']:[map[target]];
+    var pre=target==='all'?['pk_mv_','pk_pm_','pk_ab_','pk_dexlist','pk_fid_','pk_item_','pk_itemlist','pk_itemimg_','pk_gh_','pk_sprite_','pk_icon_','pk_slug_','pk_ndex_','pk_ps_','pk_psf_','pk_abilist','nbtype_']:[map[target]];
     hudCacheDeletePrefixes(pre.filter(Boolean));
     var del=[];
     for(var i=0;i<localStorage.length;i++){
