@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.9';
+var PK_VER='2.10.10';
 /*PK_NOTICE_BEGIN
-v2.10.9
-修复厄诡椪面具形态图错位（水井/火灶/础石三个面具的图片内容对不上）。
+v2.10.10
+图鉴详情精灵图固定使用静图原图：与图鉴列表预览图一致，但显示高清原图（不经过压缩代理），不再显示动图。
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
