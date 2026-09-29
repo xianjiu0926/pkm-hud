@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.0';
+var PK_VER='2.10.1';
 /*PK_NOTICE_BEGIN
+v2.10.1
+修复：图源切换后精灵图缓存不区分图源导致显示旧图；附近属性仓库查询 dex 键缺失报错
 v2.10.0
 精灵图源切换为 GitHub 数据仓库（xianjiu0926/Pokemon），本地四级兜底
 · 设置「精灵图源」仍可切 pokeos / showdown
@@ -2967,7 +2969,7 @@ function pkmEnName(n){if(!n)return '';var b=baseName(String(n).trim());return NA
 var pkmSlugCache={};
 var pkmDexCache={};
 var pkmSpriteCache={};
-function spriteCacheKey(name,shiny){var p=pkmFormParse(name),b=(p&&p.base)||'';if(!b)return '';return (shiny?'s2:':'n2:')+(p.form?p.form+'|':'')+b;}
+function spriteCacheKey(name,shiny){var p=pkmFormParse(name),b=(p&&p.base)||'';if(!b)return '';return (pkmSource||'pk')+':'+(shiny?'s2:':'n2:')+(p.form?p.form+'|':'')+b;}
 function cachedSpriteCss(name,shiny){
   var k=spriteCacheKey(name,shiny);
   if(!k)return '';
@@ -2988,14 +2990,14 @@ function setCachedSprite(name,shiny,url){
 
 var pkmIconCache={};
 function cachedIconCss(icon,shiny){
-  var k=(shiny?'is:':'in:')+String(icon||'').trim().toLowerCase();
+  var k=(pkmSource||'pk')+':'+(shiny?'is:':'in:')+String(icon||'').trim().toLowerCase();
   if(!k)return '';
   if(pkmIconCache[k]!==undefined)return pkmIconCache[k];
   try{var v=lsGet('pk_icon_'+k,'');if(v){pkmIconCache[k]=v;return v;}}catch(e){}
   return '';
 }
 function setCachedIcon(icon,shiny,url){
-  var k=(shiny?'is:':'in:')+String(icon||'').trim().toLowerCase();
+  var k=(pkmSource||'pk')+':'+(shiny?'is:':'in:')+String(icon||'').trim().toLowerCase();
   if(!k||!url)return;
   var css="url('"+url+"')";
   pkmIconCache[k]=css;
@@ -4829,7 +4831,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DB={abil:null,move:null,item:null},PKM_DB_LOADING={abil:false,move:false,item:false},PKM_DB_CBS={abil:[],move:[],item:[]};
+var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
   for(var i=0;i<data.length;i++){
@@ -4847,7 +4849,7 @@ function pkmDbLoad(kind,file,fields,cb){
   if(store){cb&&cb(store);return;}
   var _c=lsGet('pk_gh_'+kind,null);
   if(_c&&_c.data&&_c.data.length){store={data:_c.data,idx:pkmDbBuildIndex(_c.data,fields)};PKM_DB[kind]=store;cb&&cb(store);return;}
-  if(PKM_DB_LOADING[kind]){cb&&PKM_DB_CBS[kind].push(cb);return;}
+  if(PKM_DB_LOADING[kind]){cb&&(PKM_DB_CBS[kind]=PKM_DB_CBS[kind]||[]).push(cb);return;}
   PKM_DB_LOADING[kind]=true;
   hudFetch(PKM_DATA_BASE+file)
     .then(function(r){return r.ok?r.json():Promise.reject(new Error('HTTP '+r.status));})
@@ -4856,13 +4858,13 @@ function pkmDbLoad(kind,file,fields,cb){
       var st={data:data,idx:pkmDbBuildIndex(data,fields)};
       PKM_DB[kind]=st;PKM_DB_LOADING[kind]=false;
       if(data.length){try{lsSet('pk_gh_'+kind,{data:data});}catch(e){}}
-      var cbs=PKM_DB_CBS[kind];PKM_DB_CBS[kind]=[];
+      var cbs=PKM_DB_CBS[kind]||[];PKM_DB_CBS[kind]=[];
       for(var i=0;i<cbs.length;i++){try{cbs[i](st);}catch(e){}}
       if(cb)cb(st);
     })
     .catch(function(){
       PKM_DB_LOADING[kind]=false;
-      var cbs=PKM_DB_CBS[kind];PKM_DB_CBS[kind]=[];
+      var cbs=PKM_DB_CBS[kind]||[];PKM_DB_CBS[kind]=[];
       for(var i=0;i<cbs.length;i++){try{cbs[i](null);}catch(e){}}
       if(cb)cb(null);
     });
