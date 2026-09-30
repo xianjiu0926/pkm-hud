@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.31';
+var PK_VER='2.10.32';
 /*PK_NOTICE_BEGIN
 v2.10.14
 图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
@@ -197,6 +197,7 @@ function hudCacheInit(){
     var legacy=[];
     for(var i=0;i<localStorage.length;i++){
       var k=localStorage.key(i);if(!hudIsCacheKey(k))continue;
+      if(k.indexOf('pk_dexthumb_')===0){try{localStorage.removeItem(k);}catch(e){}continue;}
       var raw=localStorage.getItem(k),v=raw;try{v=JSON.parse(raw);}catch(e){}
       hudCacheMem[k]=v;legacy.push([k,v]);
     }
@@ -208,7 +209,7 @@ function hudCacheInit(){
     try{
       tx=db.transaction(HUD_CACHE_STORE,'readonly');var rq=tx.objectStore(HUD_CACHE_STORE).getAll();
       tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}fin(false,new Error('HUD cache 预加载超时'));},5000);
-      rq.onsuccess=function(){var rows=(rq.result||[]),now=Date.now(),remove=[];rows.sort(function(a,b){return Number(b&&b.t||0)-Number(a&&a.t||0);});var kept=0;rows.forEach(function(r){if(!r||r.k==null)return;var t=Number(r.t||now),expired=(now-t)>HUD_CACHE_TTL;if(expired||kept>=HUD_CACHE_MAX_ENTRIES){remove.push(String(r.k));return;}kept++;hudCacheLastTouch[r.k]=t;if(hudCacheMem[r.k]===undefined)hudCacheMem[r.k]=r.v;});hudCacheReady=true;hudDiagInc('cachePruned',remove.length);fin(true,true);if(remove.length)hudScope.setTimeout(function(){hudCacheDeleteKeys(remove);},0);};
+      rq.onsuccess=function(){var rows=(rq.result||[]),now=Date.now(),remove=[];rows.sort(function(a,b){return Number(b&&b.t||0)-Number(a&&a.t||0);});var kept=0;rows.forEach(function(r){if(!r||r.k==null)return;var t=Number(r.t||now),expired=(now-t)>HUD_CACHE_TTL;if(String(r.k).indexOf('pk_dexthumb_')===0||expired||kept>=HUD_CACHE_MAX_ENTRIES){remove.push(String(r.k));return;}kept++;hudCacheLastTouch[r.k]=t;if(hudCacheMem[r.k]===undefined)hudCacheMem[r.k]=r.v;});hudCacheReady=true;hudDiagInc('cachePruned',remove.length);fin(true,true);if(remove.length)hudScope.setTimeout(function(){hudCacheDeleteKeys(remove);},0);};
       rq.onerror=function(){fin(false,rq.error||new Error('HUD cache 预加载失败'));};
       tx.onabort=function(){if(!done)fin(false,tx.error||new Error('HUD cache 预加载中止'));};
     }catch(e){fin(false,e);}
@@ -4957,46 +4958,20 @@ function dexCellImgUrl(ndex){
 var dexLazyObs=null;
 var dexThumbCache={},dexThumbFetching={};
 function dexThumbGet(ndex){
-  if(ndex==null)return '';
-  if(dexThumbCache[ndex]!==undefined)return dexThumbCache[ndex];
-  var v=lsGet('pk_dexthumb_'+ndex,'');
-  dexThumbCache[ndex]=v||'';
-  return dexThumbCache[ndex];
+  // 缩略图不再转 base64 存缓存（曾导致 IndexedDB 膨胀、重启爆内存），统一走图片 URL + 浏览器 HTTP 缓存
+  return '';
 }
 function dexThumbSet(ndex,dataUrl){
-  if(!ndex||!dataUrl)return;
-  dexThumbCache[ndex]=dataUrl;
-  try{lsSet('pk_dexthumb_'+ndex,dataUrl);}catch(e){}
+  // 不再写缩略图缓存
 }
 function dexThumbFetch(ndex,url){
-  if(!ndex||!url)return;
-  if(dexThumbGet(ndex)||dexThumbFetching[ndex])return;
-  dexThumbFetching[ndex]=true;
-  function done(){dexThumbFetching[ndex]=false;}
-  try{
-    hudFetch(url,{timeout:20000})
-      .then(function(r){return r.ok?r.blob():Promise.reject();})
-      .then(function(blob){
-        if(!blob||blob.size>80000){done();return;}
-        var reader=new FileReader();
-        reader.onload=function(){dexThumbSet(ndex,String(reader.result||''));done();};
-        reader.onerror=function(){done();};
-        reader.readAsDataURL(blob);
-      })
-      .catch(function(){done();});
-  }catch(e){done();}
+  // 不再拉取缩略图转 base64
 }
 function dexLoadImg(img){
   var u=img.getAttribute('data-dexsrc');
   if(!u)return;
   img.removeAttribute('data-dexsrc');
-  var cell=img.closest?img.closest('.dex-cell'):null;
-  var ndexRaw=(cell&&!cell.classList.contains('unknown'))?(cell.getAttribute('data-id')||''):'';
-  var ndexN=parseInt(ndexRaw,10);
-  var ndex=(ndexN&&ndexN>0)?String(ndexN):'';
   img.onerror=function(){try{this.style.display='none';}catch(e){}};
-  if(ndex){var c=dexThumbGet(ndex);if(c){img.src=c;return;}}
-  if(ndex){img.addEventListener('load',function(){dexThumbFetch(ndex,u);},{once:true});}
   img.src=u;
 }
 function setupDexLazy(){
