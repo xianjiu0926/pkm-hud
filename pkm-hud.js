@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.0.3';
+var PK_VER='3.0.4';
 /*PK_NOTICE_BEGIN
+v3.0.4
+【修复】精灵图源兜底顺序：选 Showdown 时缺 Showdown 动图会兜底到 Showdown 静态图（不再跳到 PokeOS 图），选 PokeOS 同理
 v3.0.3
 【修复】精灵读图兜底：Showdown / PokeOS 图源统一改走仓库四级兜底，不再直连 Showdown 源站（修复悖谬宝可梦等带连字符英文名的图变问号、无兜底）
 v3.0.2
@@ -3182,7 +3184,7 @@ var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleo
   });
   var sel=(pkmSource==='showdown')?'showdown':'pokeos';
   var other=(sel==='showdown')?'pokeos':'showdown';
-  var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
+  var order=[['animated',sel],['static',sel],['animated',other],['static',other]];
   function candsFor(src){
     if(src==='pokeos'){return [fn];}
     return slugCandidates(fn);
@@ -3264,7 +3266,7 @@ function resolvePkmBgRepo(el,slug,shiny,name){
   var paSuf=pkmRepoFormSuf(p.form);
   var sel=(pkmSource==='showdown')?'showdown':'pokeos';
   var other=(sel==='showdown')?'pokeos':'showdown';
-  var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
+  var order=[['animated',sel],['static',sel],['animated',other],['static',other]];
   var si=0,ci=0,cands=null,useBase=false;
   function apply(url){
     el.style.backgroundImage="url('"+url+"')";
