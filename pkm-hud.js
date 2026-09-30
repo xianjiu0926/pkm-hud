@@ -3,10 +3,15 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='2.10.32';
+var PK_VER='3.0.0';
 /*PK_NOTICE_BEGIN
-v2.10.14
-图鉴缩略图恢复 128px 显示；动图（仓库内已是 128px）直接读取、不压缩。
+v3.0.0 · 大版本更新
+【修复】酒馆重启爆内存：图鉴缩略图不再转 base64 存缓存，改走图片 URL + 浏览器缓存（更新后首次重启会自动清理旧缓存）
+【修复】精灵图源命名统一：PokeOS / Showdown 文件名统一为 dex en，解决「仓库有图但匹配不上、走兜底」的问题
+【优化】批量重压 2463 张 PokeOS 动图，去除半透明硬切毛边（白边/黑边）
+【修复】图鉴缩略图匹配（编号→英文名对齐带连字符）
+【补图】超级玛机雅娜(500年前)、超级米立龙(下垂/平挺)
+【修复】大师球介绍
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
