@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.0.0';
+var PK_VER='3.0.1';
 /*PK_NOTICE_BEGIN
+v3.0.1
+【修复】招式/道具/特性等数据缓存写 localStorage 超配额报错（pk_gh_* 改走 IndexedDB 缓存）
 v3.0.0 · 大版本更新
 【修复】酒馆重启爆内存：图鉴缩略图不再转 base64 存缓存，改走图片 URL + 浏览器缓存（更新后首次重启会自动清理旧缓存）
 【修复】精灵图源命名统一：PokeOS / Showdown 文件名统一为 dex en，解决「仓库有图但匹配不上、走兜底」的问题
@@ -183,7 +185,7 @@ function hudFetch(url,opt){
 
 
 var HUD_CACHE_DB='pk_hud_cache_v2',HUD_CACHE_STORE='kv',HUD_CACHE_TTL=90*24*60*60*1000,HUD_CACHE_MAX_ENTRIES=2500,hudCacheDbP=null,hudCacheMem=Object.create(null),hudCacheReady=false,hudCacheLastTouch=Object.create(null);
-function hudIsCacheKey(k){k=String(k||'');return /^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_dexthumb_|pk_mv_|pk_pm_|pk_ab_|pk_fid_|pk_item_|pk_itemimg_|pk_ps_|pk_psf_)/.test(k)||['pk_dexlist','pk_itemlist','pk_abilist'].indexOf(k)>=0;}
+function hudIsCacheKey(k){k=String(k||'');return /^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_dexthumb_|pk_mv_|pk_pm_|pk_ab_|pk_fid_|pk_item_|pk_itemimg_|pk_ps_|pk_psf_|pk_gh_)/.test(k)||['pk_dexlist','pk_itemlist','pk_abilist'].indexOf(k)>=0;}
 function hudCacheDb(){if(hudCacheDbP)return hudCacheDbP;hudCacheDbP=new Promise(function(res,rej){try{var idb=WIN.indexedDB||window.indexedDB;if(!idb)throw new Error('IndexedDB 不可用');var rq=idb.open(HUD_CACHE_DB,1),done=false,tm=WIN.setTimeout(function(){if(done)return;done=true;hudCacheDbP=null;rej(new Error('HUD cache IndexedDB 打开超时'));},5000);rq.onupgradeneeded=function(){if(!rq.result.objectStoreNames.contains(HUD_CACHE_STORE))rq.result.createObjectStore(HUD_CACHE_STORE,{keyPath:'k'});};rq.onblocked=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudCacheDbP=null;rej(new Error('HUD cache IndexedDB 被阻塞'));};rq.onsuccess=function(){if(done){try{rq.result.close();}catch(e){}return;}done=true;WIN.clearTimeout(tm);var db=rq.result;db.onversionchange=function(){try{db.close();}catch(e){}hudCacheDbP=null;};res(db);};rq.onerror=function(){if(done)return;done=true;WIN.clearTimeout(tm);hudCacheDbP=null;rej(rq.error||new Error('HUD cache IndexedDB 打开失败'));};}catch(e){hudCacheDbP=null;rej(e);}});return hudCacheDbP;}
 function hudCachePut(k,v){var now=Date.now();hudCacheMem[k]=v;hudCacheLastTouch[k]=now;return hudCacheDb().then(function(db){return new Promise(function(res,rej){var tx=db.transaction(HUD_CACHE_STORE,'readwrite');tx.objectStore(HUD_CACHE_STORE).put({k:k,v:v,t:now});var tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}rej(new Error('cache 写入超时'));},5000);tx.oncomplete=function(){WIN.clearTimeout(tm);res(true);};tx.onerror=tx.onabort=function(){WIN.clearTimeout(tm);rej(tx.error||new Error('cache 写入失败'));};});}).catch(function(e){hudDiagError('cache put',e);return false;});}
 function hudCacheTouch(k){var now=Date.now(),last=Number(hudCacheLastTouch[k]||0);if(!Object.prototype.hasOwnProperty.call(hudCacheMem,k)||now-last<6*60*60*1000)return;hudCacheLastTouch[k]=now;hudCachePut(k,hudCacheMem[k]);}
