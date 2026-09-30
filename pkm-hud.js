@@ -6,24 +6,7 @@ var document=WIN.document;
 var PK_VER='3.0.8';
 /*PK_NOTICE_BEGIN
 v3.0.8
-【优化】地图图片不再写入 IndexedDB（旧版地图缓存约 30MB），改走图片 URL + 浏览器 HTTP 缓存；更新后首次加载自动清理旧地图缓存库
-v3.0.7
-【调整】图源名称对调（恢复之前习惯的显示顺序）
-v3.0.6
-【修复】设置里图源名称对齐：选 PokeOS 出 PokeOS 图、选 Showdown 出 Showdown 图（兜底规则保持原样）
-v3.0.5
-【调整】恢复图源兜底顺序；设置里图源名称对调
-v3.0.4
-【修复】精灵图源兜底顺序：选 Showdown 时缺 Showdown 动图会兜底到 Showdown 静态图（不再跳到 PokeOS 图），选 PokeOS 同理
-v3.0.3
-【修复】精灵读图兜底：Showdown / PokeOS 图源统一改走仓库四级兜底，不再直连 Showdown 源站
-v3.0.2
-【修复】精灵图源切换标签修正：选 Showdown 就加载 Showdown、选 PokeOS 就加载 PokeOS
-v3.0.1
-【修复】招式/道具/特性等数据缓存写 localStorage 超配额报错（pk_gh_* 改走 IndexedDB 缓存）
-v3.0.0 · 大版本更新
-【修复】酒馆重启爆内存：图鉴缩略图不再转 base64 存缓存，改走图片 URL + 浏览器缓存
-【优化】批量重压 PokeOS 动图去毛边；精灵图源命名统一为 dex en
+【优化】地图图片不再写 IndexedDB，改走图片 URL + 浏览器缓存，首次加载自动清理旧地图缓存
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
