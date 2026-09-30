@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.0.7';
+var PK_VER='3.0.8';
 /*PK_NOTICE_BEGIN
+v3.0.8
+【优化】地图图片不再写入 IndexedDB（旧版地图缓存约 30MB），改走图片 URL + 浏览器 HTTP 缓存；更新后首次加载自动清理旧地图缓存库
 v3.0.7
 【调整】图源名称对调（恢复之前习惯的显示顺序）
 v3.0.6
@@ -14,18 +16,14 @@ v3.0.5
 v3.0.4
 【修复】精灵图源兜底顺序：选 Showdown 时缺 Showdown 动图会兜底到 Showdown 静态图（不再跳到 PokeOS 图），选 PokeOS 同理
 v3.0.3
-【修复】精灵读图兜底：Showdown / PokeOS 图源统一改走仓库四级兜底，不再直连 Showdown 源站（修复悖谬宝可梦等带连字符英文名的图变问号、无兜底）
+【修复】精灵读图兜底：Showdown / PokeOS 图源统一改走仓库四级兜底，不再直连 Showdown 源站
 v3.0.2
-【修复】精灵图源切换标签修正：选 Showdown 就加载 Showdown、选 PokeOS 就加载 PokeOS（之前标签写反了，选一个会走另一个）
+【修复】精灵图源切换标签修正：选 Showdown 就加载 Showdown、选 PokeOS 就加载 PokeOS
 v3.0.1
 【修复】招式/道具/特性等数据缓存写 localStorage 超配额报错（pk_gh_* 改走 IndexedDB 缓存）
 v3.0.0 · 大版本更新
-【修复】酒馆重启爆内存：图鉴缩略图不再转 base64 存缓存，改走图片 URL + 浏览器缓存（更新后首次重启会自动清理旧缓存）
-【修复】精灵图源命名统一：PokeOS / Showdown 文件名统一为 dex en，解决「仓库有图但匹配不上、走兜底」的问题
-【优化】批量重压 2463 张 PokeOS 动图，去除半透明硬切毛边（白边/黑边）
-【修复】图鉴缩略图匹配（编号→英文名对齐带连字符）
-【补图】超级玛机雅娜(500年前)、超级米立龙(下垂/平挺)
-【修复】大师球介绍
+【修复】酒馆重启爆内存：图鉴缩略图不再转 base64 存缓存，改走图片 URL + 浏览器缓存
+【优化】批量重压 PokeOS 动图去毛边；精灵图源命名统一为 dex en
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4190,77 +4188,18 @@ var MAPS_DATA=[
 ];
 var MAPS=pkmHudClone(MAPS_DATA);
 
-var _mapImgBlobUrl={};
-var _MAP_IMG_TTL=30*24*60*60*1000;
-var _MAP_IMG_MAX_BYTES=30*1024*1024;
-var _mapImgDbP=null;
-function _mapImgDb(){
-  if(_mapImgDbP)return _mapImgDbP;
-  _mapImgDbP=new Promise(function(res,rej){
-    var done=false,tm=0;
-    function fin(ok,v){if(done)return;done=true;if(tm)WIN.clearTimeout(tm);if(!ok)_mapImgDbP=null;ok?res(v):rej(v);}
-    try{
-      var idb=WIN.indexedDB||window.indexedDB;if(!idb){fin(false,new Error('no-idb'));return;}
-      var rq=idb.open('pkm_hud_mapcache',1);
-      tm=WIN.setTimeout(function(){fin(false,new Error('地图缓存 IndexedDB 打开超时'));},6000);
-      rq.onupgradeneeded=function(){var db=rq.result;if(!db.objectStoreNames.contains('img'))db.createObjectStore('img');};
-      rq.onblocked=function(){fin(false,new Error('地图缓存 IndexedDB 被阻塞'));};
-      rq.onsuccess=function(){if(done){try{rq.result.close();}catch(e){}return;}var db=rq.result;db.onversionchange=function(){try{db.close();}catch(e){}_mapImgDbP=null;};fin(true,db);};
-      rq.onerror=function(){fin(false,rq.error||new Error('idb-open'));};
-    }catch(e){fin(false,e);}
-  });
-  return _mapImgDbP;
-}
-function _mapImgGet(url){
-  return _mapImgDb().then(function(db){return new Promise(function(res,rej){var tx=null,done=false,tm=0;function fin(ok,v){if(done)return;done=true;if(tm)WIN.clearTimeout(tm);ok?res(v):rej(v);}try{tx=db.transaction('img','readonly');var rq=tx.objectStore('img').get(url);tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}fin(false,new Error('地图缓存读取超时'));},6000);rq.onsuccess=function(){fin(true,rq.result||null);};rq.onerror=function(){fin(false,rq.error||new Error('地图缓存读取失败'));};tx.onabort=function(){if(!done)fin(false,tx.error||new Error('地图缓存读取中止'));};}catch(e){fin(false,e);}});});
-}
-function _mapImgPut(url,blob){
-  return _mapImgDb().then(function(db){return new Promise(function(res,rej){var tx=null,done=false,tm=0;function fin(ok,v){if(done)return;done=true;if(tm)WIN.clearTimeout(tm);ok?res(v):rej(v);}try{tx=db.transaction('img','readwrite');tx.objectStore('img').put({b:blob,t:Date.now()},url);tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}fin(false,new Error('地图缓存写入超时'));},6000);tx.oncomplete=function(){hudScope.setTimeout(_mapImgPrune,30);fin(true,true);};tx.onerror=function(){fin(false,tx.error||new Error('地图缓存写入失败'));};tx.onabort=function(){if(!done)fin(false,tx.error||new Error('地图缓存写入中止'));};}catch(e){fin(false,e);}});});
-}
-function _mapImgPrune(){
-  return _mapImgDb().then(function(db){return new Promise(function(res){var rows=[],tx=null,done=false,tm=0;function fin(){if(done)return;done=true;if(tm)WIN.clearTimeout(tm);res();}try{tx=db.transaction('img','readonly');var rq=tx.objectStore('img').openCursor();tm=WIN.setTimeout(function(){try{tx.abort();}catch(e){}fin();},7000);rq.onsuccess=function(){var c=rq.result;if(!c){var total=rows.reduce(function(a,r){return a+r.size;},0);if(total<=_MAP_IMG_MAX_BYTES){fin();return;}rows.sort(function(a,b){return a.t-b.t;});var del=[];for(var i=0;i<rows.length&&total>_MAP_IMG_MAX_BYTES;i++){del.push(rows[i].key);total-=rows[i].size;}if(!del.length){fin();return;}var tx2=db.transaction('img','readwrite'),st=tx2.objectStore('img');del.forEach(function(k){st.delete(k);var u=_mapImgBlobUrl[k];if(u){try{URL.revokeObjectURL(u);}catch(e){}delete _mapImgBlobUrl[k];}});tx2.oncomplete=function(){hudDiagInc('mapCachePruned',del.length);fin();};tx2.onerror=tx2.onabort=fin;return;}var v=c.value||{};rows.push({key:c.key,size:Number(v.b&&v.b.size||0),t:Number(v.t||0)});c.continue();};rq.onerror=fin;tx.onabort=fin;}catch(e){fin();}});}).catch(function(e){hudDiagError('map cache prune',e);});
-}
-hudScope.cleanup(function(){Object.keys(_mapImgBlobUrl||{}).forEach(function(k){try{URL.revokeObjectURL(_mapImgBlobUrl[k]);}catch(e){}});_mapImgBlobUrl={};try{if(_mapImgDbP)_mapImgDbP.then(function(db){try{db.close();}catch(e){}});}catch(e){}_mapImgDbP=null;});
-function mapImgSrc(url){
-  if(!url)return '';
-  return _mapImgBlobUrl[url]||url;
-}
-function _mapImgApply(url,blob){
-  if(!url||!blob||typeof blob.size!=='number'||blob.size<1)return;
-  var old=_mapImgBlobUrl[url];
-  var u;
-  try{u=URL.createObjectURL(blob);}catch(e){return;}
-  _mapImgBlobUrl[url]=u;
-  if(old){try{URL.revokeObjectURL(old);}catch(e){}}
+/* 地图图片直接走 URL + 浏览器 HTTP 缓存（图床返回 Cache-Control max-age=28 天），不再写入 IndexedDB，省约 30MB 空间与内存。 */
+function mapImgSrc(url){return url||'';}
+/* 升级清理：删除旧版地图 IndexedDB 缓存库，释放其占用空间。 */
+(function(){
   try{
-    var els=document.querySelectorAll('.map-img[data-src]');
-    for(var i=0;i<els.length;i++){
-      var el=els[i];
-      if(el.getAttribute('data-src')===url)el.src=u;
-    }
+    var idb=WIN.indexedDB||window.indexedDB;
+    if(!idb||!idb.deleteDatabase)return;
+    var rq=idb.deleteDatabase('pkm_hud_mapcache');
+    rq.onblocked=rq.onerror=function(){};
+    rq.onsuccess=function(){hudDiagInc('mapCacheLegacyCleared',1);};
   }catch(e){}
-}
-function _mapImgFetch(url){
-  try{
-    hudFetch(url,{mode:'cors'}).then(function(resp){
-      if(!resp.ok)throw new Error('http '+resp.status);
-      var ct=(resp.headers.get('content-type')||'').toLowerCase();
-      if(ct.indexOf('image/')!==0)throw new Error('not-image');
-      return resp.blob();
-    }).then(function(blob){
-      _mapImgPut(url,blob).catch(function(){});
-      _mapImgApply(url,blob);
-    }).catch(function(){});
-  }catch(e){}
-}
-function _mapImgPreload(url){
-  if(!url||_mapImgBlobUrl[url])return;
-  _mapImgGet(url).then(function(rec){
-    if(rec&&rec.b&&typeof rec.b.size==='number'&&rec.b.size>0&&(Date.now()-rec.t<_MAP_IMG_TTL)){_mapImgApply(url,rec.b);_mapImgPut(url,rec.b).catch(function(){});}
-    else{_mapImgFetch(url);}
-  }).catch(function(){_mapImgFetch(url);});
-}
-MAPS.forEach(function(m){if(m.img)_mapImgPreload(m.img);if(m.islands){m.islands.forEach(function(is){if(is.img)_mapImgPreload(is.img);});}});
+})();
 var activeMap='';
 var alolaIsland=-1;
 var mapSpotOn=false;
@@ -6734,8 +6673,8 @@ function hudCacheValBytes(v){
   else{try{s=JSON.stringify(v);}catch(e){s=String(v);}}
   return hudUtf8Bytes(s);
 }
-var HUD_CACHE_USAGE_ORDER=['sprite','item','mv','pm','ab','dex','fid','nearby','other','map','diy','seen','legacy','settings'];
-var HUD_CACHE_USAGE_LABELS={sprite:'精灵图缓存',item:'道具缓存（含道具图）',mv:'招式缓存',pm:'宝可梦预览缓存',ab:'特性缓存',dex:'图鉴列表',fid:'形态ID',nearby:'附近属性缓存',other:'其它数据缓存',map:'地图图片缓存',diy:'DIY 图片库',seen:'图鉴收集进度',legacy:'本地残留缓存',settings:'设置与其它数据'};
+var HUD_CACHE_USAGE_ORDER=['sprite','item','mv','pm','ab','dex','fid','nearby','other','diy','seen','legacy','settings'];
+var HUD_CACHE_USAGE_LABELS={sprite:'精灵图缓存',item:'道具缓存（含道具图）',mv:'招式缓存',pm:'宝可梦预览缓存',ab:'特性缓存',dex:'图鉴列表',fid:'形态ID',nearby:'附近属性缓存',other:'其它数据缓存',diy:'DIY 图片库',seen:'图鉴收集进度',legacy:'本地残留缓存',settings:'设置与其它数据'};
 function hudCacheUsageItems(){
   var buckets={};HUD_CACHE_USAGE_ORDER.forEach(function(k){buckets[k]={name:HUD_CACHE_USAGE_LABELS[k],count:0,bytes:0};});
   var memKeys=Object.keys(hudCacheMem||{});
@@ -6783,11 +6722,9 @@ function hudCacheUsageSnapshot(){
       });
     }).catch(function(){return [];});
   }
-  return Promise.all([scanStore(_mapImgDb,'img'),scanStore(hudDiyAssetDb,'assets')]).then(function(r){
-    var mapRows=r[0]||[],diyRows=r[1]||[],mapBytes=0,diyBytes=0,i;
-    for(i=0;i<mapRows.length;i++)mapBytes+=mapRows[i].size||0;
+  return scanStore(hudDiyAssetDb,'assets').then(function(diyRows){
+    var i,diyBytes=0;
     for(i=0;i<diyRows.length;i++)diyBytes+=diyRows[i].size||0;
-    buckets.map.count=mapRows.length;buckets.map.bytes=mapBytes;
     buckets.diy.count=diyRows.length;buckets.diy.bytes=diyBytes;
     return buckets;
   });
@@ -6818,7 +6755,7 @@ function renderCacheUsage(buckets){
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">📊 缓存占用明细</div><button class="close" data-close>✕</button></div><div class="modal-body">'+
     '<div class="cu-total"><span>总计</span><span>'+hudFmtBytes(total)+'</span></div>'+bar+
     list+
-    '<div class="dim" style="font-size:.72rem;margin-top:10px;line-height:1.6">文字类缓存按文本字节数估算，地图/DIY 图片为实际文件大小；可在「设置 → 清理缓存」按类别清理。</div>'+
+    '<div class="dim" style="font-size:.72rem;margin-top:10px;line-height:1.6">文字类缓存按文本字节数估算，DIY 图片为实际文件大小；可在「设置 → 清理缓存」按类别清理。</div>'+
     '<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-cache-usage-refresh>🔄 重新扫描</button></div>'+
     '</div></div>';
 }
