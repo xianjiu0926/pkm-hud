@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.1';
+var PK_VER='3.2.2';
 /*PK_NOTICE_BEGIN
-v3.2.1
-恢复旧版网格底纹（粗线+细线）；卡片半透明透出网格
+v3.2.2
+空位格子也改为半透明，透出网格
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -877,7 +877,7 @@ css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.info-row{color:#c9d5e5}'+
 '.menu-label{color:#c9d5e5}'+
 '.card-bg-svg polygon{stroke-width:2.5!important;fill:var(--pk-surface)!important}'+
-'.empty-frame .card-bg-svg polygon{fill:var(--pk-bg)!important}'+
+'.empty-frame .card-bg-svg polygon{fill:color-mix(in srgb, var(--pk-bg) 40%, transparent)!important}'+
 '.hud{background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%)}'+
 '.page,.modal{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
 '.trainer-frame,.battle-frame,.plain-frame,.nearby-frame{background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%);border:1px solid var(--pk-line);border-radius:10px}'+
