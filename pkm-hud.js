@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.0.10';
+var PK_VER='3.0.11';
 /*PK_NOTICE_BEGIN
-v3.0.10
-【新增】招式分类图标：物理（橙）/ 特殊（蓝）/ 变化（灰），替换原来灰色文字
+v3.0.11
+【优化】更新/修复脚本前自动清理缓存（保留 DIY 内容与图鉴收集进度）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7053,6 +7053,8 @@ function pkDoUpdate(){
   if(!pkLatestContent){ pkSetUpdateMsg('请先检查更新'); return; }
   if(!pkLatestVer){ pkSetUpdateMsg('❌ 新版版本号缺失，无法安装'); return; }
   if(pkVerCompare(pkLatestVer,PK_VER)<=0){ pkSetUpdateMsg('✅ 已是 v'+PK_VER+' 或更高版本'); return; }
+  pkSetUpdateMsg('正在清理缓存（保留 DIY 与图鉴进度）...');
+  doClear('all');
   pkSetUpdateMsg('正在更新...');
   pkInstallRecord(pkLatestVer,pkLatestContent).then(function(){
     pkClearHasUpdate();
@@ -7097,6 +7099,8 @@ function pkRepair(){
         pkLatestVer=ver;
         var nm=txt.match(/\*PK_NOTICE_BEGIN([\s\S]*?)PK_NOTICE_END\*/);
         pkLatestNotice=nm?nm[1].replace(/^\s+|\s+$/g,''):'';
+        pkSetUpdateMsg('正在清理缓存（保留 DIY 与图鉴进度）...');
+        doClear('all');
         pkSetUpdateMsg('正在安装 v'+ver+' ...');
         pkInstallRecord(ver,txt).then(function(){
           pkClearHasUpdate();
