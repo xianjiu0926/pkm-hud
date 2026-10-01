@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.12';
+var PK_VER='3.2.13';
 /*PK_NOTICE_BEGIN
-v3.2.12
-修复默认形态别名图标（如 aegislash-shield）无法出图的问题
+v3.2.13
+修复取出到队伍后盒子页面不刷新的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7840,6 +7840,7 @@ function withdrawPkm(c,teamSlot){
 }, '把'+boxDisp(boxName)+'里的'+p.名字+'取出到队伍第'+teamSlot+'位。');
   hudRecordAssetMutation(p,{action:'move',method:'HUD 盒子→队伍',fromLocation:boxDisp(boxName)+' 第'+boxSlot+'格',toLocation:'队伍第'+teamSlot+'位',location:'队伍第'+teamSlot+'位'});
   render(); resizeFrame();
+  if(currentPageKey==='box'){openPage('box');}
   hudMsg('已把《'+p.名字+'》取出到队伍第 '+teamSlot+' 位');
 }
 function equipPkm(c,itemName){
