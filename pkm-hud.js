@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.1.6';
+var PK_VER='3.1.7';
 /*PK_NOTICE_BEGIN
-v3.1.6
-主题色补齐：弹窗头部/地图头部/按钮也跟随主题变色
+v3.1.7
+小按键改回浅色，保持可区分
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -891,7 +891,7 @@ css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.map-manual-controls{background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%)}'+
 '.act-btn{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%);border-color:var(--pk-line-strong)}'+
 '.act-btn:hover{background:linear-gradient(180deg,var(--pk-surface-3) 0%,var(--pk-surface-2) 100%);border-color:var(--pk-blue)}'+
-'.btn-small,.cmd-btn,.cmd-tip,.bag-tab,.badge-tab,.map-tab,.dex-filter-btn,.dex-thumb-btn,.map-size-btn,.map-eye,.map-back-btn,.map-pad-toggle,.map-manual-btn{background:color-mix(in srgb,var(--pk-surface-2) 72%,transparent)}';
+'.btn-small,.cmd-btn,.cmd-tip,.bag-tab,.badge-tab,.map-tab,.dex-filter-btn,.dex-thumb-btn,.map-size-btn,.map-eye,.map-back-btn,.map-pad-toggle,.map-manual-btn{background:rgba(255,255,255,.05)}';
 
 try{
   var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
