@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.4';
+var PK_VER='3.2.5';
 /*PK_NOTICE_BEGIN
-v3.2.4
-首页折叠横条高度对齐（背包/人际关系）
+v3.2.5
+首页折叠横条改为固定高度（不随图标变化）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -899,7 +899,7 @@ css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.nb-cell,.nearby-grid .nearby-cell{background:linear-gradient(180deg, color-mix(in srgb, var(--pk-surface-2) 60%, transparent) 0%, color-mix(in srgb, var(--pk-surface) 60%, transparent) 100%)}'+
 '.bt-card{background:linear-gradient(160deg, color-mix(in srgb, var(--pk-surface-2) 60%, transparent) 0%, color-mix(in srgb, var(--pk-surface) 60%, transparent) 100%)}'+
 '.nearby-action-head{background:linear-gradient(180deg, color-mix(in srgb, var(--pk-surface-2) 60%, transparent) 0%, color-mix(in srgb, var(--pk-surface) 60%, transparent) 100%)}'+
-'.fold-head{min-height:20px;padding:5px 12px;line-height:1}';
+'.fold-head{height:30px;padding:5px 12px;line-height:1}';
 
 try{
   var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
