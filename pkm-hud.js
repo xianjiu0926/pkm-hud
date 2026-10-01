@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.9';
+var PK_VER='3.2.10';
 /*PK_NOTICE_BEGIN
-v3.2.9
-修正设置里精灵图源名称：Showdown 对应 Showdown 像素图、PokeOS 对应 PokeOS 高清动图
+v3.2.10
+更新/修复完成后提示已清理缓存
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7187,21 +7187,21 @@ function pkDoUpdate(){
     try{
       pkUpdateScript(pkLatestContent).then(function(res){
         if(res&&res.ok){
-          pkSetUpdateMsg('✅ 已更新到 v'+pkLatestVer+'，角色卡脚本内容也已更新，刷新页面生效。');
+          pkSetUpdateMsg('✅ 已更新到 v'+pkLatestVer+'，缓存已清理，角色卡脚本内容也已更新，刷新页面生效。');
           var sc=document.querySelector('[data-pk-show-content]');
           if(sc)sc.style.display='block';
         }else{
-          pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
+          pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），缓存已清理；但角色卡脚本内容更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
           var sc=document.querySelector('[data-pk-show-content]');
           if(sc)sc.style.display='block';
         }
       }).catch(function(err){
-        pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败：'+(err&&err.message?err.message:err)+'。可点「复制新版内容」手动粘贴。');
+        pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），缓存已清理；但角色卡脚本内容更新失败：'+(err&&err.message?err.message:err)+'。可点「复制新版内容」手动粘贴。');
         var sc=document.querySelector('[data-pk-show-content]');
         if(sc)sc.style.display='block';
       });
     }catch(e){
-      pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），但角色卡脚本内容更新失败。可点「复制新版内容」手动粘贴。');
+      pkSetUpdateMsg('✅ 新版已保存到本地（下次刷新自动切换），缓存已清理；但角色卡脚本内容更新失败。可点「复制新版内容」手动粘贴。');
       var sc=document.querySelector('[data-pk-show-content]');
       if(sc)sc.style.display='block';
     }
@@ -7235,21 +7235,21 @@ function pkRepair(){
           try{
             pkUpdateScript(txt).then(function(res){
               if(res&&res.ok){
-                pkSetUpdateMsg('✅ 已重新安装 v'+ver+'，角色卡脚本内容也已更新，刷新页面生效。');
+                pkSetUpdateMsg('✅ 已重新安装 v'+ver+'，缓存已清理，角色卡脚本内容也已更新，刷新页面生效。');
                 var sc=document.querySelector('[data-pk-show-content]');
                 if(sc)sc.style.display='block';
               }else{
-                pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
+                pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），缓存已清理；但角色卡脚本更新失败：'+(res&&res.msg?res.msg:'未知')+'。可点「复制新版内容」手动粘贴。');
                 var sc=document.querySelector('[data-pk-show-content]');
                 if(sc)sc.style.display='block';
               }
             }).catch(function(err){
-              pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败：'+(err&&err.message?err.message:err)+'。可点「复制新版内容」手动粘贴。');
+              pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），缓存已清理；但角色卡脚本更新失败：'+(err&&err.message?err.message:err)+'。可点「复制新版内容」手动粘贴。');
               var sc=document.querySelector('[data-pk-show-content]');
               if(sc)sc.style.display='block';
             });
           }catch(e){
-            pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），但角色卡脚本更新失败。可点「复制新版内容」手动粘贴。');
+            pkSetUpdateMsg('✅ 已重新安装 v'+ver+' 到本地（下次刷新生效），缓存已清理；但角色卡脚本更新失败。可点「复制新版内容」手动粘贴。');
             var sc=document.querySelector('[data-pk-show-content]');
             if(sc)sc.style.display='block';
           }
