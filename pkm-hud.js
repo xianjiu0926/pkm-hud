@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.1.5';
+var PK_VER='3.1.6';
 /*PK_NOTICE_BEGIN
-v3.1.5
-修复：主题色真正覆盖整个 HUD 背景；切换栏改为轻轻抬起效果
+v3.1.6
+主题色补齐：弹窗头部/地图头部/按钮也跟随主题变色
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -870,7 +870,7 @@ css+='#pkm-hud-win,#pkm-hud-inline{--frame:rgba(255,255,255,.12);--text:#f4f7fb;
 css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.item-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.info-title{box-shadow:none;color:#c9d5e5}'+
-'.page-head,.modal-head{box-shadow:none}'+
+'.page-head,.modal-head{box-shadow:none;background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%)}'+
 '.pk-name,.nearby-card-name,.dt-name,.bt-pk{color:#c9d5e5}'+
 '.nb-name{color:#c9d5e5}'+
 '.modal-name{color:#c9d5e5}'+
@@ -886,7 +886,12 @@ css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.nb-cell,.nearby-grid .nearby-cell{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
 '.bt-card{background:linear-gradient(160deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
 '.nearby-action-head{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
-'.tab-btn.active{background:rgba(255,255,255,.08);border-color:var(--pk-line-strong);color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.28);transform:translateY(-2px)}';
+'.tab-btn.active{background:rgba(255,255,255,.08);border-color:var(--pk-line-strong);color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.28);transform:translateY(-2px)}'+
+'.map-viewer-frame,.map-wrap{background:var(--pk-bg)}'+
+'.map-manual-controls{background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%)}'+
+'.act-btn{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%);border-color:var(--pk-line-strong)}'+
+'.act-btn:hover{background:linear-gradient(180deg,var(--pk-surface-3) 0%,var(--pk-surface-2) 100%);border-color:var(--pk-blue)}'+
+'.btn-small,.cmd-btn,.cmd-tip,.bag-tab,.badge-tab,.map-tab,.dex-filter-btn,.dex-thumb-btn,.map-size-btn,.map-eye,.map-back-btn,.map-pad-toggle,.map-manual-btn{background:color-mix(in srgb,var(--pk-surface-2) 72%,transparent)}';
 
 try{
   var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
