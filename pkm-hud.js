@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.0.14';
+var PK_VER='3.0.15';
 /*PK_NOTICE_BEGIN
-v3.0.14
-【修复】道具图支持别名中文名；中文名查不到时回退图标字段
+v3.0.15
+【优化】道具别名表迁移到数据仓库 item-alias.json（HUD 内置表兜底）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5609,7 +5609,7 @@ b.innerHTML='<div class="row block"><span class="k">介绍</span><span class="v"
 }
 var itemCache={},itemLoading={},itemSpriteCache={};
 var ITEM_ALIAS={'厚底鞋':'厚底靴','洛托姆手机':'手机洛托姆','奇异糖果':'神奇糖果','稀有糖果':'神奇糖果','药水':'伤药','回复药':'伤药','治疗药水':'伤药','超级药水':'超级伤药','高级药水':'好伤药','完全药水':'全满药','完全回复药':'全复药','解毒剂':'解毒药','烧伤药':'灼伤药','冰冻药':'解冻药','苏醒药':'清醒药','麻痹治愈':'麻痹药','万能药':'万灵药','复活碎片':'活力碎片','复活块':'活力块','复活药':'活力碎片','命玉':'生命宝珠','生命珠':'生命宝珠','剩菜':'剩饭','气腰':'气势披带','气势腰带':'气势披带','攻击背心':'突击背心','辉石':'进化奇石','进化辉石':'进化奇石','弱点对策':'弱点保险','专家腰带':'达人带','黑泥':'黑色污泥','岩石头盔':'凸凸头盔','尖锐头盔':'凸凸头盔','红色卡片':'红牌','逃脱按钮':'逃生按钮','快速爪子':'先制之爪','幸运金币':'护符金币','护身金币':'护符金币','速度围巾':'讲究围巾','特攻眼镜':'讲究眼镜','固执头带':'讲究头带'};
-function itemKey(name){var n=String(name||'').trim();return ITEM_ALIAS[n]||n;}
+var itemAliasPromise=null;function ensureItemAlias(){if(itemAliasPromise)return itemAliasPromise;itemAliasPromise=hudFetch(PKM_DATA_BASE+'item-alias.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var m=(j&&j.data&&typeof j.data==='object'&&!Array.isArray(j.data))?j.data:((j&&typeof j==='object'&&!Array.isArray(j))?j:{});for(var k in m){if(m[k])ITEM_ALIAS[k]=String(m[k]);}return ITEM_ALIAS;}).catch(function(){return ITEM_ALIAS;});return itemAliasPromise;}function itemKey(name){ensureItemAlias();var n=String(name||'').trim();return ITEM_ALIAS[n]||n;}
 function tmMoveName(name){
   var n=String(name||'').trim();
   var m=n.match(/^(?:技能机|招式学习器|TM)\s*[·:：]?\s*(.+)$/i);
@@ -8029,6 +8029,7 @@ function render(){
   '</div>'+
   '<div class="tab-bar"><button class="tab-btn active" data-tab="1">主页</button><button class="tab-btn" data-tab="2">世界</button><button class="tab-btn" data-tab="3">战场</button><button class="tab-btn" data-tab="4">菜单</button></div></div>';
 hudBindRefreshProgrammaticGuard(app);
+ensureItemAlias();
 pkImgFix(app);
 resolvePkmImgs(app);
 resolveItemImgs(app);
