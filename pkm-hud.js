@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.1.7';
+var PK_VER='3.2.0';
 /*PK_NOTICE_BEGIN
-v3.1.7
-小按键改回浅色，保持可区分
+v3.2.0
+整体 HUD 升级为宝可梦黑白2风格；队伍精灵详情采用黑白2界面
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -891,7 +891,30 @@ css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.map-manual-controls{background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%)}'+
 '.act-btn{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%);border-color:var(--pk-line-strong)}'+
 '.act-btn:hover{background:linear-gradient(180deg,var(--pk-surface-3) 0%,var(--pk-surface-2) 100%);border-color:var(--pk-blue)}'+
-'.btn-small,.cmd-btn,.cmd-tip,.bag-tab,.badge-tab,.map-tab,.dex-filter-btn,.dex-thumb-btn,.map-size-btn,.map-eye,.map-back-btn,.map-pad-toggle,.map-manual-btn{background:rgba(255,255,255,.05)}';
+'.btn-small,.cmd-btn,.cmd-tip,.bag-tab,.badge-tab,.map-tab,.dex-filter-btn,.dex-thumb-btn,.map-size-btn,.map-eye,.map-back-btn,.map-pad-toggle,.map-manual-btn{background:rgba(255,255,255,.05)}'+
+'/* ===== 宝可梦黑白2 整体主题 ===== */'+
+'.hud{background:#0c1118!important;border-color:rgba(201,230,251,.55)!important}'+
+'.hud::before{background-image:radial-gradient(circle at 88% 4%,rgba(144,136,241,.10),transparent 28%)!important}'+
+'.page,.modal{background:#121625!important;border-color:rgba(201,230,251,.55)!important;border-radius:3px!important}'+
+'.page-head,.modal-head{background:linear-gradient(180deg,#b03028,#7a1a15)!important;border-bottom-color:rgba(201,230,251,.4)!important}'+
+'.info-frame,.trainer-frame,.battle-frame,.plain-frame,.nearby-frame{background:#121625!important;border-color:rgba(201,230,251,.55)!important;border-radius:3px!important}'+
+'.card-bg-svg polygon{fill:#9088f1!important;fill-opacity:.25!important;stroke:#c9e6fb!important;stroke-opacity:.55!important;stroke-width:2!important}'+
+'.empty-frame .card-bg-svg polygon{fill:#121625!important;fill-opacity:.5!important}'+
+'.info-title{background:linear-gradient(180deg,#b03028,#7a1a15)!important;color:#fff!important;padding:5px 10px;border-radius:2px;font-weight:700;letter-spacing:1px;margin-bottom:8px}'+
+'.tab-btn{border-radius:0!important;clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 100%,0 100%);border-color:rgba(201,230,251,.35)!important;background:rgba(201,230,251,.06)!important}'+
+'.tab-btn.active{background:rgba(201,230,251,.15)!important;border-color:rgba(201,230,251,.7)!important;transform:none!important;box-shadow:none!important}'+
+'.menu-item{background:#121625!important;border-color:rgba(201,230,251,.4)!important;border-radius:0!important;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}'+
+'.nb-cell,.nearby-grid .nearby-cell{background:#121625!important;border-color:rgba(201,230,251,.5)!important;border-radius:0!important;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}'+
+'.nb-cell::before,.nearby-grid .nearby-cell::before{display:none!important}'+
+'.bt-card{background:#121625!important;border-color:rgba(201,230,251,.5)!important;border-radius:0!important}'+
+'.nearby-action-head{background:#121625!important;border-color:rgba(201,230,251,.5)!important;border-radius:0!important}'+
+'.type-chip,.nb-type-chip{border-radius:0!important;box-shadow:none!important}'+
+'.act-btn{border-radius:0!important;background:#2d4157!important;border-color:#7b92a6!important;color:#e0edf4!important}'+
+'.btn-small,.cmd-btn,.cmd-tip,.bag-tab,.badge-tab,.map-tab,.dex-filter-btn,.dex-thumb-btn,.map-size-btn,.map-eye,.map-back-btn,.map-pad-toggle,.map-manual-btn{border-radius:0!important;border-color:rgba(201,230,251,.4)!important}'+
+'.fold-head{background:rgba(201,230,251,.08)!important;color:#c9e6fb!important}'+
+'.hp-bar,.exp-bar{background:rgba(0,0,0,.5)!important}'+
+'.map-viewer-frame,.map-wrap{background:#0c1118!important;border-color:rgba(201,230,251,.5)!important}'+
+'.map-manual-controls{background:#121625!important;border-top-color:rgba(201,230,251,.4)!important}';
 
 try{
   var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
@@ -6380,7 +6403,10 @@ function showNatureInfo(name){
   subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body"><div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div></div></div>';
   subOverlay.classList.add('open');
 }
-function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-item-en="'+esc(c.ballEn||'')+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
+function detailHTML(c){
+  if(!detailHTML._bw2Renderer){
+    detailHTML._bw2Renderer=(function(){
+function bw2LegacyDetailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-item-en="'+esc(c.ballEn||'')+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
 var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
 if(c.where==='team') hudActions+='<button class="act-btn" data-pkm-store>存入盒子</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-withdraw>取出到队伍</button>';
@@ -6389,6 +6415,200 @@ if(c.item && c.item!=='无') hudActions+='<button class="act-btn" data-pkm-unequ
 hudActions+='<button class="act-btn" data-pkm-equip>携带道具</button>';
 if(hudActions) hudActions='<div class="action-btns" style="margin-top:10px">'+hudActions+'</div>';
 return '<div class="modal detail-modal one"><div class="modal-head"><div class="modal-name">宝可梦详情</div><button class="close" data-close>✕</button></div><div class="modal-body">'+p1+'<div class="dt-sep"></div>'+p2+hudActions+'</div></div>';}
+/* Shared detail identity view. Reuse core classifications and item assets;
+   presentation formatting does not alter stored names, forms or inventories. */
+function bw2DetailIdentity(c,p){
+  p=p||{};var raw=Object.assign({},p,{名字:c.species||p.名字||c.name,昵称:c.name,是否闪光:p.是否闪光!=null?p.是否闪光:c.shiny});
+  var meta=nearbyCategoryMeta(raw),text=nearbyAllText(raw)+' '+String(c.name||'');
+  function flag(keys){return keys.some(function(key){return nearbyTruthy(p[key]);});}
+  var kinds=[];
+  function add(kind,label,art,img){kinds.push({kind:kind,label:label,art:art,img:img||''});}
+  if(meta.shiny||flag(['是否闪光','闪光','shiny']))add('shiny','闪光','<path d="M6 1 7.4 4.6 11 6 7.4 7.4 6 11 4.6 7.4 1 6 4.6 4.6Z"/>','https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png');
+  if(meta.legendary||flag(['是否神兽','神兽','是否传说','legendary']))add('legendary','神兽','<path d="M1 3 4 6 6 1 8 6 11 3 10 10H2Z"/>');
+  if(meta.mythical||flag(['是否幻兽','幻兽','mythical']))add('mythical','幻兽','<path d="m6 1 5 5-5 5-5-5Z"/><circle cx="6" cy="6" r="1.5"/>');
+  if(meta.ultra||flag(['是否究极异兽','究极异兽','是否异兽','ultraBeast']))add('ultra','究极异兽','<path d="m3 1 3 3 3-3 2 5-2 5-3-3-3 3-2-5Z"/>');
+  if(meta.mega||/超级|超級/i.test(String(c.species||''))||flag(['是否Mega','是否mega','Mega','mega','是否超级进化']))add('mega','Mega 进化','<path d="M2 1C10 1 2 11 10 11M10 1C2 1 10 11 2 11M3 3h6M3 9h6"/>','https://img.baibai.cv/f/YNBKTy/1788349081288.png');
+  var gmax=/超极巨|超極巨|gigantamax|gmax|g-max/i.test(text)||flag(['是否超极巨化','超极巨化','gigantamax']);
+  if(gmax||meta.dynamax||flag(['是否极巨化','极巨化','dynamax']))add('dynamax',gmax?'超极巨化':'极巨化','<path d="m1 9 3-3 2 2 2-5 3 2M3 2h2M7 1h2M2 11h8"/>','https://img.baibai.cv/f/GKpwto/1788410257587.png');
+  if(meta.boss||flag(['是否霸主','是否头目','霸主','头目','boss','alpha']))add('boss',/头目|頭目|首领|首領|alpha/i.test(text)?'头目／霸主':'霸主','<path d="M1 4 4 5 6 1 8 5 11 4 9 10H3Z"/>','https://img.baibai.cv/f/yeRrTj/1788410175968.png');
+  if(/原始回归|原始回歸|primal/i.test(text)||flag(['是否原始回归','原始回归','primal']))add('primal','原始回归','<path d="M2 9V3L6 1l4 2v6l-4 2Z M4 9V4h3l1 2-1 1H4"/>');
+  if(/太晶化|太晶|terastal/i.test(text)||flag(['是否太晶化','太晶化','terastal']))add('tera','太晶化','<path d="M3 1h6l2 4-5 6-5-6ZM1 5h10M3 1l3 10L9 1"/>');
+  var display=String(c.name||c.species||'—').trim(),prefix=/^(?:究极异兽|究極異獸|超级进化|超級進化|超进化|超進化|超极巨化|超極巨化|超极巨|超極巨|极巨化|極巨化|极巨|極巨|原始回归|原始回歸|太晶化|太晶|头目|頭目|霸主|首领|首領|闪光|閃光|神兽|神獸|幻兽|幻獸|Mega|MAGE|超级|超級)[\s·:_-]*/i;
+  // "超级" describes the actual Mega form, so retain it in the display name.
+  if(!p.昵称){var superPrefix='';while(prefix.test(display)){var match=display.match(prefix),next=display.replace(prefix,'').trim();if(!next)break;if(/^(?:超级|超級)/.test(match[0]))superPrefix+=match[0].trim();display=next;}display=superPrefix+display;}
+  var units=Array.from(display).reduce(function(sum,char){return sum+(/[\u2e80-\uffff]/.test(char)?1:/\s/.test(char)?.3:.6);},0);
+  return {name:display,nameFont:Math.min(4.1,25/Math.max(1,units)).toFixed(3)+'cqw',badges:kinds};
+}
+function bw2DetailBadgesHTML(identity){
+  return identity.badges.slice(0,5).map(function(badge){return '<span class="bw2-state-badge '+badge.kind+'" data-bw2-badge="'+badge.kind+'" role="img" title="'+esc(badge.label)+'" aria-label="'+esc(badge.label)+'"><svg viewBox="0 0 12 12" aria-hidden="true">'+badge.art+'</svg>'+(badge.img?'<img src="'+esc(badge.img)+'" alt="" onerror="this.remove()">':'')+'</span>';}).join('');
+}
+function bw2HeldIconHTML(c){
+  var name=c.item;if(!name||name==='无')return '';
+  var diy=diyGet('item',name),ref=diy&&diy.img?String(diy.img).trim():'',cls='item-icon bw2-held-icon';
+  if(ref&&(ref.indexOf(HUD_DIY_SCHEME)===0||/^(?:https?:\/\/|data:image\/|blob:)/i.test(ref)))return hudDiyImgTag(ref,'class="'+cls+'" alt="'+esc(name)+'" onerror="itemImgErr(this)"');
+  var url=itemImgOf(name)||(itemCache[name]&&itemCache[name].img);
+  if(url)return '<img class="'+cls+'" src="'+esc(url)+'" alt="'+esc(name)+'" onerror="itemImgErr(this)">';
+  // Unknown Chinese names need the core's cached item lookup for their image.
+  // Delay until the returned detail markup is mounted; never fetch per frame.
+  if(!c.itemEn&&!itemIconName(name))hudScope.setTimeout(function(){bw2ResolveHeldIcon(name);},0);
+  return '<span class="'+cls+' placeholder item-wiki" data-item="'+esc(name)+'" data-item-en="'+esc(c.itemEn||'')+'" data-cls="'+cls+'" aria-label="'+esc(name)+'图标">?</span>';
+}
+function bw2ResolveHeldIcon(name){
+  var row=document.querySelector('.bw2-detail .bw2-held-item');
+  if(!row||row._bw2IconLoading||row.querySelector('.bw2-held-name').textContent!==name||row.querySelector('img'))return;
+  row._bw2IconLoading=true;
+  fetchItem(name,'',function(data){
+    if(!row.isConnected)return;
+    var url=data&&data.img;
+    if(!url&&typeof itemListCache!=='undefined'&&itemListCache){var maps=itemListMaps(itemListCache),en=maps.cn2en&&maps.cn2en[name];if(en&&pkmItemSource==='serebii')url=serebiiItemUrl(en);}
+    var target=row.querySelector('.item-icon');if(!url||!target||row.querySelector('img'))return;
+    var img=document.createElement('img');img.className='item-icon bw2-held-icon';img.alt=name;img.referrerPolicy='origin';img.src=url;img.onerror=function(){itemImgErr(this);};target.replaceWith(img);
+  });
+}
+
+/* Detail-only snapshot of BW2 UI v0.1.26. Original domain APIs stay in the core. */
+var BW2_SCREEN_POINTS=[[2,1],[316,1],[326,11],[326,27],[385,86],[385,247],[41,247],[19,225],[19,206],[2,189]];
+var BW2_LOWER_SCREEN_POINTS=[[2,1],[191,1],[232,42],[232,56],[385,209],[385,266],[41,266],[19,244],[19,225],[2,208]];
+var bw2DetailSeq=0,bw2HeldContext=null;
+function bw2ScreenPath(){return BW2_SCREEN_POINTS.map(function(p,i){return(i?'L':'M')+p[0]+' '+p[1];}).join('')+'Z';}
+
+function bw2LowerScreenPath(){return BW2_LOWER_SCREEN_POINTS.map(function(p,i){return(i?'L':'M')+p[0]+' '+p[1];}).join('')+'Z';}
+
+function bw2DetailHTML(c){
+  var holder=document.createElement('div');holder.innerHTML=bw2LegacyDetailHTML(c);
+  function html(sel){var el=holder.querySelector(sel);return el?el.outerHTML:'';}
+  var moves='',p=getCardPkm(c)||{},xp=parseHP(c.exp),remaining=xp.max>0?Math.max(0,xp.max-xp.cur):null;
+  var ivValues={},ivAliases={hp:'HP',攻击:'攻击',atk:'攻击',attack:'攻击',防御:'防御',def:'防御',defense:'防御',特攻:'特攻',spa:'特攻',spatk:'特攻',特防:'特防',spd:'特防',spdef:'特防',速度:'速度',spe:'速度',speed:'速度'};
+  String(c.iv||'').split(/[,，;；\n]/).forEach(function(part){
+    var match=part.trim().match(/^([^:：]+)[:：]\s*(.+)$/);if(!match)return;
+    var key=ivAliases[match[1].trim().toLowerCase()];if(key)ivValues[key]=match[2].trim();
+  });
+  var statRows=['HP','攻击','防御','特攻','特防','速度'].map(function(key){
+    return '<div class="bw2-stat-row" data-bw2-iv="'+key+'"><span class="bw2-stat-label">• '+key+'</span><span class="bw2-stat-value">'+esc(ivValues[key]||'—')+'</span></div>';
+  }).join('');
+  var trait=holder.querySelector('.row [data-ability]'),traitName=trait?trait.outerHTML:esc(c.ability||'—');
+  var nature=holder.querySelector('.row [data-nature]'),natureName=nature?nature.outerHTML:esc(c.nature||'—');
+  var intimacyRaw=c.intimacy;if((intimacyRaw==null||intimacyRaw==='')&&p.亲密度===0)intimacyRaw=0;
+  var intimacy=intimacyRaw==null||intimacyRaw===''?'—':String(intimacyRaw)+'/255';
+  // Intimacy is the seventh row of the same grid, sharing the IV alignment.
+  var dataTop='<div class="bw2-stats-table" aria-label="个体值与亲密度">'+statRows+'<div class="bw2-stat-row bw2-detail-intimacy"><span class="bw2-stat-label">• 亲密度</span><span class="bw2-field-value">'+esc(intimacy)+'</span></div></div>';
+  var experience='<div class="bw2-detail-experience"><svg class="bw2-exp-frame" viewBox="47 0 267 26" preserveAspectRatio="none" aria-hidden="true">'+infoStrip(0,26,'bw2-experience-strip',xp.max>0?Math.max(0,Math.min(1,xp.cur/xp.max)):0,'bw2-exp-'+(++bw2DetailSeq))+'</svg><span class="bw2-exp-label">经验</span><span class="bw2-exp-progress bw2-field-value" role="progressbar" aria-label="经验"'+(xp.max>0?' aria-valuemin="0" aria-valuemax="'+xp.max+'" aria-valuenow="'+Math.max(0,Math.min(xp.cur,xp.max))+'"':'')+'><span class="bw2-exp-numbers" aria-label="经验 / 还需经验"><b class="bw2-exp-current">'+(xp.max>0?esc(xp.cur):esc(c.exp||'—'))+'</b><span class="bw2-exp-slash"> / </span><b class="bw2-exp-remaining">'+(remaining===null?'—':esc(remaining))+'</b></span></span></div>';
+  var battleTop=dataTop+experience+'<section class="bw2-trait-card"><button type="button" class="bw2-trait-heading"'+(c.ability?' data-ability="'+esc(c.ability)+'"':' disabled')+'><span class="bw2-trait-label">特性</span><span class="bw2-trait-name">'+traitName+'</span></button><button type="button" class="bw2-trait-heading"'+(c.nature?' data-nature="'+esc(c.nature)+'"':' disabled')+'><span class="bw2-trait-label">性格</span><span class="bw2-trait-name">'+natureName+'</span></button></section>';
+  var moveNodes=holder.querySelectorAll('.dt-move-cell');
+  // The card has move categories, not PP; keep the original category data.
+  moveNodes.forEach(function(node){var cat=(node.getAttribute('data-mvcat')||'').trim();
+    node.insertAdjacentHTML('afterbegin','<svg class="bw2-move-frame" viewBox="0 0 300 68" preserveAspectRatio="none" aria-hidden="true"><polygon points="20,2 280,2 298,34 280,66 20,66 2,34"/></svg>');
+    var categoryArt=cat==='特殊'?'<path d="M1 2h9v4H1zM14 2h9v4h-9zM1 10h9v4H1zM14 10h9v4h-9z"/>':cat==='物理'?'<path d="m12 1 2 4 6-3-2 5 5 2-5 2 2 4-6-2-2 2-2-2-6 2 2-4-5-2 5-2-2-5 6 3Z"/>':cat==='变化'?'<circle cx="12" cy="8" r="6"/><circle cx="12" cy="8" r="2"/>':'<path d="M6 3h12v10H6Z"/>';
+    var meta=document.createElement('div');meta.className='bw2-move-meta';meta.innerHTML='<span class="bw2-move-category" title="'+esc(cat||'类别未知')+'"><svg viewBox="0 0 24 16" aria-hidden="true">'+categoryArt+'</svg></span><span class="bw2-move-kind">'+esc(cat||'—')+'</span>';node.appendChild(meta);
+  });
+  moves=html('.dt-move-grid');
+  var more=html('.dt-more-btn').replace(/全部技能/g,'全部'),boxAction=c.where==='box'&&c.boxName?'<button type="button" class="bw2-box-action" data-pkm-withdraw>取出到队伍</button>':'<button type="button" class="bw2-box-action" data-pkm-store'+(c.where==='team'?'':' disabled')+'>存入盒子</button>';
+  boxAction=boxAction.replace(/(<button[^>]*>)/,'$1<svg class="bw2-box-frame" viewBox="0 0 160 26" preserveAspectRatio="none" aria-hidden="true"><polygon points="13,1 147,1 159,13 147,25 13,25 1,13"/></svg>');
+  var identity=bw2DetailIdentity(c,p),gi=genderOf(c.gender),ballNode=holder.querySelector('.dt-top .item-icon'),ballHeader=ballNode?ballNode.outerHTML:'';
+  if(c.ball==='精灵球'||c.ball==='普通精灵球')ballHeader='<svg class="bw2-basic-ball" width="18" height="18" viewBox="0 0 20 20" aria-label="精灵球"><circle cx="10" cy="10" r="9" fill="#f5f5ef" stroke="#555f65"/><path d="M1 10a9 9 0 0 1 18 0Z" fill="#e14748"/><path d="M1 10h18" stroke="#555f65" stroke-width="2"/><circle cx="10" cy="10" r="3" fill="#f5f5ef" stroke="#555f65"/></svg>';
+  var nameHeader='<div class="dt-top">'+ballHeader+'<span class="dt-name" data-bw2-info role="button" tabindex="0" title="'+esc(c.name)+' · 查看精灵资料" style="--bw2-name-font:'+identity.nameFont+'">'+esc(identity.name)+'</span><span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></div>';
+  // Outline shapes reproduce the frame; only actual saved markings are filled.
+  var markings=String(p.标记||''),symbols=['●','▲','■','♥','★','◆'];
+  var markPaths=['<circle cx="6" cy="6" r="4"/>','<path d="M6 1 11 10H1Z"/>','<rect x="2" y="2" width="8" height="8"/>','<path d="M6 11 1.5 6C-1 1 4-1 6 3 8-1 13 1 10.5 6Z"/>','<path d="m6 1 1.4 3 3.4.5-2.4 2.4.6 3.4-3-1.6-3 1.6.6-3.4L1.2 4.5 4.6 4Z"/>','<path d="m6 1 5 5-5 5-5-5Z"/>'];
+  var marks=markPaths.map(function(art,i){return '<svg viewBox="0 0 12 12" class="bw2-mark'+(markings.indexOf(symbols[i])>=0?' marked':'')+'" aria-hidden="true">'+art+'</svg>';}).join('');
+  var lowerPath=bw2LowerScreenPath();
+  // The marking cap ends on the lower contour's (385,209) corner.
+  // Its baseline and the item box share the same endpoints, without a gap.
+  var platePath='M239 1H385V53H239Z',heldPath='M229 209H385V266H229Z',markPath='M244 194H370L385 209H229Z';
+  function rim(path){return '<path class="bw2-rim-shadow" d="'+path+'"/><path class="bw2-rim-white" d="'+path+'"/>';}
+  var scene='<section class="bw2-detail-scene bw2-summary-scene" data-bw2-region="pokemon">'+
+    '<svg class="bw2-scene-geometry" viewBox="0 0 386 268" aria-hidden="true"><g class="bw2-lower-background"><path class="bw2-lower-face" d="'+lowerPath+'"/>'+rim(lowerPath)+'</g><g class="bw2-name-plane"><path class="bw2-paper-shape" d="'+platePath+'"/><path class="bw2-level-shade" d="M330 22H385V53H299Z"/>'+rim(platePath)+'</g><g class="bw2-held-plane"><path class="bw2-paper-shape" d="'+heldPath+'"/><path class="bw2-mark-base" d="'+markPath+'"/>'+rim(markPath)+rim(heldPath)+'</g></svg>'+
+    '<div class="bw2-detail-types" aria-label="精灵属性">'+typesHTML(c.attr1,c.attr2)+'</div><div class="bw2-detail-moves">'+moves+'</div><div class="bw2-move-actions'+(more?' has-more':'')+'">'+boxAction+more+'</div>'+
+    '<div class="bw2-scene-nameplate">'+nameHeader+'<div class="bw2-name-meta"><span class="bw2-detail-level"><span>Lv.</span><b>'+esc(c.level)+'</b></span><span class="bw2-state-badges" title="'+esc(identity.badges.map(function(b){return b.label;}).join('、'))+'" aria-label="特殊标记：'+esc(identity.badges.map(function(b){return b.label;}).join('、'))+'">'+bw2DetailBadgesHTML(identity)+'</span></div></div>'+
+    '<div class="bw2-scene-sprite">'+html('.dt-sprite')+'</div>'+
+    '<div class="bw2-scene-markings" title="'+(markings?'精灵标记':'尚未记录精灵标记')+'">'+marks+'</div><button type="button" class="bw2-scene-held" data-bw2-held aria-label="'+(c.item&&c.item!=='无'?'查看并管理携带道具':'选择携带道具')+'"><span class="dt-hold"><span>携带道具</span><span class="bw2-held-item">'+bw2HeldIconHTML(c)+'<span class="bw2-held-name">'+esc(c.item&&c.item!=='无'?c.item:'无 · 选择携带')+'</span></span></span></button></section>';
+  var clipId='bw2-screen-'+(++bw2DetailSeq),screenPath=bw2ScreenPath();
+  // All bars share the gray face; chevrons belong only to ability/nature.
+  // Experience fill follows the slanted track in SVG, without a rectangular gap.
+  function infoStrip(y,height,kind,progress,clipId){
+    var mid=y+height/2,bottom=y+height,path='M55 '+y+'H306L314 '+mid+'L306 '+bottom+'H55L47 '+mid+'Z';
+    var experience=typeof progress==='number',fill='';
+    if(experience){
+      var track='M151 '+y+'H306L314 '+mid+'L306 '+bottom+'H151L159 '+mid+'Z',tip=151+163*progress,cap=Math.min(8,163*progress);
+      fill='<defs><clipPath id="'+clipId+'"><path d="'+track+'"/></clipPath></defs>'+(progress>0?'<path class="bw2-exp-fill" clip-path="url(#'+clipId+')" d="M151 '+y+'H'+(tip-cap)+'L'+tip+' '+mid+'L'+(tip-cap)+' '+bottom+'H151Z"/>':'');
+    }
+    var dividers=experience?'':'<path class="bw2-trait-divider-shadow" d="M158 '+y+'L166 '+mid+'L158 '+bottom+'M164 '+y+'L172 '+mid+'L164 '+bottom+'"/><path class="bw2-trait-divider-white" d="M160 '+y+'L168 '+mid+'L160 '+bottom+'M166 '+y+'L174 '+mid+'L166 '+bottom+'"/>';
+    return '<g class="'+kind+'"><path class="bw2-paper-shape" d="'+path+'"/>'+fill+'<path class="bw2-trait-label-face" d="M55 '+y+'H151L159 '+mid+'L151 '+bottom+'H55L47 '+mid+'Z"/>'+rim(path)+dividers+'</g>';
+  }
+  function traitStrip(y){return infoStrip(y,22,'bw2-trait-strip');}
+  // The paper panel is clipped by the calibrated upper face; the grid is continuous.
+  var upperGeometry='<defs><clipPath id="'+clipId+'"><path d="'+screenPath+'"/></clipPath></defs><path class="bw2-screen-face" d="'+screenPath+'"/><g clip-path="url(#'+clipId+')"><g class="bw2-battle-plane"><path class="bw2-paper-shape" d="M180 5H386V155H180Z"/>'+rim('M180 5H386V155H180Z')+traitStrip(192)+traitStrip(220)+'</g></g><g class="bw2-main-outline">'+rim(screenPath)+'</g>';
+  var header='<header class="bw2-detail-header"><svg class="bw2-header-cap" viewBox="0 0 386 36" aria-hidden="true"><path class="bw2-top-cap" d="M1 1H150L165 16H1Z"/><path class="bw2-top-cap-lines" d="M1 3H149M1 6H152M1 9H155M1 12H158"/></svg><div class="bw2-title-band"><div class="modal-name">Pokémon info <span>/ 详细信息</span></div><button type="button" class="close bw2-detail-close" data-close aria-label="关闭详情" title="关闭详情">×</button></div></header>';
+  return '<div class="modal detail-modal one bw2-detail" data-bw2-detail="overview"><div class="modal-body"><div class="bw2-detail-canvas"><div class="bw2-detail-grid" aria-hidden="true"></div>'+header+scene+'<section class="bw2-detail-upper bw2-detail-data" data-bw2-region="values"><svg class="bw2-upper-outline" viewBox="0 0 386 248" aria-hidden="true">'+upperGeometry+'</svg><div class="bw2-upper-content">'+battleTop+'</div></section></div></div></div>';
+
+}
+
+function bw2OpenInfo(card){
+  if(!card)return;var holder=document.createElement('div');holder.innerHTML=bw2LegacyDetailHTML(card);
+  var rows=Array.prototype.slice.call(holder.querySelectorAll('.modal-body>.row')).filter(function(row){var k=row.querySelector('.k');return k&&['属性','个体值','特性','性格','亲密度','经验','经验值'].indexOf(k.textContent.trim())<0;}).map(function(row){return row.outerHTML;}).join('');
+  if(card.where==='box'&&card.boxName)rows+='<div class="action-btns"><button class="act-btn" data-bw2-movebox>切换盒子</button></div>';
+  var p=getCardPkm(card)||{};
+  ['图鉴编号','全国图鉴编号','全国编号','原训练家','主人','训练家ID','IDNo','相遇日期','获得日期','相遇地点','获得地点','相遇等级','个性'].forEach(function(k){if(p[k]!=null&&p[k]!=='')rows+='<div class="row"><span class="k">'+esc(k)+'</span><span class="v">'+esc(p[k])+'</span></div>';});
+  subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(card.species)+' · 资料</div><button class="close" data-sub-close aria-label="关闭资料">✕</button></div><div class="modal-body">'+rows+'</div></div>';subOverlay.classList.add('open');
+}
+
+function bw2OpenHeldItem(card,tab){
+  if(!card)return;bw2HeldContext={card:card,tab:tab||'overview'};
+  var p=getCardPkm(card),name=p&&p.携带道具;
+  if(!name||name==='无'){bw2OpenHeldPicker(card);return;}
+  showItemInfo(name,true,p.携带道具英文||'');
+  var modal=subOverlay.querySelector('.modal');if(modal)modal.insertAdjacentHTML('beforeend','<div class="action-btns bw2-held-actions"><button type="button" class="act-btn" data-bw2-held-action="unequip">卸下道具</button><button type="button" class="act-btn" data-bw2-held-action="pick">更换携带道具</button></div>');
+}
+
+function bw2OpenHeldPicker(card){
+  var items=Object.keys(stat_data.背包||{}).filter(function(name){return stat_data.背包[name]&&getBagCount(name)>0&&stat_data.背包[name].类型!=='重要物品';});
+  subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">选择携带道具</div><button class="close" data-sub-close>✕</button></div><div class="modal-body"><div class="action-btns">'+(items.length?items.map(function(name){return '<button type="button" class="act-btn" data-bw2-equip-item="'+esc(name)+'">'+esc(name)+' ×'+getBagCount(name)+'</button>';}).join(''):'<div class="empty">暂无可携带的库存道具</div>')+'</div></div></div>';subOverlay.classList.add('open');
+}
+
+function bw2ReopenDetail(card,tab){
+  var p=getCardPkm(card);if(!p)return;
+  currentDetailCard=cardFromPkm(p,card.slot,card.where,card.boxName);overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');
+  pkImgFix(overlay);resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);hudResolvePkidbImages(overlay);
+  resizeFrame();
+}
+
+/* Scope new presentation events to the detail adapter; native events handle
+   moves, ability, nature, storing, withdrawal, and every mutation. */
+function bw2BindDetailUI(app){
+  if(!app||app._bw2DetailBound)return;app._bw2DetailBound=true;app.classList.add('bw2-detail-host');
+  hudScope.listen(app,'click',function(e){
+    var target=e.target;if(target&&target.nodeType!==1)target=target.parentElement;if(!target||!target.closest)return;
+    var info=target.closest('[data-bw2-info]');if(info){e.preventDefault();e.stopPropagation();bw2OpenInfo(currentDetailCard);return;}
+    var held=target.closest('[data-bw2-held]');if(held){e.preventDefault();e.stopPropagation();bw2OpenHeldItem(currentDetailCard,'overview');return;}
+    var heldAction=target.closest('[data-bw2-held-action]'),equip=target.closest('[data-bw2-equip-item]');
+    if((heldAction||equip)&&bw2HeldContext){
+      e.preventDefault();e.stopPropagation();var context=bw2HeldContext;
+      if(heldAction&&heldAction.getAttribute('data-bw2-held-action')==='pick'){bw2OpenHeldPicker(context.card);return;}
+      if(equip)equipPkm(context.card,equip.getAttribute('data-bw2-equip-item'));else unequipPkmByCard(context.card);
+      subOverlay.classList.remove('open');subOverlay.innerHTML='';bw2HeldContext=null;bw2ReopenDetail(context.card,'overview');return;
+    }
+    // Box-only "switch box" remains available in the identity/info popup.
+    if(target.closest('[data-bw2-movebox]')&&currentDetailCard){e.preventDefault();e.stopPropagation();subOverlay.classList.remove('open');openMoveBoxPicker(currentDetailCard);}
+  },true);
+  hudScope.listen(app,'keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-bw2-info]')){e.preventDefault();bw2OpenInfo(currentDetailCard);}});
+}
+
+      var detailStyle=document.createElement('style');
+      detailStyle.setAttribute('data-bw2-detail-style','0.1.26');
+      detailStyle.textContent=".bw2-detail-host{--bw2-original-grid:repeating-linear-gradient(0deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px),repeating-linear-gradient(90deg,rgba(150,180,220,.14) 0 2px,transparent 2px 10px,rgba(255,255,255,.05) 10px 11px,transparent 11px 20px,rgba(255,255,255,.05) 20px 21px,transparent 21px 30px,rgba(255,255,255,.05) 30px 31px,transparent 31px 40px,rgba(255,255,255,.05) 40px 41px,transparent 41px 50px);}\n.bw2-detail-host .bw2-detail *{text-shadow:none;box-sizing:border-box}\n/* BW2 summary: proportional canvases; main paper cuts use 45-degree runs. */\n.bw2-detail-host .bw2-detail{width:min(100%,390px)!important;max-width:390px!important;background-color:#080d15;background-image:none;border:2px solid #7f91a3;border-radius:3px;color:#e3ebf3;box-shadow:0 12px 35px #0006;display:flex;flex-direction:column;overflow:hidden;font-family:'Microsoft YaHei','SimHei',sans-serif}\n.bw2-detail-host .bw2-detail [hidden]{display:none!important}\n.bw2-detail-host .bw2-detail .modal-body{padding:0 2px;overflow:auto;max-height:none;min-height:0;flex:1 1 auto;background:transparent;scrollbar-width:thin}\n.bw2-detail-host .bw2-detail-canvas{position:relative;container-type:inline-size;isolation:isolate;background:#0c1118}\n.bw2-detail-host .bw2-detail-grid{position:absolute;inset:0;z-index:1;pointer-events:none;background-image:var(--bw2-original-grid)}\n.bw2-detail-host .bw2-screen-face,.bw2-detail-host .bw2-lower-face{fill:#23283e}\n.bw2-detail-host .bw2-detail-upper{position:relative;aspect-ratio:386/292;width:100%;color:#42484d}\n.bw2-detail-host .bw2-upper-outline,.bw2-detail-host .bw2-scene-geometry{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}\n.bw2-detail-host .bw2-upper-paper,.bw2-detail-host .bw2-paper-shape{fill:#cbd3d7}\n.bw2-detail-host .bw2-rim-shadow{fill:none;stroke:#63717f;stroke-width:4;vector-effect:non-scaling-stroke;stroke-linejoin:miter}\n.bw2-detail-host .bw2-rim-white{fill:none;stroke:#e5ebed;stroke-width:1;vector-effect:non-scaling-stroke;stroke-linejoin:miter}\n.bw2-detail-host .bw2-top-cap{fill:#869399;stroke:#c3cbcf;stroke-width:1}\n.bw2-detail-host .bw2-top-cap-lines{fill:none;stroke:#53626f;stroke-width:1.2}\n.bw2-detail-host .bw2-title-band{position:absolute;z-index:2;left:0;right:0;top:5.48%;height:6.85%;display:flex;align-items:center;background:#a12820;box-shadow:0 1px #612a2b,0 -1px #c0584d;color:#fff}\n.bw2-detail-host .bw2-detail .modal-name{width:100%;padding:0 3.1%;font-family:monospace;font-size:4.1cqw;font-weight:800;letter-spacing:1.6px;line-height:1;white-space:nowrap;display:flex;align-items:center;justify-content:space-between}\n.bw2-detail-host .bw2-detail .modal-name span{font-family:'Microsoft YaHei',sans-serif;font-size:3.4cqw;font-weight:500;letter-spacing:1px;margin-right:17%}\n.bw2-detail-host .bw2-upper-content{position:absolute;z-index:2;left:12.5%;right:9%;top:23.6%;bottom:7%;overflow:auto;scrollbar-width:thin}\n.bw2-detail-host .bw2-detail .row{padding:3px 0;display:flex;justify-content:space-between;gap:8px;font-size:4.1cqw;border-bottom:1px solid #8296a52d;color:#41464c}\n.bw2-detail-host .bw2-detail .row .k{color:inherit;flex-shrink:0;opacity:1}\n.bw2-detail-host .bw2-detail .row .v{text-align:right;color:inherit}\n.bw2-detail-host .bw2-detail .abi-link{color:inherit;text-decoration:underline;text-underline-offset:2px}\n.bw2-detail-host .bw2-detail .ivs{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px}\n.bw2-detail-host .bw2-detail .iv{font-size:3.1cqw;background:#b3c9d2;color:#223e4d;border:1px solid #829baa;border-radius:0;padding:1px 3px}\n.bw2-detail-host .bw2-summary-scene{position:relative;aspect-ratio:386/268;width:100%;margin:0;background:none}\n.bw2-detail-host .bw2-level-shade{fill:#23283e;fill-opacity:1}\n.bw2-detail-host .bw2-mark-base{fill:#7d888d;fill-opacity:.8}\n.bw2-detail-host .bw2-scene-nameplate{position:absolute;z-index:2;left:62%;top:.4%;width:37.7%;height:19.4%;padding:.6cqw .7cqw;color:#454b50;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:0}\n.bw2-detail-host .bw2-scene-nameplate .dt-top{margin:0;text-align:left;display:flex;justify-content:flex-start;gap:2px;align-items:center;width:100%;line-height:1.15;min-height:5.3cqw}\n.bw2-detail-host .bw2-scene-nameplate .dt-name{flex:1;font-size:var(--bw2-name-font,4.1cqw)!important;font-weight:600;color:#454b50!important;white-space:nowrap;min-width:0}\n.bw2-detail-host .bw2-scene-nameplate .gender{font-size:4cqw;margin-left:auto;flex-shrink:0}\n.bw2-detail-host .bw2-scene-nameplate .gender-sym{flex:none;font-size:3.6cqw;line-height:1}\n.bw2-detail-host .bw2-name-meta{display:grid;grid-template-columns:minmax(0,1fr) 24.5cqw;gap:.4cqw;align-items:center;margin-left:-.3cqw;width:calc(100% + .3cqw);height:6.8cqw}\n.bw2-detail-host .bw2-scene-nameplate .bw2-detail-level{font-size:3.75cqw;font-weight:700;margin:0;line-height:1.1;display:flex;gap:.3cqw;align-items:baseline;white-space:nowrap;color:#454b50}\n.bw2-detail-host .bw2-state-badges{display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:.25cqw;min-width:0;width:24.5cqw;height:100%}\n.bw2-detail-host .bw2-state-badge{position:relative;display:inline-flex;flex:none;width:4.7cqw;height:4.7cqw;margin:0;padding:0;color:#5d526b}\n.bw2-detail-host .bw2-state-badge svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.1}\n.bw2-detail-host .bw2-state-badge img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}\n.bw2-detail-host .bw2-state-badge.shiny{color:#986b00}.bw2-detail-host .bw2-state-badge.legendary{color:#876400}.bw2-detail-host .bw2-state-badge.mythical{color:#a52f7f}.bw2-detail-host .bw2-state-badge.ultra{color:#256b83}.bw2-detail-host .bw2-state-badge.dynamax{color:#b52765}\n.bw2-detail-host .bw2-detail-level b{font-weight:700;font-variant-numeric:tabular-nums}\n.bw2-detail-host .bw2-scene-nameplate .item-icon{width:4.7cqw!important;height:4.7cqw!important;font-size:3.5cqw;flex-shrink:0}\n.bw2-detail-host .bw2-basic-ball{width:4.7cqw;height:4.7cqw;flex-shrink:0}\n.bw2-detail-host .bw2-scene-sprite{position:absolute;z-index:2;left:49%;top:24%;width:51%;height:49%;pointer-events:none}\n.bw2-detail-host .bw2-scene-sprite .dt-sprite{position:absolute;inset:0;margin:0;display:flex;align-items:center;justify-content:center}\n.bw2-detail-host .bw2-scene-sprite .dt-big{width:100%!important;height:100%!important;background-size:contain!important;background-repeat:no-repeat;background-position:center;filter:drop-shadow(-7.8cqw -4.2cqw 0 #000)}\n.bw2-detail-host .bw2-scene-markings{position:absolute;z-index:2;left:63.212%;top:72.388%;width:32.642%;height:5.597%;display:flex;align-items:center;justify-content:space-evenly;background:none}\n.bw2-detail-host .bw2-mark{width:10%;height:90%;stroke:#d6d3b8;stroke-width:1;fill:none}\n.bw2-detail-host .bw2-mark.marked{fill:#ded596}\n.bw2-detail-host .bw2-scene-held{position:absolute;z-index:2;left:59.326%;top:77.985%;width:40.415%;height:21.269%;background:none;color:#454b50;margin:0;padding:0;border:0;border-radius:0;cursor:pointer;font:inherit;text-align:left;appearance:none}\n.bw2-detail-host .bw2-scene-held:focus-visible,.bw2-detail-host .bw2-trait-heading:focus-visible{outline:2px solid #45d5e5;outline-offset:-2px}\n.bw2-detail-host .bw2-scene-held .dt-hold{font-size:4cqw;line-height:1.3;margin:0;padding:1% 4%;text-align:left;color:inherit;display:flex;flex-direction:column;gap:1px;font-weight:600}\n.bw2-detail-host .bw2-held-item{display:flex;gap:1cqw;align-items:center;min-width:0}\n.bw2-detail-host .bw2-scene-held .bw2-held-icon{display:inline-flex;flex:none;align-items:center;justify-content:center;width:6cqw!important;height:6cqw!important;object-fit:contain;image-rendering:pixelated;font-size:3.8cqw}\n.bw2-detail-host .bw2-held-name{min-width:0;font-size:3.8cqw;line-height:1.2;overflow-wrap:anywhere}\n.bw2-detail-host .bw2-detail-moves{position:absolute;z-index:2;left:8%;top:13%;width:52%}\n.bw2-detail-host .bw2-detail .dt-move-grid{grid-template-columns:1fr;gap:0;margin:0}\n.bw2-detail-host .bw2-detail .dt-move-cell{position:relative;isolation:isolate;border-radius:0;background:none;border:0;color:#f3f5f7;min-height:0;aspect-ratio:300/76;clip-path:polygon(6.67% 0,93.33% 0,100% 50%,93.33% 100%,6.67% 100%,0 50%);display:grid;grid-template-columns:auto 1fr;grid-template-rows:1fr 1fr;gap:0 4px;padding:.7cqw 5cqw;align-items:center}\n.bw2-detail-host .bw2-move-frame{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}\n.bw2-detail-host .bw2-move-frame polygon{fill:#343434;stroke:#9f55c1;stroke-width:1.3;stroke-linejoin:miter;vector-effect:non-scaling-stroke}\n.bw2-detail-host .bw2-detail .dt-move-cell .move-name{color:#fff;font-size:4.3cqw}\n.bw2-detail-host .bw2-detail .dt-move-cell .type-chip,.bw2-detail-host .bw2-detail .dt-move-cell .move-type{border-radius:0;padding:0 6px;font-size:4.3cqw;line-height:1.2;width:13cqw;min-width:12cqw;height:5.5cqw;text-align:center;border:1px solid #0003}\n.bw2-detail-host .bw2-move-meta{grid-column:1/-1;display:grid;grid-template-columns:13cqw 1fr;gap:4px;align-items:center;font-size:4.7cqw;line-height:1.2;color:#e5e5e5;white-space:nowrap}\n.bw2-detail-host .bw2-move-kind{text-align:center}\n.bw2-detail-host .bw2-move-category{color:#9f55c1;display:flex;align-items:center;justify-content:center}\n.bw2-detail-host .bw2-move-category svg{width:5.8cqw;height:4cqw;fill:none;stroke:currentColor;stroke-width:1.5}\n.bw2-detail-host .bw2-detail .dt-more-btn{position:absolute;top:100%;left:6cqw;right:0;width:auto;height:5cqw;min-height:0;margin:1cqw 0 0;padding:0 4px;line-height:1.1;color:#ccd9e6;border-radius:2px;background:#27364c;font-size:3.2cqw}\n.bw2-detail-host .bw2-box-action:disabled{opacity:.5;cursor:default}\n.bw2-detail-host .bw2-detail .action-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:6px}\n.bw2-detail-host .bw2-detail .act-btn{background:#2d4157;color:#e0edf4;border:1px solid #7b92a6;border-radius:2px;padding:5px;font-size:12px}\n.bw2-detail-host .bw2-detail .bw2-detail-close{position:static;flex:0 0 28px;align-self:stretch;width:28px;height:auto;min-height:32px;margin:0;color:#f14632;font-size:24px;line-height:1;padding:0;background:none;border:0;cursor:pointer}\n.bw2-detail-host .bw2-stats-table{position:absolute;left:28%;top:14.5%;width:70%;font-size:5.05cqw;line-height:1.15;font-weight:600}\n.bw2-detail-host .bw2-stat-row{display:grid;grid-template-columns:26.67% 1fr;height:7.25cqw;align-items:start}\n.bw2-detail-host .bw2-stat-label{text-align:left;color:#e3eaf0;padding-right:3cqw;white-space:nowrap}\n.bw2-detail-host .bw2-stat-value{position:relative;color:#434950;padding-left:1.8cqw;line-height:1.1;font-variant-numeric:tabular-nums}\n.bw2-detail-host .bw2-trait-label-face{fill:#7f898d}\n.bw2-detail-host .bw2-trait-divider-shadow{fill:none;stroke:#5e686e;stroke-width:2.5}\n.bw2-detail-host .bw2-trait-divider-white{fill:none;stroke:#e6edef;stroke-width:1.5}\n.bw2-detail-host .bw2-trait-card{position:absolute;left:12.18%;top:75.685%;width:69.17%;height:19.178%;color:#42484e;font-size:4.8cqw;line-height:1.3}\n.bw2-detail-host .bw2-trait-heading{display:grid;grid-template-columns:44% 1fr;gap:0;border:0;border-radius:0;background:none;margin:0;padding:0;width:100%;font-family:inherit;color:inherit;cursor:pointer;font-weight:600;height:7.254cqw;align-items:center;font-size:4.9cqw;line-height:1.15;text-align:left;appearance:none}\n.bw2-detail-host .bw2-trait-label{color:#eef3f4;text-align:center;padding-right:1cqw}\n.bw2-detail-host .bw2-trait-name{padding-left:3.4cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n.bw2-detail-host .bw2-held-actions{padding:0 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px}\n\n/* Unified detail: types, IVs, intimacy and experience above compact traits. */\n.bw2-detail-host .bw2-upper-content{inset:0;overflow:hidden}\n/* Title center: 12.18 + 69.17 * .44 / 2 - .5 = 26.8974%.\n   Equal columns within symmetric insets mirror that center to 73.1026%. */\n.bw2-detail-host .bw2-stats-table{left:3.7948%;right:3.7948%;top:18.493%;width:auto;font-size:3.9cqw;line-height:1.2}\n.bw2-detail-host .bw2-stat-row{grid-template-columns:repeat(2,minmax(0,1fr));height:5.181cqw;align-items:center}\n/* Center the label group, while keeping every bullet on its left edge. */\n.bw2-detail-host .bw2-stat-label{justify-self:center;width:4em;padding:0;text-align:left}\n.bw2-detail-host .bw2-stats-table .bw2-stat-value,.bw2-detail-host .bw2-stats-table .bw2-field-value{padding:0;text-align:center;line-height:1.1}\n.bw2-detail-host .bw2-detail-types{position:absolute;z-index:2;left:8%;top:3%;width:50%;height:7.46%;display:flex;align-items:center}\n.bw2-detail-host .bw2-detail-types .types{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:1.6cqw;padding-left:0;margin:0}\n.bw2-detail-host .bw2-detail-types .type-chip{font-size:3.1cqw;width:12.7cqw;min-width:12.7cqw;height:5.2cqw;padding:0 1.3cqw;border-radius:0;display:flex;align-items:center;justify-content:center;line-height:1;border:1px solid #0003}\n.bw2-detail-host .bw2-field-value{color:#434950;padding-left:1.8cqw;font-variant-numeric:tabular-nums}\n.bw2-detail-host .bw2-trait-card{left:12.18%;top:80.822%;width:69.17%;height:17.123%;font-size:3.8cqw;display:flex;flex-direction:column;gap:1.554cqw}\n.bw2-detail-host .bw2-trait-heading{height:5.699cqw;font-size:3.8cqw;flex-shrink:0}\n.bw2-detail-host .bw2-detail-moves{left:8%;top:13%;width:50%}\n.bw2-detail-host .bw2-detail .dt-move-cell{aspect-ratio:300/68;padding:.6cqw 4.4cqw}\n.bw2-detail-host .bw2-detail .dt-move-cell .move-name{font-size:3.5cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}\n.bw2-detail-host .bw2-detail .dt-move-cell .type-chip,.bw2-detail-host .bw2-detail .dt-move-cell .move-type{font-size:3cqw;padding:0 1cqw;width:12cqw;min-width:12cqw;height:4.6cqw;display:flex;align-items:center;justify-content:center}\n.bw2-detail-host .bw2-move-meta{grid-template-columns:12cqw 1fr;font-size:3.4cqw}\n.bw2-detail-host .bw2-move-category svg{width:4.8cqw;height:3.3cqw}\n.bw2-detail-host .bw2-move-actions{position:absolute;z-index:2;left:14.25%;top:86.2%;width:40%;height:9%;display:flex;align-items:stretch;gap:1cqw}\n.bw2-detail-host .bw2-box-action,.bw2-detail-host .bw2-detail .dt-more-btn{position:static;flex:1;min-width:0;min-height:0;width:auto;height:100%;margin:0;padding:0 1cqw;border:1px solid #91a5b3;border-radius:0;background:#cbd3d7;color:#35434d;font-family:inherit;font-size:3.1cqw;font-weight:600;line-height:1.1;white-space:nowrap;cursor:pointer}\n.bw2-detail-host .bw2-box-action:disabled{opacity:.5;cursor:default}\n.bw2-detail-host .bw2-move-actions button:focus-visible,.bw2-detail-host .bw2-detail-close:focus-visible,.bw2-detail-host [data-bw2-info]:focus-visible{outline:2px solid #45d5e5;outline-offset:-2px}\n.bw2-detail-host .bw2-detail .bw2-detail-close{position:absolute;z-index:3;right:.5%;top:2.05%;width:8.3cqw;height:8.3cqw;min-height:0;margin:0;padding:0;border:0;background:none;color:#fff1df;font-size:5.5cqw;line-height:1;cursor:pointer}\n.bw2-detail-host .bw2-scene-nameplate [data-bw2-info]{cursor:pointer}\n\n/* Breathing room uses the same grid layer between the calibrated outlines. */\n.bw2-detail-host .bw2-summary-scene{margin-top:2.6cqw}\n.bw2-detail-host .bw2-title-band{z-index:3;padding:0 2cqw;gap:1cqw}\n.bw2-detail-host .bw2-detail .modal-name{flex:1;min-width:0;height:100%;padding:0;font-size:3.8cqw;letter-spacing:1.2px}\n.bw2-detail-host .bw2-detail .modal-name span{font-size:3.2cqw;line-height:1.2;letter-spacing:.3px;margin-right:0}\n.bw2-detail-host .bw2-detail .bw2-detail-close{position:static;flex:none;align-self:center;display:flex;align-items:center;justify-content:center;width:8.3cqw;height:8.3cqw;min-height:0;font-family:Arial,sans-serif;font-size:5.8cqw;line-height:1}\n.bw2-detail-host .bw2-detail .dt-move-grid{gap:.75cqw}\n.bw2-detail-host .bw2-box-action{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0 3.3cqw}\n.bw2-detail-host .bw2-box-frame{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}\n.bw2-detail-host .bw2-box-frame polygon{fill:#cbd3d7;stroke:#91a5b3;stroke-width:1;stroke-linejoin:miter;vector-effect:non-scaling-stroke}\n.bw2-detail-host .bw2-move-actions.has-more .bw2-box-action{padding:0 1.3cqw;font-size:2.8cqw}\n\n/* Intimacy shares the six IV rows; experience is a separate cut panel. */\n.bw2-detail-host .bw2-detail-intimacy .bw2-field-value{position:relative;line-height:1.1;font-variant-numeric:tabular-nums}\n.bw2-detail-host .bw2-detail-experience{position:absolute;z-index:2;left:12.18%;top:69.863%;width:69.17%;height:8.904%;color:#354650;font-size:3.5cqw;font-weight:600}\n.bw2-detail-host .bw2-exp-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}\n.bw2-detail-host .bw2-exp-label{position:absolute;inset:0 auto 0 0;width:44%;padding-left:0;padding-right:1cqw;display:flex;align-items:center;justify-content:center;font-size:3.8cqw;color:#eef3f4}\n.bw2-detail-host .bw2-exp-progress{position:absolute;left:38.951%;right:.52cqw;top:.52cqw;bottom:.52cqw;padding:0;background:none;overflow:hidden;clip-path:none}\n.bw2-detail-host .bw2-exp-fill{fill:#96c6d4}\n.bw2-detail-host .bw2-exp-numbers{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;gap:.7cqw;padding:0 3.2cqw;font-size:3.5cqw;line-height:1.1;white-space:nowrap;color:#2e414c;font-variant-numeric:tabular-nums}\n.bw2-detail-host .bw2-exp-current,.bw2-detail-host .bw2-exp-remaining{margin:0;padding:0;background:none;font-size:inherit;font-weight:600;line-height:inherit}\n.bw2-detail-host .bw2-exp-slash{font-weight:400}\n\n.bw2-detail-host:has(.bw2-detail) .pkm-hud-sub .modal{width:min(100%,460px);max-width:460px}\n\n/* Header stays at the top; Pokemon/moves precede the numerical panel. */\n.bw2-detail-host .bw2-detail-header{position:relative;aspect-ratio:386/36;width:100%}\n.bw2-detail-host .bw2-header-cap{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}\n.bw2-detail-host .bw2-detail-header .bw2-title-band{top:44.444%;height:55.556%}\n.bw2-detail-host .bw2-summary-scene{margin-top:1.04cqw}\n.bw2-detail-host .bw2-detail-data{margin-top:2.6cqw;aspect-ratio:386/248}\n.bw2-detail-host .bw2-detail-data .bw2-stats-table{top:4.0323%}\n.bw2-detail-host .bw2-detail-data .bw2-detail-experience{top:64.5161%;height:10.4839%}\n.bw2-detail-host .bw2-detail-data .bw2-trait-card{top:77.4194%;height:20.1613%}\n.bw2-detail-host .bw2-detail-moves{z-index:4}\n.bw2-detail-host .bw2-detail-types,.bw2-detail-host .bw2-move-actions{z-index:4}\n.bw2-detail-host .bw2-scene-nameplate,.bw2-detail-host .bw2-scene-held,.bw2-detail-host .bw2-scene-markings{z-index:3}\n/* Reference: background #121625, polygon composite #313258, rim #8595b2. */\n.bw2-detail-host .bw2-detail{background-color:#121625;border-color:rgba(201,230,251,.55)}\n.bw2-detail-host .bw2-detail-canvas{background:#121625}\n.bw2-detail-host .bw2-screen-face,.bw2-detail-host .bw2-lower-face{fill:#9088f1;fill-opacity:.25}\n.bw2-detail-host .bw2-rim-shadow{stroke-opacity:0}\n.bw2-detail-host .bw2-rim-white{stroke:#c9e6fb;stroke-opacity:.55;stroke-width:2}\n.bw2-detail-host .bw2-trait-divider-white{stroke:#c9e6fb;stroke-opacity:.55}\n.bw2-detail-host .bw2-top-cap{stroke:rgba(201,230,251,.55)}\n.bw2-detail-host .bw2-level-shade{fill:#121625}\n";
+      (document.head||document.body).appendChild(detailStyle);
+      hudScope.cleanup(function(){detailStyle.remove();});
+      function renderDetail(card){
+        var host=overlay&&overlay.closest('#pkm-hud-inline,#pkm-hud-slot');
+        if(host)bw2BindDetailUI(host);
+        return bw2DetailHTML(card);
+      }
+      renderDetail.identity=bw2DetailIdentity;
+      return renderDetail;
+    })();
+  }
+  return detailHTML._bw2Renderer(c);
+}
 
 function actionHTML(raw,key){var m=nearbyCategoryMeta(raw),p=m.pokemon,img=pkImgHTML(p.名字,p.图标,m.shiny,'action-img'),badges=nearbyPillsHTML(m)+nearbyTypeBarHTML(m),marks=nearbyNameIconsHTML(m);return '<div class="modal"><div class="modal-head"><div class="modal-name">选择行动</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="action-pkm nearby-action-head '+nearbyCellClasses(m)+'" style="'+nearbyCellStyle(m)+'"><div class="nb-edge"></div><div class="nearby-action-img">'+img+'</div><div class="action-info"><div class="nearby-name nearby-action-name">'+esc(p.名字)+' <span class="nb-name-icons">'+marks+'</span></div><div class="nb-pillbar nearby-action-pills">'+badges+'</div><div class="nearby-sub">数量 ×'+num(p.数量,1)+'</div></div></div><div class="action-btns"><button class="act-btn" data-action="对战" data-key="'+esc(key)+'">⚔️ 对战</button><button class="act-btn" data-action="捕捉" data-key="'+esc(key)+'">🔴 捕捉</button><button class="act-btn" data-action="观察" data-key="'+esc(key)+'">👀 观察</button></div></div></div>';}
 
