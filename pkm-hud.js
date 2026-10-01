@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.7';
+var PK_VER='3.2.8';
 /*PK_NOTICE_BEGIN
-v3.2.7
-修复地图页面头部/背景透明问题（改回原版配色）
+v3.2.8
+修复精灵图四级兜底顺序：首选图源动图被错误跳过，导致部分精灵（如铁武者）降级成静态图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3288,7 +3288,7 @@ var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleo
     if(src==='pokeos'){return [fn];}
     return slugCandidates(fn);
   }
-  var si=0,ci=0,cands=null;
+  var si=0,ci=0,cands=candsFor(order[0][1]);
   function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');setCachedIcon(icon,shiny,u);}
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');}
   function next(){
@@ -3366,7 +3366,7 @@ function resolvePkmBgRepo(el,slug,shiny,name){
   var sel=(pkmSource==='showdown')?'showdown':'pokeos';
   var other=(sel==='showdown')?'pokeos':'showdown';
   var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
-  var si=0,ci=0,cands=null,useBase=false;
+  var useBase=false,si=0,ci=0,cands=pkmSrcSlugs(order[0][1],slug,paSuf);
   function apply(url){
     el.style.backgroundImage="url('"+url+"')";
     el.classList.remove('no-img');
