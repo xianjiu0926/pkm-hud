@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.0.13';
+var PK_VER='3.0.14';
 /*PK_NOTICE_BEGIN
-v3.0.13
-【修复】道具图优先按中文名查仓库（不再信任可能拼错的图标字段）
+v3.0.14
+【修复】道具图支持别名中文名；中文名查不到时回退图标字段
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6039,7 +6039,7 @@ function itemEnOf(name,cb){
   if(!n){cb&&cb('');return;}
   if(itemEnCache[n]!==undefined){cb&&cb(itemEnCache[n]);return;}
   pkmDbLoad('item','items.json',['name','en'],function(store){
-    var hit=store&&pkmDbLookup('item',n);
+    var hit=(store&&pkmDbLookup('item',itemKey(n)))||(store&&pkmDbLookup('item',n));
     var en=hit?hit.en:'';
     itemEnCache[n]=en;
     cb&&cb(en);
