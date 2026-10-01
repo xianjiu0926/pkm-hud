@@ -5,8 +5,7 @@ var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
 var PK_VER='3.3.0';
 /*PK_NOTICE_BEGIN
-v3.3.0
-新增卡洛斯地图（城镇/道路/特殊地点）
+更新卡洛斯地图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
