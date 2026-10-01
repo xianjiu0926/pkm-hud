@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.11';
+var PK_VER='3.2.12';
 /*PK_NOTICE_BEGIN
-v3.2.11
-修复盒子页面首次打开精灵图不显示的问题
+v3.2.12
+修复默认形态别名图标（如 aegislash-shield）无法出图的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3234,6 +3234,10 @@ function slugCandidates(n){
   for(var j=0;j<out.length;j++){if(!seen[out[j]]){seen[out[j]]=1;res.push(out[j]);}}
   return res;
 }
+function pkmDefaultFormBase(n){
+  var m=String(n||'').match(/^(.+?)-(shield|normal|altered|land|confined|ordinary|aria|disguised|solo|standard|incarnate|neutral|amped|midday)$/);
+  return m?m[1]:'';
+}
 var PKM_SPRITE_BASE='https://play.pokemonshowdown.com/sprites/';
 var PA_POKE_MIRRORS=[
   'https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/',
@@ -3285,8 +3289,10 @@ var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleo
   var other=(sel==='showdown')?'pokeos':'showdown';
   var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
   function candsFor(src){
-    if(src==='pokeos'){return [fn];}
-    return slugCandidates(fn);
+    var base=pkmDefaultFormBase(fn);
+    var a=src==='pokeos'?[fn]:slugCandidates(fn);
+    if(base&&base!==fn){var b=src==='pokeos'?[base]:slugCandidates(base);for(var i=0;i<b.length;i++){if(a.indexOf(b[i])<0)a.push(b[i]);}}
+    return a;
   }
   var si=0,ci=0,cands=candsFor(order[0][1]);
   function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');setCachedIcon(icon,shiny,u);}
