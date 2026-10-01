@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.10';
+var PK_VER='3.2.11';
 /*PK_NOTICE_BEGIN
-v3.2.10
-更新/修复完成后提示已清理缓存
+v3.2.11
+修复盒子页面首次打开精灵图不显示的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7524,7 +7524,7 @@ var bn=pageOverlay.querySelector('[data-box-new]');
 if(bn){bn.addEventListener('click',function(e){e.stopPropagation();openNewBoxModal();});}
 var bd=pageOverlay.querySelector('[data-box-del]');
 if(bd){bd.addEventListener('click',function(e){e.stopPropagation();openDeleteBoxConfirm();});}
-var bs=pageOverlay.querySelector('#box-select');if(bs){bs.addEventListener('change',function(){activeBox=bs.value;pageOverlay.querySelector('.page-body').innerHTML=boxHTML();bindPageInteractions();});}
+var bs=pageOverlay.querySelector('#box-select');if(bs){bs.addEventListener('change',function(){activeBox=bs.value;pageOverlay.querySelector('.page-body').innerHTML=boxHTML();bindPageInteractions();resolvePkmImgs(pageOverlay);});}
   var si=pageOverlay.querySelector('#dex-search-input');
 if(si){si.addEventListener('input',dexSearch);}
 pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(b){b.addEventListener('click',function(){dexRegion=b.getAttribute('data-dexregion');pageOverlay.querySelectorAll('[data-dexregion]').forEach(function(x){x.classList.toggle('active',x===b);});renderDexRegion();});});
@@ -7737,7 +7737,7 @@ function openPage(key){
   pageOverlay.classList.toggle('map-focus',key==='map');
   pageOverlayPopout(key==='map');
   pageOverlay.style.paddingTop='';
-  pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');hudSyncModalIsolation();bindPageInteractions();pkImgFix(pageOverlay);resolveItemImgs(pageOverlay);if(key==='map')hudSyncMapPopoutHeight();
+  pageOverlay.innerHTML=pageHTML(m.label,pageContent(key));pageOverlay.classList.add('open');hudSyncModalIsolation();bindPageInteractions();pkImgFix(pageOverlay);resolvePkmImgs(pageOverlay);resolveItemImgs(pageOverlay);if(key==='map')hudSyncMapPopoutHeight();
 }
 
 function hudMsg(msg){
