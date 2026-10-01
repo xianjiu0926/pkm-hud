@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.1.4';
+var PK_VER='3.1.5';
 /*PK_NOTICE_BEGIN
-v3.1.4
-主题色升级：覆盖整个 HUD，支持预设/自定义色 + 深浅调节
+v3.1.5
+修复：主题色真正覆盖整个 HUD 背景；切换栏改为轻轻抬起效果
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -876,9 +876,17 @@ css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.modal-name{color:#c9d5e5}'+
 '.info-row{color:#c9d5e5}'+
 '.menu-label{color:#c9d5e5}'+
-'.card-bg-svg polygon{stroke-width:1.8!important}'+
-'.nearby-frame{background:linear-gradient(180deg,rgba(27,36,51,.94),rgba(20,27,39,.96));border:1px solid var(--pk-line);border-radius:10px;box-shadow:0 5px 16px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025)}'+
-'.tab-btn.active{background:rgba(255,255,255,.06);border-color:var(--pk-line);color:#fff;box-shadow:inset 0 -3px 0 var(--pk-red)}';
+'.card-bg-svg polygon{stroke-width:1.8!important;fill:var(--pk-surface)!important}'+
+'.empty-frame .card-bg-svg polygon{fill:var(--pk-bg)!important}'+
+'.hud{background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%)}'+
+'.page,.modal{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
+'.trainer-frame,.battle-frame,.plain-frame,.nearby-frame{background:linear-gradient(180deg,var(--pk-surface) 0%,var(--pk-bg) 100%);border:1px solid var(--pk-line);border-radius:10px}'+
+'.nearby-frame{box-shadow:0 5px 16px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025)}'+
+'.menu-item{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
+'.nb-cell,.nearby-grid .nearby-cell{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
+'.bt-card{background:linear-gradient(160deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
+'.nearby-action-head{background:linear-gradient(180deg,var(--pk-surface-2) 0%,var(--pk-surface) 100%)}'+
+'.tab-btn.active{background:rgba(255,255,255,.08);border-color:var(--pk-line-strong);color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.28);transform:translateY(-2px)}';
 
 try{
   var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
