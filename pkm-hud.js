@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.1.0';
+var PK_VER='3.1.1';
 /*PK_NOTICE_BEGIN
-v3.1.0
-@狮子酱
-美化更新
+v3.1.1
+美化优化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -875,7 +874,9 @@ css+='.menu-icon-wrap{background:none;border-radius:0;box-shadow:none}'+
 '.pk-name,.nearby-card-name,.dt-name,.bt-pk{color:#c9d5e5}'+
 '.nb-name{color:#c9d5e5}'+
 '.modal-name{color:#c9d5e5}'+
-'.info-row{color:#c9d5e5}';
+'.info-row{color:#c9d5e5}'+
+'.menu-label{color:#c9d5e5}'+
+'.card-bg-svg polygon{stroke-width:1.8!important}';
 
 try{
   var _deadIds=['pkm-hud-btn','pkm-hud-mapfab','pkm-hud-mask','pkm-hud-win'];
