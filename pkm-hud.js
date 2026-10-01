@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.2.2';
+var PK_VER='3.2.3';
 /*PK_NOTICE_BEGIN
-v3.2.2
-空位格子也改为半透明，透出网格
+v3.2.3
+默认主题色深浅调整为40（更亮）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6866,7 +6866,7 @@ function openCacheUsage(){
     overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">📊 缓存占用明细</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="row"><span class="v">扫描失败，请重试。</span></div><div class="action-btns"><button class="act-btn" data-cache-usage-refresh>🔄 重试</button></div></div></div>';
   });
 }
-var PK_THEME_HUE_DEFAULT='#5b7cff',PK_THEME_LIGHT_DEFAULT='20';
+var PK_THEME_HUE_DEFAULT='#5b7cff',PK_THEME_LIGHT_DEFAULT='40';
 function pkThemeReadHue(){try{var v=localStorage.getItem('pk_theme_hue');return v||PK_THEME_HUE_DEFAULT;}catch(e){return PK_THEME_HUE_DEFAULT;}}
 function pkThemeReadLight(){try{var v=localStorage.getItem('pk_theme_light');return (v===null||v==='')?PK_THEME_LIGHT_DEFAULT:v;}catch(e){return PK_THEME_LIGHT_DEFAULT;}}
 function pkThemeHexToHsl(hex){hex=String(hex||'').replace('#','');if(hex.length===3)hex=hex.replace(/(.)/g,'$1$1');var r=parseInt(hex.slice(0,2),16)/255,g=parseInt(hex.slice(2,4),16)/255,b=parseInt(hex.slice(4,6),16)/255;if(isNaN(r)){r=0.36;g=0.49;b=1;}var max=Math.max(r,g,b),min=Math.min(r,g,b),l=(max+min)/2,h=0,s=0;if(max!==min){var d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;}h/=6;}return{h:Math.round(h*360),s:Math.round(s*100),l:Math.round(l*100)};}
