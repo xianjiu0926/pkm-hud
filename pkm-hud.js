@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.1.1';
+var PK_VER='3.1.2';
 /*PK_NOTICE_BEGIN
-v3.1.1
-美化优化
+v3.1.2
+招式别名表支持（地狱突刺等民间译名可读效果）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4904,7 +4904,7 @@ function fetchMove(name,cb){
   if(moveCache[name]&&moveCache[name].type!==undefined){cb&&cb(moveCache[name]);return;}
   var _c=lsGet('pk_mv_'+name,null);if(_c&&_c.type!==undefined){moveCache[name]=_c;cb&&cb(_c);return;}
   pkmDbLoad('move','moves.json',['name','en','jp'],function(store){
-    var hit=store&&pkmDbLookup('move',name);
+    var hit=store&&pkmDbLookup('move',moveKey(name));
     if(hit){
       var d={type:hit.type,cat:hit.cat,power:hit.power,acc:hit.acc,desc:hit.desc,eff:hit.effect};
       moveCache[name]=d;
@@ -5698,6 +5698,8 @@ b.innerHTML='<div class="row block"><span class="k">介绍</span><span class="v"
 var itemCache={},itemLoading={},itemSpriteCache={};
 var ITEM_ALIAS={};
 var itemAliasPromise=null;function ensureItemAlias(){if(itemAliasPromise)return itemAliasPromise;itemAliasPromise=hudFetch(PKM_DATA_BASE+'item-alias.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var m=(j&&j.data&&typeof j.data==='object'&&!Array.isArray(j.data))?j.data:((j&&typeof j==='object'&&!Array.isArray(j))?j:{});for(var k in m){if(m[k])ITEM_ALIAS[k]=String(m[k]);}return ITEM_ALIAS;}).catch(function(){return ITEM_ALIAS;});return itemAliasPromise;}function itemKey(name){ensureItemAlias();var n=String(name||'').trim();return ITEM_ALIAS[n]||n;}
+var MOVE_ALIAS={};
+var moveAliasPromise=null;function ensureMoveAlias(){if(moveAliasPromise)return moveAliasPromise;moveAliasPromise=hudFetch(PKM_DATA_BASE+'move-alias.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var m=(j&&j.data&&typeof j.data==='object'&&!Array.isArray(j.data))?j.data:((j&&typeof j==='object'&&!Array.isArray(j))?j:{});for(var k in m){if(m[k])MOVE_ALIAS[k]=String(m[k]);}return MOVE_ALIAS;}).catch(function(){return MOVE_ALIAS;});return moveAliasPromise;}function moveKey(name){ensureMoveAlias();var n=t2s(String(name||'').trim());return MOVE_ALIAS[n]||n;}
 function tmMoveName(name){
   var n=String(name||'').trim();
   var m=n.match(/^(?:技能机|招式学习器|TM)\s*[·:：]?\s*(.+)$/i);
@@ -8118,6 +8120,7 @@ function render(){
   '<div class="tab-bar"><button class="tab-btn active" data-tab="1">主页</button><button class="tab-btn" data-tab="2">世界</button><button class="tab-btn" data-tab="3">战场</button><button class="tab-btn" data-tab="4">菜单</button></div></div>';
 hudBindRefreshProgrammaticGuard(app);
 ensureItemAlias();
+ensureMoveAlias();
 pkImgFix(app);
 resolvePkmImgs(app);
 resolveItemImgs(app);
