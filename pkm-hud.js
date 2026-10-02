@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.13';
+var PK_VER='3.3.14';
 /*PK_NOTICE_BEGIN
-可学招式属性列居中，与招式名列对齐
+修复可学招式表头「招式名」与数据错位（属性列固定宽度）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -500,7 +500,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.mv-tab{flex:1;padding:4px 6px;font-size:.72rem;border:1px solid var(--pk-line);border-radius:6px;background:rgba(43,74,111,.3);color:var(--text);cursor:pointer}'+
 '.mv-tab.active{background:rgba(43,74,111,.9);border-color:#7cc4f8;font-weight:800}'+
 '.mv-panel{display:block}'+
-'.mv-row{display:grid;grid-template-columns:56px 1fr auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed rgba(170,204,255,.15);font-size:.8rem}'+
+'.mv-row{display:grid;grid-template-columns:56px 1fr 82px;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed rgba(170,204,255,.15);font-size:.8rem}'+
 '.mv-row:last-child{border-bottom:none}'+
 '.mv-row.mv-head{color:var(--dim);font-size:.7rem;font-weight:800;border-bottom:1px solid rgba(170,204,255,.3)}'+
 '.mv-c1{text-align:center;color:var(--dim);font-size:.78rem}'+
