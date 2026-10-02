@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.15';
+var PK_VER='3.3.16';
 /*PK_NOTICE_BEGIN
-图鉴介绍：朱/紫等版本标注移到描述前面显示
+图鉴介绍：朱/紫版本标注移到描述前，多版本分行显示
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -515,7 +515,6 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.evo-from{text-align:left;font-weight:600}'+
 '.evo-cond{text-align:center;color:var(--dim);font-size:.72rem;line-height:1.3;word-break:break-word}'+
 '.evo-to{text-align:right;font-weight:600}'+
-'.desc-ver{color:#ffd76a;font-weight:700;margin-right:2px}'+
 '#pkm-moves-row .k{width:100%;text-align:center}'+
 '#pkm-moves{width:100%;max-width:360px;align-self:center}'+
 '.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(170,204,255,.25);font-size:.85rem;color:var(--text)}'+
@@ -4965,7 +4964,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260930g';
+var PKM_DATA_REV='r20260930h';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -5638,7 +5637,7 @@ if(big){
   var b=document.getElementById('pkm-body');
   if(b){
     var out='';
-    if(d.desc)out+='<div class="row block"><span class="k">介绍</span><span class="v">'+pkmDescHTML(d.desc)+'</span></div>';
+    if(d.desc)out+='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.desc).replace(/\n/g,'<br>')+'</span></div>';
     if(d.species)out+='<div class="row"><span class="k">分类</span><span class="v">'+esc(d.species)+'</span></div>';
     var types='';
     if(f.type1)types+=typeChipHTML(f.type1);
@@ -5758,24 +5757,6 @@ function loadMoveset(no,cb){
     .catch(function(){movesetCache[key]=null;movesetLoading[key]=false;cb&&cb(null);});
 }
 function evoName(no){var n=parseInt(no,10)||0;return pkmNoName(n)||PKM_DEX_EN[n]||('#'+n);}
-function pkmDescHTML(desc){
-  if(!desc)return '';
-  var s=String(desc);
-  var lines=s.split(/\n+/);
-  if(lines.length<=1)return esc(s);
-  var out=[];
-  for(var i=0;i<lines.length;i++){
-    var line=lines[i].trim();
-    if(!line)continue;
-    var m=line.match(/^([\s\S]*?)\s*[（(](朱|紫|剑|盾|蓝|红|金|银|钻石|珍珠|白金|黑|白|日|月|究极|传说|皮卡丘|伊布|星星)[）)]\s*$/);
-    if(m){
-      out.push('<span class="desc-ver">['+esc(m[2])+']</span> '+esc(m[1].trim()));
-    }else{
-      out.push(esc(line));
-    }
-  }
-  return out.join('<br>');
-}
 function evoFormName(cond,baseName){
   var s=String(cond||'');
   if(s.indexOf('超级进化')>=0)return '超级'+baseName;
