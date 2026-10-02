@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.16';
+var PK_VER='3.3.17';
 /*PK_NOTICE_BEGIN
-图鉴介绍：朱/紫版本标注移到描述前，多版本分行显示
+修复太乐巴戈斯太晶/星晶形态图；切换形态时介绍随形态变化
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5384,6 +5384,7 @@ function formKeyOf(nm,region){
   if(s.indexOf('现形')>=0)return 'busted';
   if(s.indexOf('血月')>=0)return 'bloodmoon';
   if(s.indexOf('星晶')>=0)return 'stellar';
+  if(s.indexOf('太晶')>=0)return 'terastal';
   if(s.indexOf('500年前')>=0||s.indexOf('古老')>=0)return 'original';
   if(s.indexOf('全能')>=0)return 'hero';
   return '';
@@ -5463,6 +5464,7 @@ function genToPkmAll(entries,baseEn,no){
     var fk=isBase?'':formKeyOf(g.name||'',region);
     var ab2=g.abilities||[],ty2=g.types||[],st2=g.stats||{};
     d.forms.push({name:g.name||'',en:g.en||'',label:isBase?'普通':(g.name||''),region:region,formKey:fk,base:isBase?1:0,
+      desc:g.desc||'',
       type1:ty2[0]||'',type2:ty2[1]||'',
       ability1:ab2[0]||'',ability2:ab2[1]||'',abilityd:ab2[2]||'',
       height:(g.height!=null?String(g.height):''),weight:(g.weight!=null?String(g.weight):''),
@@ -5637,7 +5639,8 @@ if(big){
   var b=document.getElementById('pkm-body');
   if(b){
     var out='';
-    if(d.desc)out+='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.desc).replace(/\n/g,'<br>')+'</span></div>';
+    var _fdesc=(f&&f.desc)?f.desc:(d&&d.desc);
+    if(_fdesc)out+='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(_fdesc).replace(/\n/g,'<br>')+'</span></div>';
     if(d.species)out+='<div class="row"><span class="k">分类</span><span class="v">'+esc(d.species)+'</span></div>';
     var types='';
     if(f.type1)types+=typeChipHTML(f.type1);
@@ -5713,7 +5716,7 @@ function md5(str){
   'sky':'-sky','complete':'-complete','10':'-10','50':'-50','attack':'-attack','defense':'-defense',
   'speed':'-speed','black':'-black','white':'-white','crowned-sword':'-crowned','crowned-shield':'-crowned',
   'ice':'-ice','shadow':'-shadow','therian':'-therian','zen':'-zen','school':'-school','busted':'-busted',
-  'bloodmoon':'-bloodmoon','stellar':'-stellar','hero':'-hero',
+  'bloodmoon':'-bloodmoon','stellar':'-stellar','terastal':'-terastal','hero':'-hero',
   'alola':'-alola','galar':'-galar','hisui':'-hisui','paldea':'-paldea'
 };
 function pickHomeImg(idx,shiny){
