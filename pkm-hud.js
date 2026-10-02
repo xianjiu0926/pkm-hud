@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.8';
+var PK_VER='3.3.9';
 /*PK_NOTICE_BEGIN
-进化链形态变化：中间列保留形态名（超极巨化等），右侧显示具体形态
+可学招式板块居中限宽：手机占满、电脑适中
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -513,6 +513,8 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.evo-from{text-align:left;font-weight:600}'+
 '.evo-cond{text-align:center;color:var(--dim);font-size:.72rem;line-height:1.3;word-break:break-word}'+
 '.evo-to{text-align:right;font-weight:600}'+
+'#pkm-moves-row .k{width:100%;text-align:center}'+
+'#pkm-moves{width:100%;max-width:360px;align-self:center}'+
 '.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(170,204,255,.25);font-size:.85rem;color:var(--text)}'+
 '.row:last-child{border-bottom:none}'+
 '.row .k{color:var(--dim);flex-shrink:0}'+
