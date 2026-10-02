@@ -5,7 +5,7 @@ var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
 var PK_VER='3.3.2';
 /*PK_NOTICE_BEGIN
-主题深浅改为点击展开滑条，避免误触
+修复图鉴精灵详情打不开（数据读取路径修正，全部宝可梦详情恢复）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
