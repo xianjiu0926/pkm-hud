@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.7';
+var PK_VER='3.3.8';
 /*PK_NOTICE_BEGIN
-进化链形态变化显示具体形态名（如「超级妙蛙花」「超极巨化妙蛙花」）
+进化链形态变化：中间列保留形态名（超极巨化等），右侧显示具体形态
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5779,7 +5779,6 @@ function evoChainRender(chain,selfNo){
     var same=(c.from===c.to);
     if(same){
       cond=cond.replace(/[（(][^）)]*(超级进化|超极巨化|原始回归|形态变化)[^）)]*[）)]/g,'')
-        .replace(/(超级进化|超极巨化|原始回归|形态变化)\s*$/,'')
         .replace(/[；;]\s*$/,'');
     }
     var hlFrom=(c.from===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
