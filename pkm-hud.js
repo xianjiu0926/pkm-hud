@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.4';
+var PK_VER='3.3.5';
 /*PK_NOTICE_BEGIN
-可学招式改为「等级提升/学习器」页签，点招式名可查看详情
+可学招式：进化时学会（等级 0）的招式等级显示为 -
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5790,7 +5790,7 @@ function mvRows(list,hasLevel,head1){
     var nm=mv?mv.name:('#'+mid);
     var tp=mv?mv.type:'';
     var cat=mv?mv.cat:'';
-    var c1=hasLevel?((lvl!==''&&lvl!=null)?lvl:'-'):'-';
+    var c1=hasLevel?((lvl!==''&&lvl!=null&&lvl!==0)?lvl:'-'):'-';
     out+='<div class="mv-row">'
       +'<span class="mv-c1">'+c1+'</span>'
       +'<span class="mv-c2 mv-name" data-move="'+esc(nm)+'"'+(tp?' data-mvtype="'+esc(tp)+'"':'')+(cat?' data-mvcat="'+esc(cat)+'"':'')+'>'+esc(nm)+'</span>'
