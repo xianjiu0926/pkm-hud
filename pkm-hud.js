@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.6';
+var PK_VER='3.3.7';
 /*PK_NOTICE_BEGIN
-进化链改为三列表格（精灵名｜进化条件｜精灵名）
+进化链形态变化显示具体形态名（如「超级妙蛙花」「超极巨化妙蛙花」）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5753,12 +5753,22 @@ function loadMoveset(no,cb){
     .catch(function(){movesetCache[key]=null;movesetLoading[key]=false;cb&&cb(null);});
 }
 function evoName(no){var n=parseInt(no,10)||0;return pkmNoName(n)||PKM_DEX_EN[n]||('#'+n);}
-function evoFormLabel(cond){
+function evoFormName(cond,baseName){
   var s=String(cond||'');
-  if(s.indexOf('超级进化')>=0)return '超级进化';
-  if(s.indexOf('超极巨化')>=0||s.indexOf('超極巨')>=0)return '超极巨化';
-  if(s.indexOf('原始回归')>=0)return '原始回归';
-  return '形态变化';
+  if(s.indexOf('超级进化')>=0)return '超级'+baseName;
+  if(s.indexOf('超极巨化')>=0||s.indexOf('超極巨')>=0)return '超极巨化'+baseName;
+  if(s.indexOf('原始回归')>=0)return '原始'+baseName;
+  if(s.indexOf('起源')>=0)return '起源'+baseName;
+  if(s.indexOf('伽勒尔')>=0)return '伽勒尔'+baseName;
+  if(s.indexOf('洗翠')>=0)return '洗翠'+baseName;
+  if(s.indexOf('阿罗拉')>=0)return '阿罗拉'+baseName;
+  if(s.indexOf('现形')>=0)return '灵兽'+baseName;
+  if(s.indexOf('惩戒')>=0)return '解放'+baseName;
+  if(s.indexOf('达摩模式')>=0)return '达摩'+baseName;
+  if(s.indexOf('太晶')>=0)return '太晶'+baseName;
+  if(s.indexOf('星晶')>=0)return '星晶'+baseName;
+  if(s.indexOf('全能')>=0)return '全能'+baseName;
+  return baseName+'（形态变化）';
 }
 function evoChainRender(chain,selfNo){
   if(!chain||!chain.length)return '<span class="dim">暂无进化数据</span>';
@@ -5773,8 +5783,8 @@ function evoChainRender(chain,selfNo){
         .replace(/[；;]\s*$/,'');
     }
     var hlFrom=(c.from===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
-    var hlTo=(!same&&c.to===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
-    var toHtml=same?('<span class="dim">'+esc(evoFormLabel(c.cond))+'</span>'):('<span'+hlTo+'>'+esc(evoName(c.to))+'</span>');
+    var hlTo=(c.to===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
+    var toHtml='<span'+hlTo+'>'+esc(same?evoFormName(c.cond,evoName(c.from)):evoName(c.to))+'</span>';
     rows.push('<div class="evo-row">'
       +'<span class="evo-from"'+hlFrom+'>'+esc(evoName(c.from))+'</span>'
       +'<span class="evo-cond">'+(cond?esc(cond):'—')+'</span>'
