@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.3';
+var PK_VER='3.3.4';
 /*PK_NOTICE_BEGIN
-图鉴详情：新增介绍、进化链、可学招式；形态改为按见过/捕获显示
+可学招式改为「等级提升/学习器」页签，点招式名可查看详情
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -496,6 +496,18 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.abi-link:hover{color:#7cc4f8}'+
 '.pkm-forms{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0;border-bottom:1px dashed rgba(170,204,255,.25)}'+
 '.pkm-form-btn.active{background:rgba(43,74,111,.9);border-color:#7cc4f8}'+
+'.mv-tabs{display:flex;gap:4px;margin-bottom:4px}'+
+'.mv-tab{flex:1;padding:4px 6px;font-size:.72rem;border:1px solid var(--pk-line);border-radius:6px;background:rgba(43,74,111,.3);color:var(--text);cursor:pointer}'+
+'.mv-tab.active{background:rgba(43,74,111,.9);border-color:#7cc4f8;font-weight:800}'+
+'.mv-panel{display:block}'+
+'.mv-row{display:grid;grid-template-columns:56px 1fr auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed rgba(170,204,255,.15);font-size:.8rem}'+
+'.mv-row:last-child{border-bottom:none}'+
+'.mv-row.mv-head{color:var(--dim);font-size:.7rem;font-weight:800;border-bottom:1px solid rgba(170,204,255,.3)}'+
+'.mv-c1{text-align:center;color:var(--dim);font-size:.78rem}'+
+'.mv-c2{color:var(--text);text-align:left}'+
+'.mv-c3{text-align:right}'+
+'.mv-name{cursor:pointer}'+
+'.mv-name:hover{color:#7cc4f8}'+
 '.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(170,204,255,.25);font-size:.85rem;color:var(--text)}'+
 '.row:last-child{border-bottom:none}'+
 '.row .k{color:var(--dim);flex-shrink:0}'+
@@ -5018,11 +5030,12 @@ function pkmNoName(no){
   }
   return '';
 }
-function moveNameById(id){
+function moveById(id){
   var store=PKM_DB['move'];
-  if(store&&store.data){for(var i=0;i<store.data.length;i++){if(store.data[i].id===id)return store.data[i].name||'';}}
-  return '';
+  if(store&&store.data){for(var i=0;i<store.data.length;i++){if(store.data[i].id===id)return store.data[i];}}
+  return null;
 }
+function moveNameById(id){var m=moveById(id);return m?m.name||'':'';}
 function formRegionOf(nm,en){
   var s=(String(nm||'')+' '+(String(en||'').toLowerCase()));
   if(s.indexOf('阿罗拉')>=0||s.indexOf('阿羅拉')>=0||s.indexOf('-alola')>=0)return 'alola';
@@ -5764,21 +5777,43 @@ function renderEvoInto(d){
     el2.innerHTML=evoChainRender(chain,(d&&d.ndex)||0);
   });
 }
+function mvRowHead(c1){
+  return '<div class="mv-row mv-head"><span class="mv-c1">'+c1+'</span><span class="mv-c2">招式名</span><span class="mv-c3">属性</span></div>';
+}
+function mvRows(list,hasLevel,head1){
+  var out=mvRowHead(head1);
+  if(!list||!list.length){return out+'<div class="mv-row"><span class="mv-c1 dim" style="grid-column:1/-1;text-align:center">暂无</span></div>';}
+  for(var i=0;i<list.length;i++){
+    var mid=hasLevel?list[i][0]:list[i];
+    var lvl=hasLevel?list[i][1]:'';
+    var mv=moveById(mid);
+    var nm=mv?mv.name:('#'+mid);
+    var tp=mv?mv.type:'';
+    var cat=mv?mv.cat:'';
+    var c1=hasLevel?((lvl!==''&&lvl!=null)?lvl:'-'):'-';
+    out+='<div class="mv-row">'
+      +'<span class="mv-c1">'+c1+'</span>'
+      +'<span class="mv-c2 mv-name" data-move="'+esc(nm)+'"'+(tp?' data-mvtype="'+esc(tp)+'"':'')+(cat?' data-mvcat="'+esc(cat)+'"':'')+'>'+esc(nm)+'</span>'
+      +'<span class="mv-c3">'+(tp?typeChipHTML(tp):'<span class="dim">-</span>')+'</span>'
+      +'</div>';
+  }
+  return out;
+}
 function movesetRender(ms){
   var gens=ms&&ms.allgen||[];
   var g=null;
   for(var i=gens.length-1;i>=0;i--){if(gens[i].levelup&&gens[i].levelup.length){g=gens[i];break;}}
   if(!g)g=gens[gens.length-1]||null;
-  if(!g||!g.levelup||!g.levelup.length)return '<span class="dim">暂无升级招式</span>';
-  var lv=g.levelup.slice().sort(function(a,b){return (a[1]-b[1])||(a[0]-b[0]);});
-  var out=[];
-  for(var j=0;j<lv.length;j++){
-    var mn=moveNameById(lv[j][0]);
-    if(!mn)continue;
-    out.push('<span style="white-space:nowrap"><span class="dim">Lv.'+lv[j][1]+'</span> '+esc(mn)+'</span>');
-  }
-  if(!out.length)return '<span class="dim">暂无升级招式</span>';
-  return out.join('、');
+  if(!g)return '<span class="dim">暂无招式数据</span>';
+  var lv=(g.levelup||[]).slice().sort(function(a,b){return (a[1]-b[1])||(a[0]-b[0]);});
+  var machine=(g.machine||[]).slice();
+  var tabs='<div class="mv-tabs">'
+    +'<button class="mv-tab active" data-mvtab="levelup">等级提升</button>'
+    +'<button class="mv-tab" data-mvtab="machine">学习器</button>'
+    +'</div>';
+  return tabs
+    +'<div class="mv-panel" data-mvpanel="levelup">'+mvRows(lv,true,'等级')+'</div>'
+    +'<div class="mv-panel" data-mvpanel="machine" style="display:none">'+mvRows(machine,false,'-')+'</div>';
 }
 function renderMovesInto(d){
   var el=document.getElementById('pkm-moves');if(!el)return;
@@ -5792,6 +5827,13 @@ function renderMovesInto(d){
       el3.innerHTML=movesetRender(ms);
     });
   });
+}
+function mvTabSwitch(tab){
+  var wrap=document.getElementById('pkm-moves');if(!wrap)return;
+  var tabs=wrap.querySelectorAll('.mv-tab');
+  for(var i=0;i<tabs.length;i++){tabs[i].classList.toggle('active',tabs[i].getAttribute('data-mvtab')===tab);}
+  var panels=wrap.querySelectorAll('.mv-panel');
+  for(var j=0;j<panels.length;j++){panels[j].style.display=(panels[j].getAttribute('data-mvpanel')===tab)?'':'none';}
 }
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
@@ -8483,6 +8525,7 @@ var fia=e.target.closest('[data-fab-img-apply]');if(fia){e.stopPropagation();fab
 var fip=e.target.closest('[data-fab-img-preview]');if(fip){e.stopPropagation();var fiuv=document.getElementById('fab-img-url');if(fiuv)fabImgPreview(fiuv.value);return;}
 var fir=e.target.closest('[data-fab-img-reset]');if(fir){e.stopPropagation();fabImgReset();return;}
 var dmb=e.target.closest('[data-dt-all]');if(dmb){e.stopPropagation();showAllMoves(dmb.getAttribute('data-dt-all'));return;}
+var mvt=e.target.closest('[data-mvtab]');if(mvt){e.stopPropagation();mvTabSwitch(mvt.getAttribute('data-mvtab'));return;}
     var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
     var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{var _nd=cry.getAttribute('data-cry');var _au=new Audio(PKM_DATA_BASE+'cries/'+_nd+'.ogg');_au.onerror=function(){try{new Audio('https://cdn.jsdelivr.net/gh/PokeAPI/cries@main/cries/pokemon/latest/'+_nd+'.ogg').play();}catch(e2){}};_au.play();}catch(err){}return;}
     var ab=e.target.closest('[data-ability]');if(ab){e.stopPropagation();showAbilityInfo(ab.getAttribute('data-ability'));return;}
