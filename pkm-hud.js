@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.17';
+var PK_VER='3.3.18';
 /*PK_NOTICE_BEGIN
-修复太乐巴戈斯太晶/星晶形态图；切换形态时介绍随形态变化
+修复皮卡丘帽子等形态图：形态后缀映射移到数据仓库，HUD 不再硬编码
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4964,7 +4964,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260930h';
+var PKM_DATA_REV='r20260930i';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -5349,46 +5349,6 @@ function pokedexHTML(){
   return html;
 }
 var pkmCache={},pkmLoading={};
-function formKeyOf(nm,region){
-  if(region)return region;
-  var s=t2s(nm).replace(/超級/g,'超级').replace(/超極巨/g,'超极巨').replace(/Ｘ/g,'X').replace(/Ｙ/g,'Y').replace(/Ｚ/g,'Z').toUpperCase();
-  if(s.indexOf('MEGA')>=0||s.indexOf('超级')>=0){
-    if(s.indexOf('X')>=0)return 'mega-x';
-    if(s.indexOf('Y')>=0)return 'mega-y';
-    if(s.indexOf('Z')>=0)return 'mega-z';
-    return 'mega';
-  }
-  if(s.indexOf('原始')>=0)return 'primal';
-  if(s.indexOf('超极巨')>=0)return 'gmax';
-  if(s.indexOf('小智')>=0||s.indexOf('牵绊')>=0)return 'ash';
-  if(s.indexOf('黄昏之鬃')>=0)return 'dusk';
-  if(s.indexOf('拂晓之翼')>=0)return 'dawn';
-  if(s.indexOf('究极')>=0)return 'ultra';
-  if(s.indexOf('起源')>=0)return 'origin';
-  if(s.indexOf('天空')>=0)return 'sky';
-  if(s.indexOf('完全体')>=0)return 'complete';
-  if(s.indexOf('10%')>=0)return '10';
-  if(s.indexOf('50%')>=0)return '50';
-  if(s.indexOf('攻击形态')>=0)return 'attack';
-  if(s.indexOf('防御形态')>=0)return 'defense';
-  if(s.indexOf('速度形态')>=0)return 'speed';
-  if(s.indexOf('暗黑')>=0)return 'black';
-  if(s.indexOf('焰白')>=0)return 'white';
-  if(s.indexOf('剑之王')>=0)return 'crowned-sword';
-  if(s.indexOf('盾之王')>=0)return 'crowned-shield';
-  if(s.indexOf('骑白马')>=0)return 'ice';
-  if(s.indexOf('骑黑马')>=0)return 'shadow';
-  if(s.indexOf('灵兽')>=0)return 'therian';
-  if(s.indexOf('达摩')>=0)return 'zen';
-  if(s.indexOf('鱼群')>=0)return 'school';
-  if(s.indexOf('现形')>=0)return 'busted';
-  if(s.indexOf('血月')>=0)return 'bloodmoon';
-  if(s.indexOf('星晶')>=0)return 'stellar';
-  if(s.indexOf('太晶')>=0)return 'terastal';
-  if(s.indexOf('500年前')>=0||s.indexOf('古老')>=0)return 'original';
-  if(s.indexOf('全能')>=0)return 'hero';
-  return '';
-}
 function parsePkmn(wt){
   var d={name:'',enname:'',species:'',ndex:'',egg1:'',egg2:'',catchrate:'',forms:[]};
   var m=wt.match(/\{\{\s*[^{}\n]*信息框[\s\S]*?\n\}\}/);
@@ -5422,7 +5382,7 @@ var bs=bms.length?statsOf(bms[0]):{hp:'',atk:'',def:'',spa:'',spd:'',spe:''};
     var t1v=g0('type1-'+n);if(t1v===null)t1v=g('type1');
     var t2v=g0('type2-'+n);if(t2v===null)t2v=g('type2');
     var a1v=g0('ability1-'+n);if(a1v===null)a1v=g('ability1');
-    d.forms.push({name:t2s(nm),label:lb,region:region,formKey:formKeyOf(nm,region),type1:t2s(t1v),type2:t2s(t2v),ability1:t2s(a1v),ability2:t2s(g('ability2-'+n)),abilityd:t2s(g('abilityd'+n)),height:g('height'+n)||g('height'),weight:g('weight'+n)||g('weight'),stats:bms[n-1]?statsOf(bms[n-1]):bs});
+    d.forms.push({name:t2s(nm),label:lb,region:region,type1:t2s(t1v),type2:t2s(t2v),ability1:t2s(a1v),ability2:t2s(g('ability2-'+n)),abilityd:t2s(g('abilityd'+n)),height:g('height'+n)||g('height'),weight:g('weight'+n)||g('weight'),stats:bms[n-1]?statsOf(bms[n-1]):bs});
     n++;
   }
   return d;
@@ -5461,9 +5421,9 @@ function genToPkmAll(entries,baseEn,no){
     var g=arr[j];
     var isBase=(g===base);
     var region=formRegionOf(g.name,g.en);
-    var fk=isBase?'':formKeyOf(g.name||'',region);
     var ab2=g.abilities||[],ty2=g.types||[],st2=g.stats||{};
-    d.forms.push({name:g.name||'',en:g.en||'',label:isBase?'普通':(g.name||''),region:region,formKey:fk,base:isBase?1:0,
+    d.forms.push({name:g.name||'',en:g.en||'',label:isBase?'普通':(g.name||''),region:region,base:isBase?1:0,
+      suffix:g.suffix||'',
       desc:g.desc||'',
       type1:ty2[0]||'',type2:ty2[1]||'',
       ability1:ab2[0]||'',ability2:ab2[1]||'',abilityd:ab2[2]||'',
@@ -5710,30 +5670,13 @@ function md5(str){
     return [a,b,c,d];
   }
   return binl2hex(coreMD5(str2binl(str),str.length*8));
-}var PKM_REPO_FORM_SUFFIX={
-  'mega-x':'-mega-x','mega-y':'-mega-y','mega-z':'-mega-z','mega':'-mega','primal':'-primal',
-  'gmax':'-gmax','ash':'-ash','dusk':'-dusk','dawn':'-dawn','ultra':'-ultra','origin':'-origin',
-  'sky':'-sky','complete':'-complete','10':'-10','50':'-50','attack':'-attack','defense':'-defense',
-  'speed':'-speed','black':'-black','white':'-white','crowned-sword':'-crowned','crowned-shield':'-crowned',
-  'ice':'-ice','shadow':'-shadow','therian':'-therian','zen':'-zen','school':'-school','busted':'-busted',
-  'bloodmoon':'-bloodmoon','stellar':'-stellar','terastal':'-terastal','hero':'-hero',
-  'alola':'-alola','galar':'-galar','hisui':'-hisui','paldea':'-paldea'
-};
-function pickHomeImg(idx,shiny){
+}function pickHomeImg(idx,shiny){
   var d=curPkm;
   var f=null;
   if(d){var forms=curPkmForms&&curPkmForms.length?curPkmForms:d.forms;f=forms[idx]||forms[0];}
   var en=(d&&d.enname)?String(d.enname).toLowerCase():'';
   if(!en)return '';
-  var fk=(f&&f.formKey)||'';
-  var nm=((f&&f.name)||'')+' '+((f&&f.label)||'');
-  var suf='';
-  if(nm.indexOf('水井')>=0)suf='-wellspring-mask';
-  else if(nm.indexOf('火灶')>=0)suf='-hearthflame-mask';
-  else if(nm.indexOf('础石')>=0)suf='-cornerstone-mask';
-  else if(nm.indexOf('连击流')>=0)suf='-rapid-strike';
-  else if(nm.indexOf('觉悟')>=0)suf='-resolute';
-  else suf=PKM_REPO_FORM_SUFFIX[fk]||'';
+  var suf=(f&&f.suffix)||'';
   var slug=en+suf;
   return pkmRepoUrl('static','pokeos',slug,shiny);
 }
