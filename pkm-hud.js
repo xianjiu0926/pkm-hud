@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.2';
+var PK_VER='3.3.3';
 /*PK_NOTICE_BEGIN
-修复图鉴精灵详情打不开（数据读取路径修正，全部宝可梦详情恢复）
+图鉴详情：新增介绍、进化链、可学招式；形态改为按见过/捕获显示
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3500,25 +3500,20 @@ function recordSeen(){
 }
 function hitSpecies(set,name){if(!name)return false;if(set[name])return true;if(name.length<2)return false;for(var k in set){if(k.indexOf(name)===0&&k.length>name.length){if(!/[\u4e00-\u9fff]/.test(k.slice(name.length)))return true;}}return false;}
 function formSeen(set,f,base){
+  if(f.base===1)return true;
+  if(!set)return false;
+  if(f.name&&set[f.name])return true;
   if(f.region){
     var rk={'alola':'阿罗拉','galar':'伽勒尔','hisui':'洗翠','paldea':'帕底亚'}[f.region]||'';
     var rt={'alola':'阿羅拉','galar':'伽勒爾','hisui':'洗翠','paldea':'帕底亞'}[f.region]||'';
-    if(!rk)return !!set[f.name];
-    for(var k in set){
-      if((k.indexOf(rk)>=0||(rt&&k.indexOf(rt)>=0))&&k.indexOf(base)>=0)return true;
+    if(rk){
+      for(var k in set){
+        if((k.indexOf(rk)>=0||(rt&&k.indexOf(rt)>=0))&&base&&k.indexOf(base)>=0)return true;
+      }
     }
     return false;
   }
-  if(f.formKey){
-    if(set[f.name])return true;
-    return false;
-  }
-  if(set[base])return true;
-  for(var k2 in set){
-    if(k2.indexOf(base)===0&&k2.length>base.length&&!/[\u4e00-\u9fff]/.test(k2.slice(base.length))){
-      if(k2.indexOf('阿罗拉')<0&&k2.indexOf('阿羅拉')<0&&k2.indexOf('伽勒尔')<0&&k2.indexOf('伽勒爾')<0&&k2.indexOf('洗翠')<0&&k2.indexOf('帕底亚')<0&&k2.indexOf('帕底亞')<0)return true;
-    }
-  }
+  if(f.label&&set[f.label])return true;
   return false;
 }
 function num(v,d){var n=parseInt(v,10);return isNaN(n)?d:n;}
@@ -5007,6 +5002,35 @@ function pkmDbLookupPrefix(kind,name){
   }
   return null;
 }
+function pkmDbLookupAll(kind,no){
+  var store=PKM_DB[kind];if(!store||!store.data)return [];
+  var n=parseInt(no,10);if(isNaN(n))return [];
+  var out=[];
+  for(var i=0;i<store.data.length;i++){if(store.data[i].no===n)out.push(store.data[i]);}
+  return out;
+}
+function pkmNoName(no){
+  var store=PKM_DB['dex'];if(!store||!store.data)return '';
+  var n=parseInt(no,10);if(isNaN(n))return '';
+  for(var i=0;i<store.data.length;i++){
+    var d=store.data[i];
+    if(d.no===n&&d.name){var p=String(d.name).split('(')[0].split('（')[0].trim();if(p)return p;}
+  }
+  return '';
+}
+function moveNameById(id){
+  var store=PKM_DB['move'];
+  if(store&&store.data){for(var i=0;i<store.data.length;i++){if(store.data[i].id===id)return store.data[i].name||'';}}
+  return '';
+}
+function formRegionOf(nm,en){
+  var s=(String(nm||'')+' '+(String(en||'').toLowerCase()));
+  if(s.indexOf('阿罗拉')>=0||s.indexOf('阿羅拉')>=0||s.indexOf('-alola')>=0)return 'alola';
+  if(s.indexOf('伽勒尔')>=0||s.indexOf('伽勒爾')>=0||s.indexOf('-galar')>=0)return 'galar';
+  if(s.indexOf('洗翠')>=0||s.indexOf('-hisui')>=0)return 'hisui';
+  if(s.indexOf('帕底亚')>=0||s.indexOf('帕底亞')>=0||s.indexOf('-paldea')>=0)return 'paldea';
+  return '';
+}
 function fetchMove(name,cb){
   if(!name){cb&&cb(null);return;}
   var _diy=diyGet('move',name);
@@ -5393,14 +5417,36 @@ function genFileOf(no){
   if(n>=906&&n<=1025)return 'gen-09.json';
   return 'gen-10.json';
 }
-function genToPkm(g){
-  var ab=g.abilities||[],ty=g.types||[],st=g.stats||{},eg=g.eggGroups||[];
-  return {name:g.name||'',enname:g.en||'',species:g.species||'',ndex:(g.no!=null?String(g.no):''),
-    egg1:eg[0]||'',egg2:eg[1]||'',catchrate:(g.catchRate!=null?String(g.catchRate):''),
-    forms:[{name:g.name||'',label:'普通',region:'',type1:ty[0]||'',type2:ty[1]||'',
-      ability1:ab[0]||'',ability2:ab[1]||'',abilityd:ab[2]||'',
+function genToPkmAll(entries,baseEn,no){
+  var arr=entries||[];
+  if(!arr.length)return null;
+  var base=null;
+  for(var i=0;i<arr.length;i++){if(String(arr[i].en||'').toLowerCase()===baseEn){base=arr[i];break;}}
+  if(!base)base=arr[0];
+  var ab=base.abilities||[],eg=base.eggGroups||[];
+  var d={name:base.name||'',enname:baseEn||String(base.en||'').toLowerCase(),species:base.species||'',
+    ndex:(base.no!=null?String(base.no):String(no||'')),
+    jp:base.jp||'',gen:base.gen||'',color:base.color||'',
+    genderRatio:(base.genderRatio!=null?base.genderRatio:-1),
+    hatchSteps:(base.hatchSteps!=null?base.hatchSteps:''),
+    baseFriendship:(base.baseFriendship!=null?base.baseFriendship:''),
+    evolveChainId:(base.evolveChainId!=null?base.evolveChainId:''),
+    desc:base.desc||'',
+    egg1:eg[0]||'',egg2:eg[1]||'',catchrate:(base.catchRate!=null?String(base.catchRate):''),
+    forms:[]};
+  for(var j=0;j<arr.length;j++){
+    var g=arr[j];
+    var isBase=(g===base);
+    var region=formRegionOf(g.name,g.en);
+    var fk=isBase?'':formKeyOf(g.name||'',region);
+    var ab2=g.abilities||[],ty2=g.types||[],st2=g.stats||{};
+    d.forms.push({name:g.name||'',en:g.en||'',label:isBase?'普通':(g.name||''),region:region,formKey:fk,base:isBase?1:0,
+      type1:ty2[0]||'',type2:ty2[1]||'',
+      ability1:ab2[0]||'',ability2:ab2[1]||'',abilityd:ab2[2]||'',
       height:(g.height!=null?String(g.height):''),weight:(g.weight!=null?String(g.weight):''),
-      stats:{hp:(st.hp!=null?String(st.hp):''),atk:(st.atk!=null?String(st.atk):''),def:(st.def!=null?String(st.def):''),spa:(st.spa!=null?String(st.spa):''),spd:(st.spd!=null?String(st.spd):''),spe:(st.spe!=null?String(st.spe):'')}}]};
+      stats:{hp:(st2.hp!=null?String(st2.hp):''),atk:(st2.atk!=null?String(st2.atk):''),def:(st2.def!=null?String(st2.def):''),spa:(st2.spa!=null?String(st2.spa):''),spd:(st2.spd!=null?String(st2.spd):''),spe:(st2.spe!=null?String(st2.spe):'')}});
+  }
+  return d;
 }
 function fetchPokemon(name,ndex,cb){
   if(typeof ndex==='function'){cb=ndex;ndex=0;}
@@ -5453,17 +5499,12 @@ function fetchPokemon(name,ndex,cb){
       if(!hit&&store)hit=pkmDbLookupPrefix('dex',b);
       var dexNo=(hit&&hit.no!=null)?(parseInt(hit.no,10)||0):no;
       if(!dexNo){parsePage(t2s(key),searchThen);return;}
+      if(!baseEn)baseEn=(PKM_DEX_EN[dexNo]||'');
       var gf=genFileOf(dexNo);
       pkmDbLoad('pkm_'+gf,'pokemon/'+gf,['en','name','no'],function(gstore){
-        var ghit=null;
-        if(gstore){
-          if(hit)ghit=pkmDbLookup('pkm_'+gf,hit.en);
-          if(!ghit&&hit)ghit=pkmDbLookup('pkm_'+gf,hit.name);
-          if(!ghit&&baseEn)ghit=pkmDbLookup('pkm_'+gf,baseEn);
-          if(!ghit&&b)ghit=pkmDbLookupPrefix('pkm_'+gf,b);
-          if(!ghit)ghit=pkmDbLookup('pkm_'+gf,String(dexNo));
-        }
-        if(ghit){done(genToPkm(ghit));}else{parsePage(t2s(key),searchThen);}
+        var entries=gstore?pkmDbLookupAll('pkm_'+gf,dexNo):[];
+        var d=entries.length?genToPkmAll(entries,baseEn,dexNo):null;
+        if(d&&d.forms&&d.forms.length){done(d);}else{parsePage(t2s(key),searchThen);}
       });
     });
   }
@@ -5574,6 +5615,7 @@ if(big){
   var b=document.getElementById('pkm-body');
   if(b){
     var out='';
+    if(d.desc)out+='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.desc)+'</span></div>';
     if(d.species)out+='<div class="row"><span class="k">分类</span><span class="v">'+esc(d.species)+'</span></div>';
     var types='';
     if(f.type1)types+=typeChipHTML(f.type1);
@@ -5600,7 +5642,10 @@ if(big){
       var ratePct=(!isNaN(rate)&&rate>0)?(rate/7.65).toFixed(1)+'%':'—';
       out+='<div class="row"><span class="k">捕获率</span><span class="v">'+ratePct+'</span></div>';
     }
+    out+='<div class="row block" id="pkm-evo-row"><span class="k">进化链</span><span class="v" id="pkm-evo"><span class="dim">加载中…</span></span></div>';
+    out+='<div class="row block" id="pkm-moves-row"><span class="k">可学招式</span><span class="v" id="pkm-moves"><span class="dim">加载中…</span></span></div>';
     b.innerHTML=out||'<div class="empty">没有数据</div>';var lv=document.getElementById('pkm-lv');if(lv){bindPkmSlider(lv);}updatePkmStats();
+    renderEvoInto(d);renderMovesInto(d);
   }
 }function dexStr(n){var s=String(n);while(s.length<3)s='0'+s;return s;}
 function md5(str){
@@ -5667,6 +5712,87 @@ function pickHomeImg(idx,shiny){
   var slug=en+suf;
   return pkmRepoUrl('static','pokeos',slug,shiny);
 }
+var evolutionCache=null,evolutionLoading=false,evolutionCbs=[];
+function loadEvolution(cb){
+  if(evolutionCache){cb&&cb(evolutionCache);return;}
+  if(evolutionLoading){cb&&evolutionCbs.push(cb);return;}
+  evolutionLoading=true;
+  hudFetch(PKM_DATA_BASE+'evolution.json')
+    .then(function(r){return r.ok?r.json():Promise.reject();})
+    .then(function(j){evolutionCache=(j&&j.data)||[];evolutionLoading=false;var c=evolutionCbs;evolutionCbs=[];for(var i=0;i<c.length;i++){try{c[i](evolutionCache);}catch(e){}}cb&&cb(evolutionCache);})
+    .catch(function(){evolutionLoading=false;var c=evolutionCbs;evolutionCbs=[];for(var i=0;i<c.length;i++){try{c[i](null);}catch(e){}}cb&&cb(null);});
+}
+var movesetCache={},movesetLoading={};
+function loadMoveset(no,cb){
+  var key=String(no);
+  if(movesetCache[key]){cb&&cb(movesetCache[key]);return;}
+  if(movesetLoading[key]){cb&&cb(null);return;}
+  movesetLoading[key]=true;
+  var file='movesets/pokemon-'+('000'+key).slice(-4)+'.json';
+  hudFetch(PKM_DATA_BASE+file)
+    .then(function(r){return r.ok?r.json():Promise.reject();})
+    .then(function(j){movesetCache[key]=j;movesetLoading[key]=false;cb&&cb(j);})
+    .catch(function(){movesetCache[key]=null;movesetLoading[key]=false;cb&&cb(null);});
+}
+function evoName(no){var n=parseInt(no,10)||0;return pkmNoName(n)||PKM_DEX_EN[n]||('#'+n);}
+function evoChainRender(chain,selfNo){
+  if(!chain||!chain.length)return '<span class="dim">暂无进化数据</span>';
+  var selfN=parseInt(selfNo,10)||0,out=[];
+  for(var i=0;i<chain.length;i++){
+    var c=chain[i];
+    var cond=String(c.cond||'').replace(/\n/g,'；');
+    if(c.from===c.to){
+      out.push('<span class="dim">'+(cond?esc(cond):'形态变化')+'</span>');
+    }else{
+      var line='<span'+(c.from===selfN?' style="color:var(--pk-blue);font-weight:700"':'')+'>'+esc(evoName(c.from))+'</span> <span class="dim">→</span>';
+      if(cond)line+=' <span class="dim">'+esc(cond)+'</span> <span class="dim">→</span>';
+      line+=' <span'+(c.to===selfN?' style="color:var(--pk-blue);font-weight:700"':'')+'>'+esc(evoName(c.to))+'</span>';
+      out.push(line);
+    }
+  }
+  return out.join('<br>');
+}
+function renderEvoInto(d){
+  var el=document.getElementById('pkm-evo');if(!el)return;
+  var id=(d&&d.evolveChainId!=null)?d.evolveChainId:'';
+  if(id===''||id==null){el.innerHTML='<span class="dim">暂无进化数据</span>';return;}
+  loadEvolution(function(list){
+    var el2=document.getElementById('pkm-evo');if(!el2)return;
+    if(!list){el2.innerHTML='<span class="dim">进化数据加载失败</span>';return;}
+    var chain=null;
+    for(var i=0;i<list.length;i++){if(String(list[i].id)===String(id)){chain=list[i].chain;break;}}
+    el2.innerHTML=evoChainRender(chain,(d&&d.ndex)||0);
+  });
+}
+function movesetRender(ms){
+  var gens=ms&&ms.allgen||[];
+  var g=null;
+  for(var i=gens.length-1;i>=0;i--){if(gens[i].levelup&&gens[i].levelup.length){g=gens[i];break;}}
+  if(!g)g=gens[gens.length-1]||null;
+  if(!g||!g.levelup||!g.levelup.length)return '<span class="dim">暂无升级招式</span>';
+  var lv=g.levelup.slice().sort(function(a,b){return (a[1]-b[1])||(a[0]-b[0]);});
+  var out=[];
+  for(var j=0;j<lv.length;j++){
+    var mn=moveNameById(lv[j][0]);
+    if(!mn)continue;
+    out.push('<span style="white-space:nowrap"><span class="dim">Lv.'+lv[j][1]+'</span> '+esc(mn)+'</span>');
+  }
+  if(!out.length)return '<span class="dim">暂无升级招式</span>';
+  return out.join('、');
+}
+function renderMovesInto(d){
+  var el=document.getElementById('pkm-moves');if(!el)return;
+  var nd=parseInt(d&&d.ndex,10)||0;
+  if(!nd){el.innerHTML='<span class="dim">暂无招式数据</span>';return;}
+  loadMoveset(nd,function(ms){
+    var el2=document.getElementById('pkm-moves');if(!el2)return;
+    if(!ms){el2.innerHTML='<span class="dim">暂无招式数据</span>';return;}
+    pkmDbLoad('move','moves.json',['name','en','jp'],function(){
+      var el3=document.getElementById('pkm-moves');if(!el3)return;
+      el3.innerHTML=movesetRender(ms);
+    });
+  });
+}
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
   clearBack();
@@ -5678,11 +5804,13 @@ fetchPokemon(name,curPkmNdex,function(d){
     if(!d){if(bb)bb.innerHTML='<div class="empty">宝可梦数据获取失败</div>';return;}
     curPkm=d;
     var seenFull=devUnlocked()?{}:loadSeenFull();
-    var shown=[];
+    var baseForms=[],otherForms=[];
     d.forms.forEach(function(f){
-      if(formSeen(seenFull,f,name))shown.push(f);
+      if(!(devUnlocked()||formSeen(seenFull,f,name)))return;
+      if(f.base===1)baseForms.push(f);else otherForms.push(f);
     });
-    if(!shown.length)shown=d.forms;
+    var shown=baseForms.concat(otherForms);
+    if(!shown.length)shown=[d.forms[0]];
     curPkmForms=shown;
     var bar=document.getElementById('pkm-formbar');
     if(bar&&shown.length>1){
