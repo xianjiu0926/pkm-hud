@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.1';
+var PK_VER='3.3.2';
 /*PK_NOTICE_BEGIN
 主题深浅改为点击展开滑条，避免误触
 PK_NOTICE_END*/
@@ -4996,6 +4996,17 @@ function pkmDbLookup(kind,name){
   var hw=normItemName(n);if(hw!==n&&store.idx[hw])return store.idx[hw];
   return null;
 }
+function pkmDbLookupPrefix(kind,name){
+  var store=PKM_DB[kind];if(!store||!store.data)return null;
+  var n=String(name==null?'':name).trim();if(!n)return null;
+  for(var i=0;i<store.data.length;i++){
+    var d=store.data[i];var nm=d&&d.name;
+    if(nm==null)continue;
+    var p=String(nm).split('(')[0].split('（')[0].trim();
+    if(p===n)return d;
+  }
+  return null;
+}
 function fetchMove(name,cb){
   if(!name){cb&&cb(null);return;}
   var _diy=diyGet('move',name);
@@ -5391,7 +5402,8 @@ function genToPkm(g){
       height:(g.height!=null?String(g.height):''),weight:(g.weight!=null?String(g.weight):''),
       stats:{hp:(st.hp!=null?String(st.hp):''),atk:(st.atk!=null?String(st.atk):''),def:(st.def!=null?String(st.def):''),spa:(st.spa!=null?String(st.spa):''),spd:(st.spd!=null?String(st.spd):''),spe:(st.spe!=null?String(st.spe):'')}}]};
 }
-function fetchPokemon(name,cb){
+function fetchPokemon(name,ndex,cb){
+  if(typeof ndex==='function'){cb=ndex;ndex=0;}
   if(!name){cb&&cb(null);return;}
   var key=name;
   if(pkmCache[key]){cb&&cb(pkmCache[key]);return;}
@@ -5432,13 +5444,25 @@ function fetchPokemon(name,cb){
   }
   function localLookup(){
     var b=pkmFormParse(key).base;
-    if(!b){parsePage(t2s(key),searchThen);return;}
+    var no=parseInt(ndex,10)||0;
+    var baseEn=(no&&PKM_DEX_EN[no])?PKM_DEX_EN[no]:'';
+    if(!b&&!baseEn){parsePage(t2s(key),searchThen);return;}
     pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
       var hit=store&&pkmDbLookup('dex',b);
-      if(!hit||!hit.no){parsePage(t2s(key),searchThen);return;}
-      var gf=genFileOf(hit.no);
-      pkmDbLoad('pkm_'+gf,gf,['en','name'],function(gstore){
-        var ghit=gstore&&(pkmDbLookup('pkm_'+gf,hit.en)||pkmDbLookup('pkm_'+gf,hit.name));
+      if(!hit&&baseEn)hit=store&&pkmDbLookup('dex',baseEn);
+      if(!hit&&store)hit=pkmDbLookupPrefix('dex',b);
+      var dexNo=(hit&&hit.no!=null)?(parseInt(hit.no,10)||0):no;
+      if(!dexNo){parsePage(t2s(key),searchThen);return;}
+      var gf=genFileOf(dexNo);
+      pkmDbLoad('pkm_'+gf,'pokemon/'+gf,['en','name','no'],function(gstore){
+        var ghit=null;
+        if(gstore){
+          if(hit)ghit=pkmDbLookup('pkm_'+gf,hit.en);
+          if(!ghit&&hit)ghit=pkmDbLookup('pkm_'+gf,hit.name);
+          if(!ghit&&baseEn)ghit=pkmDbLookup('pkm_'+gf,baseEn);
+          if(!ghit&&b)ghit=pkmDbLookupPrefix('pkm_'+gf,b);
+          if(!ghit)ghit=pkmDbLookup('pkm_'+gf,String(dexNo));
+        }
         if(ghit){done(genToPkm(ghit));}else{parsePage(t2s(key),searchThen);}
       });
     });
@@ -5649,7 +5673,7 @@ function showPokemonInfo(name,ndex){
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body"><div id="pkm-formbar"></div><div class="pkm-big" id="pkm-big" data-shiny-toggle title="点击切换普通/闪光"><div class="empty">加载中...</div></div><div id="pkm-body"></div></div></div>';
   overlay.classList.add('open');
   curPkm=null;curPkmForm=0;curPkmForms=[];curPkmShiny=false;
-fetchPokemon(name,function(d){
+fetchPokemon(name,curPkmNdex,function(d){
     var bb=document.getElementById('pkm-body');
     if(!d){if(bb)bb.innerHTML='<div class="empty">宝可梦数据获取失败</div>';return;}
     curPkm=d;
