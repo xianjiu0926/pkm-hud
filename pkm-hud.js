@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.5';
+var PK_VER='3.3.6';
 /*PK_NOTICE_BEGIN
-可学招式：进化时学会（等级 0）的招式等级显示为 -
+进化链改为三列表格（精灵名｜进化条件｜精灵名）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -508,6 +508,11 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.mv-c3{text-align:right}'+
 '.mv-name{cursor:pointer}'+
 '.mv-name:hover{color:#7cc4f8}'+
+'.evo-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed rgba(170,204,255,.12);font-size:.8rem}'+
+'.evo-row:last-child{border-bottom:none}'+
+'.evo-from{text-align:left;font-weight:600}'+
+'.evo-cond{text-align:center;color:var(--dim);font-size:.72rem;line-height:1.3;word-break:break-word}'+
+'.evo-to{text-align:right;font-weight:600}'+
 '.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(170,204,255,.25);font-size:.85rem;color:var(--text)}'+
 '.row:last-child{border-bottom:none}'+
 '.row .k{color:var(--dim);flex-shrink:0}'+
@@ -5748,22 +5753,35 @@ function loadMoveset(no,cb){
     .catch(function(){movesetCache[key]=null;movesetLoading[key]=false;cb&&cb(null);});
 }
 function evoName(no){var n=parseInt(no,10)||0;return pkmNoName(n)||PKM_DEX_EN[n]||('#'+n);}
+function evoFormLabel(cond){
+  var s=String(cond||'');
+  if(s.indexOf('超级进化')>=0)return '超级进化';
+  if(s.indexOf('超极巨化')>=0||s.indexOf('超極巨')>=0)return '超极巨化';
+  if(s.indexOf('原始回归')>=0)return '原始回归';
+  return '形态变化';
+}
 function evoChainRender(chain,selfNo){
   if(!chain||!chain.length)return '<span class="dim">暂无进化数据</span>';
-  var selfN=parseInt(selfNo,10)||0,out=[];
+  var selfN=parseInt(selfNo,10)||0,rows=[];
   for(var i=0;i<chain.length;i++){
     var c=chain[i];
     var cond=String(c.cond||'').replace(/\n/g,'；');
-    if(c.from===c.to){
-      out.push('<span class="dim">'+(cond?esc(cond):'形态变化')+'</span>');
-    }else{
-      var line='<span'+(c.from===selfN?' style="color:var(--pk-blue);font-weight:700"':'')+'>'+esc(evoName(c.from))+'</span> <span class="dim">→</span>';
-      if(cond)line+=' <span class="dim">'+esc(cond)+'</span> <span class="dim">→</span>';
-      line+=' <span'+(c.to===selfN?' style="color:var(--pk-blue);font-weight:700"':'')+'>'+esc(evoName(c.to))+'</span>';
-      out.push(line);
+    var same=(c.from===c.to);
+    if(same){
+      cond=cond.replace(/[（(][^）)]*(超级进化|超极巨化|原始回归|形态变化)[^）)]*[）)]/g,'')
+        .replace(/(超级进化|超极巨化|原始回归|形态变化)\s*$/,'')
+        .replace(/[；;]\s*$/,'');
     }
+    var hlFrom=(c.from===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
+    var hlTo=(!same&&c.to===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
+    var toHtml=same?('<span class="dim">'+esc(evoFormLabel(c.cond))+'</span>'):('<span'+hlTo+'>'+esc(evoName(c.to))+'</span>');
+    rows.push('<div class="evo-row">'
+      +'<span class="evo-from"'+hlFrom+'>'+esc(evoName(c.from))+'</span>'
+      +'<span class="evo-cond">'+(cond?esc(cond):'—')+'</span>'
+      +'<span class="evo-to">'+toHtml+'</span>'
+      +'</div>');
   }
-  return out.join('<br>');
+  return rows.join('');
 }
 function renderEvoInto(d){
   var el=document.getElementById('pkm-evo');if(!el)return;
