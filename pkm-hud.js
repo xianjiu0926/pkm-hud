@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.27';
+var PK_VER='3.3.28';
 /*PK_NOTICE_BEGIN
-优化图鉴种族值滑条：连续值跟手 + 缓存轨道位置，拖动更丝滑不卡顿
+移除诊断里"重复脚本/样式"检测；样式注入改为幂等（唯一id），避免重复插入
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -946,10 +946,13 @@ try{
   hudScope.listen(WIN,'storage',WIN.__pkmHudAssetStorageHandler);
 }catch(e){hudDiagError('asset lock bind',e);}
 
-var st=document.createElement('style');
-st.type='text/css';
-st.textContent=css;
-(document.head||document.body).appendChild(st);
+if(!document.getElementById('pkm-hud-css')){
+  var st=document.createElement('style');
+  st.type='text/css';
+  st.id='pkm-hud-css';
+  st.textContent=css;
+  (document.head||document.body).appendChild(st);
+}
 
 var PK_IS_TAURI=false;
 try{
@@ -7001,36 +7004,22 @@ function hudDiagSnapshot(){
 }
 try{WIN.__pkmHudDiagnostics=function(){return pkmHudClone(hudDiagSnapshot());};}catch(e){}
 function diagInfo(){
-  var d={styles:'?',cache:'?',scripts:'?',runtime:hudDiagSnapshot()};
-  try{
-    d.styles=0;
-    document.querySelectorAll('style').forEach(function(s){if(s.textContent.indexOf('pkm-hud')>=0||s.textContent.indexOf('map-pin')>=0)d.styles++;});
-  }catch(e){}
+  var d={cache:'?',runtime:hudDiagSnapshot()};
   try{
     var cnt=0,bytes=0;
     for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('pk_')===0){cnt++;bytes+=String(localStorage.getItem(k)||'').length;}}
     d.cache='localStorage '+cnt+'项 / '+Math.round(bytes/1024)+'KB · IDB内存索引 '+Object.keys(hudCacheMem||{}).length+'项';
   }catch(e){}
-  try{
-    var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;
-    var ch=ctx&&ctx.characters?ctx.characters[ctx.characterId]:null;
-    var sc=(ch&&ch.data&&ch.data.extensions&&ch.data.extensions.tavern_helper&&ch.data.extensions.tavern_helper.scripts)||[];
-    var n=0;sc.forEach(function(s){if(s&&s.content&&s.content.indexOf('pkm-hud-btn')>=0)n++;});
-    d.scripts=n;
-  }catch(e){}
   return d;
 }
 function diagHTML(){
-  var d=diagInfo(),r=d.runtime||{},ok=(d.scripts===1&&d.styles===1),errs=r.errors||[],last=errs.length?errs[errs.length-1]:null,h='';
-  h+='<div class="info-row"><span class="k">HUD脚本份数</span><span class="v">'+d.scripts+'（正常1）</span></div>';
-  h+='<div class="info-row"><span class="k">HUD样式注入</span><span class="v">'+d.styles+'（正常1）</span></div>';
+  var d=diagInfo(),r=d.runtime||{},errs=r.errors||[],last=errs.length?errs[errs.length-1]:null,h='';
   h+='<div class="info-row info-row-click" data-cache-usage title="点击查看缓存明细"><span class="k">缓存占用</span><span class="v">'+esc(d.cache)+' 🔍</span></div>';
   h+='<div class="info-row"><span class="k">生命周期</span><span class="v">计时器 '+r.timers+' · 轮询 '+r.intervals+' · Observer '+r.observers+'</span></div>';
   h+='<div class="info-row"><span class="k">网络请求</span><span class="v">当前 '+r.activeRequests+' · 峰值 '+r.maxActiveRequests+'</span></div>';
   h+='<div class="info-row"><span class="k">索引</span><span class="v">精灵 '+r.locationIndex+' · DIY '+r.diyIndex+' · Rev '+esc(r.stateRevision||'-')+'</span></div>';
   h+='<div class="info-row"><span class="k">局部刷新</span><span class="v">'+Number((r.counters||{}).partialRenders||0)+' 次</span></div>';
   h+='<div class="info-row"><span class="k">最近错误</span><span class="v" style="color:'+(last?'#fbbf24':'#4ade80')+'">'+(last?esc(last.area+': '+last.message):'无')+'</span></div>';
-  h+='<div class="info-row"><span class="k">诊断结论</span><span class="v" style="color:'+(ok?'#4ade80':'#f87171')+'">'+(ok?'✅ 运行结构正常':'⚠️ 检测到重复脚本/样式')+'</span></div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-small" data-diag-refresh>🔍 重新检测</button><button class="btn-small" data-diag-copy>📋 复制诊断</button><button class="btn-small" data-diag-clear>🧹 清错误日志</button></div>';
   return h;
 }
