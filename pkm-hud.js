@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.26';
+var PK_VER='3.3.27';
 /*PK_NOTICE_BEGIN
-修复两个形态 suffix：超极巨化武道熊师(连击流) 补 -gmax、达摩狒狒(伽勒尔达摩模式) 补 -zen
+优化图鉴种族值滑条：连续值跟手 + 缓存轨道位置，拖动更丝滑不卡顿
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5544,32 +5544,40 @@ var pkmLvValue=50;
 function bindPkmSlider(el){
   if(!el)return;
   var min=0,max=100;
-  pkmLvValue=parseInt(el.getAttribute('data-val'),10)||50;
-  var fill=el.querySelector('.pkm-fill');
-  var thumb=el.querySelector('.pkm-thumb');
+  pkmLvValue=parseFloat(el.getAttribute('data-val'))||50;
+  el._pkmFill=el.querySelector('.pkm-fill');
+  el._pkmThumb=el.querySelector('.pkm-thumb');
   function paint(){
     var pct=Math.max(0,Math.min(100,(pkmLvValue-min)/(max-min)*100));
-    if(fill)fill.style.width=pct+'%';
-    if(thumb)thumb.style.left='calc('+pct+'% - 9px)';
+    if(el._pkmFill)el._pkmFill.style.width=pct+'%';
+    if(el._pkmThumb)el._pkmThumb.style.left='calc('+pct+'% - 9px)';
   }
-  function setFromClientX(cx){
-    var r=el.getBoundingClientRect();
-    if(r.width<=0)return;
-    var pct=Math.max(0,Math.min(1,(cx-r.left)/r.width));
-    var v=Math.round(min+pct*(max-min));
-    if(v!==pkmLvValue){pkmLvValue=v;el.setAttribute('data-val',String(v));paint();updatePkmStats();}
+  el._pkmPaint=paint;
+  function setFromClientX(cx,rect){
+    if(!rect||rect.width<=0)return;
+    var pct=Math.max(0,Math.min(1,(cx-rect.left)/rect.width));
+    var v=min+pct*(max-min);
+    if(v!==pkmLvValue){pkmLvValue=v;el.setAttribute('data-val',String(Math.round(v)));pkmScheduleRender();}
   }
   paint();
-  el._pkmDrag=false;
-  el.addEventListener('pointerdown',function(e){el._pkmDrag=true;try{el.setPointerCapture(e.pointerId);}catch(err){}setFromClientX(e.clientX);e.preventDefault();});
-  el.addEventListener('pointermove',function(e){if(el._pkmDrag)setFromClientX(e.clientX);});
-  el.addEventListener('pointerup',function(){el._pkmDrag=false;});
-  el.addEventListener('pointercancel',function(){el._pkmDrag=false;});
+  el._pkmDrag=false;el._pkmRect=null;
+  el.addEventListener('pointerdown',function(e){el._pkmDrag=true;el._pkmRect=el.getBoundingClientRect();try{el.setPointerCapture(e.pointerId);}catch(err){}setFromClientX(e.clientX,el._pkmRect);e.preventDefault();});
+  el.addEventListener('pointermove',function(e){if(el._pkmDrag)setFromClientX(e.clientX,el._pkmRect);});
+  el.addEventListener('pointerup',function(){el._pkmDrag=false;el._pkmRect=null;});
+  el.addEventListener('pointercancel',function(){el._pkmDrag=false;el._pkmRect=null;});
 }
 var pkmStatsRaf=0;
-function updatePkmStats(){
+function pkmScheduleRender(){
   if(pkmStatsRaf)return;
-  pkmStatsRaf=requestAnimationFrame(function(){pkmStatsRaf=0;updatePkmStatsNow();});
+  pkmStatsRaf=requestAnimationFrame(function(){
+    pkmStatsRaf=0;
+    var sl=document.getElementById('pkm-lv');
+    if(sl&&sl._pkmPaint)sl._pkmPaint();
+    updatePkmStatsNow();
+  });
+}
+function updatePkmStats(){
+  pkmScheduleRender();
 }
 function updatePkmStatsNow(){
   var d=curPkm;if(!d)return;
@@ -5580,7 +5588,7 @@ function updatePkmStatsNow(){
   var stEl=document.getElementById('pkm-stats');
   var numEl=document.getElementById('pkm-lv-num');
   if(!lvEl||!stEl)return;
-  var lv=parseInt(pkmLvValue,10)||0;
+  var lv=Math.round(pkmLvValue)||0;
   if(numEl)numEl.textContent=lv+'级';
   var isShed=(curPkmNdex===292)||(f.name&&f.name.indexOf('脱壳忍者')>=0)||(d.name&&d.name.indexOf('脱壳忍者')>=0);
   function range(b,isHp){
