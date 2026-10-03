@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.24';
+var PK_VER='3.3.25';
 /*PK_NOTICE_BEGIN
 新增仓库形态映射表 sprite-map.json：形态图缺失时按映射回退到基础形态（如 urshifu-rapidstrike 也会出 urshifu）
 PK_NOTICE_END*/
@@ -3329,18 +3329,21 @@ var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleo
   var sel=(pkmSource==='showdown')?'showdown':'pokeos';
   var other=(sel==='showdown')?'pokeos':'showdown';
   var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
+  var base=spriteMapBase(fn);
+  var useBase=false,si=0,ci=0,cands=null;
   function candsFor(src){
-    var base=spriteMapBase(fn);
-    var a=src==='pokeos'?[fn]:slugCandidates(fn);
-    if(base&&base!==fn){var b=src==='pokeos'?[base]:slugCandidates(base);for(var i=0;i<b.length;i++){if(a.indexOf(b[i])<0)a.push(b[i]);}}
-    return a;
+    var s=useBase?base:fn;
+    return src==='pokeos'?[s]:slugCandidates(s);
   }
-  var si=0,ci=0,cands=candsFor(order[0][1]);
+  cands=candsFor(order[0][1]);
   function apply(u){el.style.backgroundImage="url('"+u+"')";el.classList.remove('no-img');el.textContent='';el.removeAttribute('data-icon');setCachedIcon(icon,shiny,u);}
   function fail(){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');}
   function next(){
     if(!cands||ci>=cands.length){ci=0;cands=null;si++;}
-    if(si>=order.length){fail();return;}
+    if(si>=order.length){
+      if(base&&base!==fn&&!useBase){useBase=true;si=0;ci=0;cands=null;}
+      else{fail();return;}
+    }
     if(!cands){cands=candsFor(order[si][1]);}
     var o=order[si];
     var u=pkmRepoUrl(o[0],o[1],cands[ci],shiny);
