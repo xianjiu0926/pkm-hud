@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.20';
+var PK_VER='3.3.21';
 /*PK_NOTICE_BEGIN
 修复皮卡丘帽子等形态图：形态后缀映射移到数据仓库，HUD 不再硬编码
 PK_NOTICE_END*/
@@ -4964,7 +4964,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260930k';
+var PKM_DATA_REV='r20260930l';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
