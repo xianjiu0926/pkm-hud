@@ -3,9 +3,9 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.28';
+var PK_VER='3.3.29';
 /*PK_NOTICE_BEGIN
-移除诊断里"重复脚本/样式"检测；样式注入改为幂等（唯一id），避免重复插入
+修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3243,6 +3243,8 @@ var SLUG_FIX={'hooh':'ho-oh','mrmime':'mr-mime','porygonz':'porygon-z','typenull
 function fixSlug(n){return SLUG_FIX[n]||n;}
 function slugCandidates(n){
   var out=[n];
+  var _mx=n.match(/^(.*?)-?(megax|megay|megaz)$/);
+  if(_mx)out.push(_mx[1]+'-mega-'+_mx[2].slice(-1));
   var noH=n.replace(/[-:]/g,'');
   if(noH!==n)out.push(noH);
   var m=n.match(/^([a-z]+)(\d+)$/);
@@ -3411,8 +3413,7 @@ function pkmRepoUrl(kind,src,slug,shiny){
 }
 function pkmSrcSlugs(src,slug,form){
   if(src==='pokeos'){return [slug+form];}
-  var sf=String(form||'').replace('-mega-x','-megax').replace('-mega-y','-megay').replace('-mega-z','-megaz');
-  return slugCandidates(slug+sf);
+  return slugCandidates(slug+(form||''));
 }
 function resolvePkmBgRepo(el,slug,shiny,name){
   ensureSpriteMap().then(function(){
