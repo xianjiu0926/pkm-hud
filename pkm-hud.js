@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.30';
+var PK_VER='3.3.31';
 /*PK_NOTICE_BEGIN
 修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
 PK_NOTICE_END*/
@@ -6678,7 +6678,6 @@ function showNatureInfo(name){
   var shown=esc(name);
   var render=function(){
     var e=natureLookup(name),rows='<div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div>';
-    if(e&&e.en)rows+='<div class="row"><span class="k">英文名</span><span class="v">'+esc(e.en)+'</span></div>';
     if(e&&e.like)rows+='<div class="row"><span class="k">喜欢的口味</span><span class="v">'+esc(e.like)+'</span></div>';
     if(e&&e.dislike)rows+='<div class="row"><span class="k">讨厌的口味</span><span class="v">'+esc(e.dislike)+'</span></div>';
     subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+shown+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body">'+rows+'</div></div>';
