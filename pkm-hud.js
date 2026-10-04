@@ -3,14 +3,13 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.8';
+var PK_VER='4.0.9';
 /*PK_NOTICE_BEGIN
-v4.0 大版本更新（数据彻底统一走仓库）：
-· 所有文字/图/叫声/图标/地图 100% 走数据仓库，删除全部外部图床与源站兜底
-· 数据源自动检测：自动选快的加载源（GitHub 直连 / jsDelivr 镜像），不挂梯子也能用
-· 新增性格表、Z招式、极巨招式数据（走仓库）；性格弹窗显示能力变化 + 口味
-· UI 图标与地区地图下载进仓库（UI/ 目录），不再依赖 img.baibai.cv 图床
-· 修复菜单「背包/盒子/图鉴/繁育」与地图图标不显示的问题
+v4.0.9 更新（人际关系立绘）：
+· 人际关系点击人物名查看立绘（主页 + 菜单都支持）
+· 有立绘的角色名显示绿色、可点击；没有立绘的角色不显示成可点状态
+· 人际关系标题后新增 📷 配图设置：可给任意角色上传本地图或填链接，配图后即可点击查看，并优先显示你配的图
+· 修复菜单图标与地图不显示的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
