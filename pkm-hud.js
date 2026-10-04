@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.6';
+var PK_VER='4.0.7';
 /*PK_NOTICE_BEGIN
 v4.0 大版本更新（数据彻底统一走仓库）：
 · 所有文字/图/叫声/图标/地图 100% 走数据仓库，删除全部外部图床与源站兜底
@@ -472,6 +472,13 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.rel-item{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:.82rem;color:var(--text)}'+
 '.rel-name{width:60px;text-align:left;flex-shrink:0;color:var(--dim);font-weight:600}'+
 '.rel-name.rel-click{cursor:pointer;text-decoration:underline dotted}'+
+'.rel-settings{cursor:pointer;margin-left:4px;font-size:.8em;opacity:.75}'+
+'.rel-settings:hover{opacity:1}'+
+'.relset-list{max-height:60vh;overflow:auto}'+
+'.relset-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(128,128,128,.15);font-size:.82rem}'+
+'.relset-name{flex:0 0 72px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+'.relset-status{flex:0 0 72px;color:var(--dim);font-size:.72rem}'+
+'.relset-btns{margin-left:auto;display:flex;gap:4px}'+
 '.rel-bar{flex:1;height:8px;background:rgba(0,0,0,.4);border-radius:4px;overflow:hidden}'+
 '.rel-fill{height:100%;background:#f08888;border-radius:4px}'+
 '.rel-val{width:30px;text-align:right;flex-shrink:0;color:var(--dim)}'+
@@ -4687,13 +4694,13 @@ function bindMapViewer(wrap){
 
 
 var activeBox='1';var nearbyOpen=false;var foldState={};function foldHTML(key,label,fn){var open=!!foldState[key];return '<div class="fold-box"><div class="fold-head" data-fold="'+key+'"><span>'+label+'</span><span class="fold-arrow">'+(open?'▾':'▸')+'</span></div>'+(open?'<div class="fold-body">'+fn()+'</div>':'')+'</div>';}function bagPlainHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return '<div class="fold-inner"><div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div></div>';}function relPlainHTML(){var rel=stat_data.人际关系||{};var ks=Object.keys(rel);if(!ks.length)return '<div class="fold-inner"><div class="empty">暂无</div></div>';return '<div class="fold-inner">'+ks.map(function(k){var val=rel[k];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name'+(relHasPortrait(k)?' rel-click" data-rel="'+esc(k)+'"':'"')+'>'+esc(k)+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('')+'</div>';}
-function quickHTML(){var Q=[['box','q-box',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/盒子.png'),'盒子'],['pokedex','q-pokedex',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/图鉴.png'),'图鉴'],['breeding','q-breeding',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/繁育.png'),'繁育'],['typechart','q-typechart','⚡','克制表'],['map','q-map','🗺️','地图']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" referrerpolicy="origin" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/背包.png')+'" style="width:18px;height:18px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'box-icon');return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
+function quickHTML(){var Q=[['box','q-box',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/盒子.png'),'盒子'],['pokedex','q-pokedex',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/图鉴.png'),'图鉴'],['breeding','q-breeding',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/繁育.png'),'繁育'],['typechart','q-typechart','⚡','克制表'],['map','q-map','🗺️','地图']];return '<div class="quick-bar">'+Q.map(function(q){var sz=getIconSize(q[1]);var ic=q[2].indexOf('http')===0?'<img src="'+esc(q[2])+'" referrerpolicy="origin" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;image-rendering:pixelated">':'<span class="quick-emoji" style="font-size:'+sz+'px">'+q[2]+'</span>';return '<span class="menu-item quick-chip" data-page="'+q[0]+'">'+ic+q[3]+'</span>';}).join('')+'</div>';}function homeFoldHTML(){return foldHTML('bagfold','<span style="display:inline-flex;align-items:center;gap:4px"><img src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/背包.png')+'" style="width:18px;height:18px;object-fit:contain;image-rendering:pixelated">背包</span>',bagPlainHTML)+foldHTML('relfold','💬 人际关系 <span class="rel-settings" data-rel-settings title="给角色配图">📷</span>',relPlainHTML);}function boxHTML(){var box=stat_data.盒子||{};var keys=Object.keys(box);if(!keys.length)return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button>','<div class="empty">这里是空的</div>');if(!box[activeBox])activeBox=keys[0];var sel='<select class="box-select" id="box-select" style="float:left;margin-bottom:5px;min-width:0;width:auto;max-width:100%">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===activeBox?' selected':'')+'>'+esc(String(k).replace(/^盒子/,''))+'</option>';}).join('')+'</select>';var pokemons=box[activeBox]||{};var entries=Object.keys(pokemons).filter(function(s){var p=pokemons[s];return p&&p.名字&&p.名字!=='空';}).map(function(s){return{slot:s,data:pokemons[s]};});var cells=entries.length?entries.map(function(e){var p=e.data;var img=pkImgHTML(p.名字,p.图标,p.是否闪光,'box-icon');return '<div class="box-cell" data-box="'+esc(activeBox)+'" data-slot="'+esc(e.slot)+'">'+img+'<div class="box-name">'+esc(p.昵称||p.名字)+'</div></div>';}).join(''):'<div class="empty">这里是空的</div>';return frame('<span>盒子</span><button class="btn-small" data-box-new style="display:inline-block;vertical-align:middle;margin-left:6px;padding:2px 7px;font-size:.7rem;line-height:1.3">＋ 新建盒子</button><button class="btn-small" data-box-del style="display:inline-block;vertical-align:middle;margin-left:4px;padding:2px 7px;font-size:.7rem;line-height:1.3;background:rgba(150,50,50,.65);border-color:#c06060">删除盒子</button>',sel+'<div class="box-grid">'+cells+'</div>');}
 
 function tasksHTML(){var t=stat_data.任务||{},html='';if(t.主线)html+='<div class="task-item"><span class="task-tag main">主线</span><div class="task-text">'+esc(t.主线)+'</div></div>';if(t.传说)html+='<div class="task-item"><span class="task-tag legend">传说</span><div class="task-text">'+esc(t.传说)+'</div></div>';if(t.支线)html+='<div class="task-item"><span class="task-tag random">支线</span><div class="task-text">'+esc(t.支线).split(/[；;\n]/).join('<br>')+'</br></div></div>';if(!html)html='<div class="empty">暂无任务</div>';return frameP('任务',html);}
 function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){return esc(String(v||'')).split(/[；;]/).join('<br>');}if(w.附近遭遇)html+='<div class="event-item"><span class="event-type">📍 附近遭遇</span><p>'+ln(w.附近遭遇)+'</p></div>';if(w.地区新闻)html+='<div class="event-item"><span class="event-type">📰 地区新闻</span><p>'+ln(w.地区新闻)+'</p></div>';if(w.区域动态)html+='<div class="event-item"><span class="event-type">🌍 区域动态</span><p>'+ln(w.区域动态)+'</p></div>';if(!html)html='<div class="empty">暂无世界事件</div>';return '<div class="info-frame world-frame plain-frame"><div class="info-inner"><div class="info-title">世界动态</div>'+html+'</div></div>';}
 function relHTML(){var rel=stat_data.人际关系||{};var entries=Object.entries(rel);if(!entries.length)return frame('人际关系','<div class="empty">暂无</div>');var html=entries.map(function(kv){var val=kv[1];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name'+(relHasPortrait(kv[0])?' rel-click" data-rel="'+esc(kv[0])+'"':'"')+'>'+esc(kv[0])+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('');return frame('人际关系',html);}
 function relPortraitUrl(name){var s=t2s(String(name==null?'':name).trim());if(!s)return '';return pkmRepoFirst(PKM_DATA_BASE+'人物立绘/'+s+'/'+s+'.png');}
-function showRelPortrait(name){var s=t2s(String(name==null?'':name).trim());if(!s)return;var url=relPortraitUrl(name);var mirror=pkmRepoMirror(url);clearBack();var mAttr=mirror?(' data-m="'+esc(mirror)+'"'):'';overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body" style="text-align:center;padding:14px"><img src="'+esc(url)+'"'+mAttr+' referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="if(this.dataset.m){var m=this.dataset.m;this.dataset.m=\'\';this.src=m;}else{this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>暂无立绘</div>\');}"></div></div>';overlay.classList.add('open');}
+function showRelPortrait(name){var s=t2s(String(name==null?'':name).trim());if(!s)return;clearBack();var user=relUserPortrait(name);var img;if(user){img=hudDiyImgTag(user,'referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>图片加载失败</div>\')"');}else{var url=relPortraitUrl(name);var mirror=pkmRepoMirror(url);var mAttr=mirror?(' data-m="'+esc(mirror)+'"'):'';img='<img src="'+esc(url)+'"'+mAttr+' referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="if(this.dataset.m){var m=this.dataset.m;this.dataset.m=\'\';this.src=m;}else{this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>暂无立绘</div>\')}">';}overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body" style="text-align:center;padding:14px">'+img+'</div></div>';overlay.classList.add('open');hudResolvePkidbImages(overlay);}
 var PKM_PORTRAITS=null,PKM_PORTRAITS_LOADING=false,PKM_PORTRAITS_CBS=[];
 function ensurePortraits(cb){
   if(PKM_PORTRAITS){cb&&cb(PKM_PORTRAITS);return;}
@@ -4716,13 +4723,84 @@ function ensurePortraits(cb){
     })
     .catch(function(){done(Object.create(null));});
 }
+function relUserMap(){
+  try{var m=JSON.parse(WIN.localStorage.getItem('pk_rel_portraits')||'{}');return (m&&typeof m==='object')?m:{};}catch(e){return {};}
+}
+function relUserPortrait(name){
+  var k=t2s(String(name==null?'':name).trim());
+  if(!k)return '';
+  return String(relUserMap()[k]||'');
+}
+function relSetUserPortrait(name,val){
+  var k=t2s(String(name==null?'':name).trim());
+  if(!k)return;
+  var m=relUserMap();
+  if(val){m[k]=String(val);}else{delete m[k];}
+  try{WIN.localStorage.setItem('pk_rel_portraits',JSON.stringify(m));}catch(e){}
+}
 function relHasPortrait(name){
+  if(relUserPortrait(name))return true;
   if(!PKM_PORTRAITS)return true;
   return !!PKM_PORTRAITS[t2s(String(name==null?'':name).trim())];
 }
 function refreshRelViews(){
   try{var hf=document.querySelector('#home-fold');if(hf){hf.innerHTML=homeFoldHTML();resolveItemImgs(hf);hudResolvePkidbImages(hf);}}catch(e){}
   try{if(pageOverlay&&pageOverlay.classList.contains('open')){var body=pageOverlay.querySelector('.page-body');if(body&&body.querySelector('.rel-item')){body.innerHTML=relHTML();}}}catch(e){}
+}
+function relSettingsUpload(name){
+  var inp=document.getElementById('relset-file');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file';inp.id='relset-file';inp.accept='image/*';inp.style.display='none';
+    document.body.appendChild(inp);
+    inp.addEventListener('change',function(){relSettingsFileChange(inp);});
+  }
+  inp.setAttribute('data-relset-name',String(name||''));
+  inp.value='';
+  try{inp.click();}catch(e){}
+}
+function relSettingsFileChange(input){
+  if(!input.files||!input.files.length)return;
+  var name=String(input.getAttribute('data-relset-name')||'');
+  var file=input.files[0];
+  if(!/^image\//.test(file.type||'')){hudMsg('请选择图片文件');return;}
+  if(file.size>8*1024*1024){hudMsg('文件超过 8MB，请压缩后再上传');return;}
+  hudDiyAssetStoreBlob(file).then(function(ref){
+    relSetUserPortrait(name,ref);
+    hudMsg('已为「'+name+'」配图');
+    openRelSettings();
+    refreshRelViews();
+  }).catch(function(e){hudDiagError('rel portrait store',e);hudMsg('图片保存失败：'+String(e&&e.message||e));});
+}
+function relSettingsUrl(name){
+  var cur=relUserPortrait(name);
+  var def=/^(https?:\/\/|data:image\/)/i.test(cur)?cur:'';
+  var v=WIN.prompt('为「'+name+'」填写图片链接（http/https/data:，留空则清除）:',def);
+  if(v===null)return;
+  v=String(v||'').trim();
+  relSetUserPortrait(name,v);
+  openRelSettings();
+  refreshRelViews();
+}
+function relSettingsClear(name){
+  relSetUserPortrait(name,'');
+  hudMsg('已清除「'+name+'」的配图');
+  openRelSettings();
+  refreshRelViews();
+}
+function openRelSettings(){
+  var rel=stat_data.人际关系||{};
+  var ks=Object.keys(rel);
+  if(!ks.length){hudMsg('暂无人际关系角色');return;}
+  clearBack();
+  var rows=ks.map(function(k){
+    var user=relUserPortrait(k);
+    var repo=!!(PKM_PORTRAITS&&PKM_PORTRAITS[t2s(String(k).trim())]);
+    var status=user?'🖼 用户图':(repo?'✅ 有立绘':'— 无图');
+    return '<div class="relset-row" data-relset-name="'+esc(k)+'"><span class="relset-name">'+esc(k)+'</span><span class="relset-status">'+status+'</span><span class="relset-btns"><button class="btn-small" data-relset-upload>📁 上传</button><button class="btn-small" data-relset-url>🔗 链接</button>'+(user?'<button class="btn-small" data-relset-clear style="background:rgba(150,50,50,.65)">清除</button>':'')+'</span></div>';
+  }).join('');
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">人际关系配图</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="relset-list">'+rows+'</div><div class="dim" style="font-size:.72rem;margin-top:8px">上传本地图或填链接；配图后该角色即可点击查看，并优先显示你配的图。</div></div></div>';
+  overlay.classList.add('open');
 }
 function rivalsHTML(){var r=stat_data.劲敌||{};var entries=Object.entries(r);if(!entries.length)return frameP('劲敌','<div class="empty">尚未遭遇劲敌</div>');var html=entries.map(function(kv){return '<div class="nearby-item" style="cursor:default"><div class="nearby-info"><div class="nearby-name">'+esc(kv[0])+'</div><div class="nearby-sub">'+esc(kv[1])+'</div></div></div>';}).join('');return frameP('劲敌',html);}
 function breedingHTML(){var b=stat_data.繁育||{};return frame('繁育',infoRow('蛋',esc(b.蛋||'无蛋'))+infoRow('剩余步数',num(b.剩余步数,0)+'步')+infoRow('存放',esc(b.存放||'-')));}
@@ -8234,6 +8312,7 @@ function hudBindRootDelegation(app){
     var cmd=x('[data-cmd]');if(cmd){e.preventDefault();e.stopPropagation();var txt=cmd.getAttribute('data-cmd'),old=cmd.textContent;if(fillInput(txt)){cmd.textContent='✔ 已填入输入栏';hudScope.setTimeout(function(){if(cmd&&cmd.isConnected)cmd.textContent=old;},1200);}else hudMsg('无法访问输入栏。指令：'+txt);return;}
     var tab=x('.tab-btn[data-tab]');if(tab){var t=tab.getAttribute('data-tab');app.querySelectorAll('.tab-btn').forEach(function(b){b.classList.toggle('active',b===tab);});app.querySelectorAll('.tab-panel').forEach(function(p){p.classList.toggle('active',p.id==='tab-'+t);});resizeFrame();return;}
     var menu=x('.menu-item[data-page]');if(menu){openPage(menu.getAttribute('data-page'));return;}
+    var rs=x('#home-fold [data-rel-settings]');if(rs){e.stopPropagation();openRelSettings();return;}
     var fold=x('#home-fold [data-fold]');if(fold){var k=fold.getAttribute('data-fold');foldState[k]=!foldState[k];var home=app.querySelector('#home-fold');if(home){home.innerHTML=homeFoldHTML();resolveItemImgs(home);hudResolvePkidbImages(home);}resizeFrame();return;}
     var rel=x('#home-fold [data-rel]');if(rel){e.stopPropagation();showRelPortrait(rel.getAttribute('data-rel'));return;}
     var bag=x('#home-fold .bag-tab[data-bag]');if(bag){activeBag=bag.getAttribute('data-bag');var home2=app.querySelector('#home-fold');if(home2){home2.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===bag);});var list=home2.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(home2);}}resizeFrame();return;}
@@ -8322,6 +8401,9 @@ if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-widt
   overlay.addEventListener('click',function(e){
     e.stopPropagation();
     if(e.target.closest('[data-move-back]')){e.stopPropagation();var _pb=popBack();if(_pb){overlay.innerHTML=_pb;}else{overlay.classList.remove('open');}return;}
+var rup=e.target.closest('[data-relset-upload]');if(rup){e.stopPropagation();var _rr=rup.closest('.relset-row');relSettingsUpload(_rr?_rr.getAttribute('data-relset-name'):'');return;}
+var rul=e.target.closest('[data-relset-url]');if(rul){e.stopPropagation();var _rr2=rul.closest('.relset-row');relSettingsUrl(_rr2?_rr2.getAttribute('data-relset-name'):'');return;}
+var rcl=e.target.closest('[data-relset-clear]');if(rcl){e.stopPropagation();var _rr3=rcl.closest('.relset-row');relSettingsClear(_rr3?_rr3.getAttribute('data-relset-name'):'');return;}
 var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true,itm.getAttribute('data-item-en')||'');return;}
     if(e.target===overlay){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();var _pb2=popBack();if(_pb2){overlay.innerHTML=_pb2;}else{overlay.classList.remove('open');}return;}
         if(e.target.closest('[data-close]')){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();overlay.classList.remove('open');clearBack();return;}
