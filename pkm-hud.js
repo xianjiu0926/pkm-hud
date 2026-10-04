@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.33';
+var PK_VER='3.3.34';
 /*PK_NOTICE_BEGIN
 修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
 PK_NOTICE_END*/
@@ -2988,39 +2988,7 @@ function itemImgOf(name){
   }
   return undefined;
 }
-var PS_ITEM_OUTLINE=false;
-var PS_CAT={
-  'poke-ball':'ball','great-ball':'ball','ultra-ball':'ball','master-ball':'ball','premier-ball':'ball','heal-ball':'ball','net-ball':'ball','nest-ball':'ball','dive-ball':'ball','dusk-ball':'ball','timer-ball':'ball','quick-ball':'ball','repeat-ball':'ball','luxury-ball':'ball','safari-ball':'ball','level-ball':'ball','lure-ball':'ball','moon-ball':'ball','friend-ball':'ball','love-ball':'ball','heavy-ball':'ball','fast-ball':'ball','sport-ball':'ball','park-ball':'ball','dream-ball':'ball','beast-ball':'ball','cherish-ball':'ball','gs-ball':'ball',
-  'normalium-z':'z-crystals','fightinium-z':'z-crystals','flyinium-z':'z-crystals','poisonium-z':'z-crystals','groundium-z':'z-crystals','rockium-z':'z-crystals','buginium-z':'z-crystals','ghostium-z':'z-crystals','steelium-z':'z-crystals','firium-z':'z-crystals','waterium-z':'z-crystals','grassium-z':'z-crystals','electrium-z':'z-crystals','psychium-z':'z-crystals','icium-z':'z-crystals','dragonium-z':'z-crystals','darkinium-z':'z-crystals','fairium-z':'z-crystals','pikanium-z':'z-crystals','pikashunium-z':'z-crystals','snorlium-z':'z-crystals','eevium-z':'z-crystals','aloraichium-z':'z-crystals','decidium-z':'z-crystals','incinium-z':'z-crystals','primarium-z':'z-crystals','kommonium-z':'z-crystals','lunalium-z':'z-crystals','lycanium-z':'z-crystals','marshadium-z':'z-crystals','mewnium-z':'z-crystals','mimikium-z':'z-crystals','solganium-z':'z-crystals','tapunium-z':'z-crystals','ultranecrozium-z':'z-crystals',
-  'dynamax-band':'key-item','key-stone':'key-item','max-soup':'key-item','wishing-piece':'key-item'
-};
-function ballNorm(s){var m={'pokeball':'poke-ball','greatball':'great-ball','ultraball':'ultra-ball','masterball':'master-ball','safariball':'safari-ball','premierball':'premier-ball','healball':'heal-ball','netball':'net-ball','nestball':'nest-ball','diveball':'dive-ball','duskball':'dusk-ball','timerball':'timer-ball','quickball':'quick-ball','repeatball':'repeat-ball','luxuryball':'luxury-ball','levelball':'level-ball','lureball':'lure-ball','moonball':'moon-ball','friendball':'friend-ball','loveball':'love-ball','heavyball':'heavy-ball','fastball':'fast-ball','sportball':'sport-ball','parkball':'park-ball','dreamball':'dream-ball','beastball':'beast-ball','cherishball':'cherish-ball','gsball':'gs-ball'};return m[s]||s;}
 function normSlug(s){return String(s==null?'':s).toLowerCase().replace(/é/g,'e').replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/'/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
-function psCat(slug){
-  if(PS_CAT[slug])return PS_CAT[slug];
-  if(/-z$/.test(slug))return 'z-crystals';
-  if(/ite(-[xy])?$/.test(slug))return 'mega-stone';
-  if(/^tm-/.test(slug))return 'tm';
-  if(/^tr-/.test(slug))return 'tr';
-  if(/^hm-/.test(slug))return 'hm';
-  if(/^(town-map|bicycle|escape-rope|exp-share|itemfinder|poke-flute|good-rod|super-rod|vs-seeker|pokeradar|mega-ring|z-ring|tera-orb)$/.test(slug))return 'key-item';
-  if(/^(potion|super-potion|hyper-potion|max-potion|full-restore|revive|max-revive|antidote|burn-heal|ice-heal|awakening|paralyze-heal|full-heal|ether|max-ether|elixir|max-elixir|fresh-water|soda-pop|lemonade|moomoo-milk|energy-powder|energy-root|heal-powder|revival-herb|berry-juice|sacred-ash|sweet-heart|rare-candy|hp-up|protein|iron|calcium|zinc|carbos|pp-up|pp-max)$/.test(slug))return 'medicine';
-  if(/^(fire-stone|water-stone|thunder-stone|leaf-stone|moon-stone|sun-stone|shiny-stone|dusk-stone|dawn-stone|ice-stone|oval-stone|everstone)$/.test(slug))return 'evo-item';
-  if(/berry$/.test(slug))return 'berry';
-  if(/-plate$/.test(slug))return 'plate';
-  if(/-gem$/.test(slug))return 'gem';
-  if(/-memory$/.test(slug))return 'memory';
-  if(/-mint$/.test(slug))return 'mint';
-  if(/-fossil$/.test(slug))return 'fossil';
-  if(/-incense$/.test(slug))return 'incense';
-  if(/-flute$/.test(slug))return 'flute';
-  if(/-shard$/.test(slug))return 'shard';
-  if(/-scarf$/.test(slug))return 'scarf';
-  if(/-mail$/.test(slug))return 'mail';
-  if(/-mulch$/.test(slug))return 'mulch';
-  if(/-apricorn$/.test(slug))return 'apricorn';
-  return '';
-}
 function psItemUrl(slug,kind){
   var raw=String(slug==null?'':slug).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');
   if(/^(tm|tr|hm)-/.test(raw)){var s=raw.replace(/^(tm|tr|hm)-/,'');return pkmRepoFirst(PKM_ITEM_SEREBII_BASE+'tm-'+s+'.png');}
