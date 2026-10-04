@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.31';
+var PK_VER='3.3.32';
 /*PK_NOTICE_BEGIN
 修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
 PK_NOTICE_END*/
@@ -162,17 +162,27 @@ function hudNewAbortController(){
   try{var C=WIN.AbortController||(typeof AbortController!=='undefined'?AbortController:null);if(C)return new C();}catch(e){}
   return {signal:null,abort:function(){}};
 }
+var PKM_REPO_RAW='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
+var PKM_REPO_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/Pokemon@main/';
+function pkmRepoMirror(u){if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0)return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return null;}
 function hudFetch(url,opt){
-  opt=opt&&typeof opt==='object'?Object.assign({},opt):{};
-  var timeout=Math.max(1000,Math.min(120000,Number(opt.timeout)||30000)),outerSignal=opt.signal;delete opt.timeout;
-  var ctl=hudScope.controller(hudNewAbortController()),done=false,tm=0,timedOut=false;
-  if(outerSignal){if(outerSignal.aborted){try{ctl.abort();}catch(e){}}else try{outerSignal.addEventListener('abort',function(){try{ctl.abort();}catch(e){}},{once:true});}catch(e){}}
-  if(ctl.signal)opt.signal=ctl.signal;else delete opt.signal;
-  hudDiagInc('fetch');hudDiag.activeRequests++;hudDiag.maxActiveRequests=Math.max(hudDiag.maxActiveRequests,hudDiag.activeRequests);
-  var req=WIN.fetch(url,opt);
-  var guarded;if(ctl.signal){tm=WIN.setTimeout(function(){if(done)return;timedOut=true;try{ctl.abort();}catch(e){}},timeout);guarded=req;}
-  else{guarded=Promise.race([req,new Promise(function(_,rej){tm=WIN.setTimeout(function(){if(done)return;timedOut=true;var e=new Error('请求超时');e.name='TimeoutError';rej(e);},timeout);})]);}
-  return guarded.catch(function(e){if(timedOut&&e&&e.name==='AbortError'){try{e.message='请求超时';}catch(_){} }hudDiagError('fetch '+String(url).slice(0,180),e);throw e;}).finally(function(){done=true;if(tm)WIN.clearTimeout(tm);hudScope.uncontroller(ctl);hudDiag.activeRequests=Math.max(0,hudDiag.activeRequests-1);});
+  var baseOpt=opt&&typeof opt==='object'?Object.assign({},opt):{};
+  var mirrorUrl=pkmRepoMirror(url);
+  function once(u){
+    var o=Object.assign({},baseOpt);
+    var timeout=Math.max(1000,Math.min(120000,Number(o.timeout)||30000)),outerSignal=o.signal;delete o.timeout;
+    var ctl=hudScope.controller(hudNewAbortController()),done=false,tm=0,timedOut=false;
+    if(outerSignal){if(outerSignal.aborted){try{ctl.abort();}catch(e){}}else try{outerSignal.addEventListener('abort',function(){try{ctl.abort();}catch(e){}},{once:true});}catch(e){}}
+    if(ctl.signal)o.signal=ctl.signal;else delete o.signal;
+    hudDiagInc('fetch');hudDiag.activeRequests++;hudDiag.maxActiveRequests=Math.max(hudDiag.maxActiveRequests,hudDiag.activeRequests);
+    var req=WIN.fetch(u,o);
+    var guarded;if(ctl.signal){tm=WIN.setTimeout(function(){if(done)return;timedOut=true;try{ctl.abort();}catch(e){}},timeout);guarded=req;}
+    else{guarded=Promise.race([req,new Promise(function(_,rej){tm=WIN.setTimeout(function(){if(done)return;timedOut=true;var e=new Error('请求超时');e.name='TimeoutError';rej(e);},timeout);})]);}
+    return guarded.catch(function(e){if(timedOut&&e&&e.name==='AbortError'){try{e.message='请求超时';}catch(_){} }hudDiagError('fetch '+String(u).slice(0,180),e);throw e;}).finally(function(){done=true;if(tm)WIN.clearTimeout(tm);hudScope.uncontroller(ctl);hudDiag.activeRequests=Math.max(0,hudDiag.activeRequests-1);});
+  }
+  var first=once(url);
+  if(!mirrorUrl)return first;
+  return first.then(function(r){return (r&&r.ok)?r:once(mirrorUrl);},function(){return once(mirrorUrl);});
 }
 
 
@@ -3049,6 +3059,7 @@ function itemImgErr(el){
   var src=String(el.getAttribute('src')||'');
   var fb=el.getAttribute('data-fallback');
   if(fb&&fb!==src){el.setAttribute('src',fb);el.removeAttribute('data-fallback');return;}
+  if(src.indexOf(PKM_REPO_RAW)===0){var _m=pkmRepoMirror(src);if(_m&&_m!==src){el.src=_m;return;}}
   var isPS=(src.indexOf('pokesprite')>=0);
   var all=isPS?PS_MIRRORS:PA_MIRRORS;
   var cur=-1,rel='';
@@ -3353,9 +3364,10 @@ var PKM_EN_DEX={"bulbasaur":1,"ivysaur":2,"venusaur":3,"charmander":4,"charmeleo
     var o=order[si];
     var u=pkmRepoUrl(o[0],o[1],cands[ci],shiny);
     ci++;
+    var mu=pkmRepoMirror(u);
     var im=noRefImg();
     im.onload=function(){apply(u);};
-    im.onerror=next;
+    im.onerror=function(){if(mu){var im2=noRefImg();im2.onload=function(){apply(mu);};im2.onerror=next;im2.src=mu;}else{next();}};
     im.src=u;
   }
   next();
@@ -3445,9 +3457,10 @@ function resolvePkmBgRepo(el,slug,shiny,name){
     var o=order[si];
     var u=pkmRepoUrl(o[0],o[1],cands[ci],shiny);
     ci++;
+    var mu=pkmRepoMirror(u);
     var im=noRefImg();
     im.onload=function(){apply(u);};
-    im.onerror=next;
+    im.onerror=function(){if(mu){var im2=noRefImg();im2.onload=function(){apply(mu);};im2.onerror=next;im2.src=mu;}else{next();}};
     im.src=u;
   }
   next();
@@ -6633,7 +6646,7 @@ function movesArr(s){
     return {name:(p[0]||'').trim(),type:(p[1]||'').trim(),cat:(p[2]||'').trim()};
   }).filter(function(m){return m.name;});
 }
-function moveCatIcon(cat){var m={'物理':'physical','特殊':'special','变化':'status'};var slug=m[cat];if(slug)return '<img class="move-cat-ic" src="'+PKM_DATA_BASE+'move-cat-icons/'+slug+'.png" alt="'+esc(cat)+'" title="'+esc(cat)+'">';return esc(cat||'');}
+function moveCatIcon(cat){var m={'物理':'physical','特殊':'special','变化':'status'};var slug=m[cat];if(slug)return '<img class="move-cat-ic" src="'+PKM_DATA_BASE+'move-cat-icons/'+slug+'.png" alt="'+esc(cat)+'" title="'+esc(cat)+'" onerror="itemImgErr(this)">';return esc(cat||'');}
 function moveGridItemHTML(m){
   if(!m||!m.name)return '';
   var type=m.type||MOVE_TYPE[m.name]||'';
@@ -8541,7 +8554,7 @@ var fir=e.target.closest('[data-fab-img-reset]');if(fir){e.stopPropagation();fab
 var dmb=e.target.closest('[data-dt-all]');if(dmb){e.stopPropagation();showAllMoves(dmb.getAttribute('data-dt-all'));return;}
 var mvt=e.target.closest('[data-mvtab]');if(mvt){e.stopPropagation();mvTabSwitch(mvt.getAttribute('data-mvtab'));return;}
     var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
-    var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{var _nd=cry.getAttribute('data-cry');var _au=new Audio(PKM_DATA_BASE+'cries/'+_nd+'.ogg');_au.onerror=function(){try{new Audio('https://cdn.jsdelivr.net/gh/PokeAPI/cries@main/cries/pokemon/latest/'+_nd+'.ogg').play();}catch(e2){}};_au.play();}catch(err){}return;}
+    var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{var _nd=cry.getAttribute('data-cry');var _au=new Audio(PKM_DATA_BASE+'cries/'+_nd+'.ogg');_au.onerror=function(){var _m=pkmRepoMirror(PKM_DATA_BASE+'cries/'+_nd+'.ogg');var _pk=new Audio('https://cdn.jsdelivr.net/gh/PokeAPI/cries@main/cries/pokemon/latest/'+_nd+'.ogg');if(_m){var _au2=new Audio(_m);_au2.onerror=function(){try{_pk.play();}catch(e2){}};_au2.play();}else{try{_pk.play();}catch(e2){}}};_au.play();}catch(err){}return;}
     var ab=e.target.closest('[data-ability]');if(ab){e.stopPropagation();showAbilityInfo(ab.getAttribute('data-ability'));return;}
 var nt=e.target.closest('[data-nature]');if(nt){e.stopPropagation();showNatureInfo(nt.getAttribute('data-nature'));return;}
 var st=e.target.closest('[data-shiny-toggle]');if(st){e.stopPropagation();if(curPkm){curPkmShiny=!curPkmShiny;renderPkmForm(curPkmForm);}return;}
