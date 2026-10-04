@@ -3,9 +3,14 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.2';
+var PK_VER='4.0.3';
 /*PK_NOTICE_BEGIN
-修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
+v4.0 大版本更新（数据彻底统一走仓库）：
+· 所有文字/图/叫声/图标/地图 100% 走数据仓库，删除全部外部图床与源站兜底
+· 设置新增「数据加载源」切换：需要魔法（GitHub 直连）/ 无需魔法（镜像加速），不挂梯子也能用
+· 新增性格表、Z招式、极巨招式数据（走仓库）；性格弹窗显示能力变化 + 口味
+· UI 图标与地区地图下载进仓库（UI/ 目录），不再依赖 img.baibai.cv 图床
+· 修复菜单「背包/盒子/图鉴/繁育」与地图图标不显示的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
