@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.29';
+var PK_VER='3.3.30';
 /*PK_NOTICE_BEGIN
 修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
 PK_NOTICE_END*/
@@ -4999,7 +4999,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
 var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
-var PKM_DATA_REV='r20260930o';
+var PKM_DATA_REV='r20260930p';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -6664,19 +6664,28 @@ function showAllMoves(s){
 }
 function resolveMoveTypes(scope){var els=(scope||document).querySelectorAll('.dt-move-cell[data-move]');for(var i=0;i<els.length;i++){(function(el){var name=el.getAttribute('data-move');if(!name)return;fetchMove(name,function(d){if(d&&d.type){var lb=typeLabel(d.type);var cl=typeColor(d.type);if(!lb)return;el.setAttribute('data-mvtype',d.type);var sp=el.querySelector('.move-type');if(!sp){sp=document.createElement('span');sp.className='move-type';el.insertBefore(sp,el.firstChild);}sp.style.background=cl;sp.textContent=lb;}});})(els[i]);}}
 function toggleDtPage(){var p1=document.querySelector('.dt-page[data-dt-page="1"]');var p2=document.querySelector('.dt-page[data-dt-page="2"]');var btn=document.querySelector('[data-dt-next]');if(!p1||!p2||!btn)return;if(p1.classList.contains('active')){p1.classList.remove('active');p2.classList.add('active');btn.classList.remove('right');btn.classList.add('left');btn.textContent='◀';}else{p2.classList.remove('active');p1.classList.add('active');btn.classList.remove('left');btn.classList.add('right');btn.textContent='▶';}}
-var NATURE_MAP={'勤奋':{up:'',down:''},'怕寂寞':{up:'攻击',down:'防御'},'固执':{up:'攻击',down:'特攻'},'顽皮':{up:'攻击',down:'特防'},'勇敢':{up:'攻击',down:'速度'},'大胆':{up:'防御',down:'攻击'},'坦率':{up:'',down:''},'淘气':{up:'防御',down:'特攻'},'乐天':{up:'防御',down:'特防'},'悠闲':{up:'防御',down:'速度'},'内敛':{up:'特攻',down:'攻击'},'慢吞吞':{up:'特攻',down:'防御'},'害羞':{up:'',down:''},'马虎':{up:'特攻',down:'特防'},'冷静':{up:'特攻',down:'速度'},'温和':{up:'特防',down:'攻击'},'温顺':{up:'特防',down:'防御'},'慎重':{up:'特防',down:'特攻'},'浮躁':{up:'',down:''},'自大':{up:'特防',down:'速度'},'胆小':{up:'速度',down:'攻击'},'急躁':{up:'速度',down:'防御'},'爽朗':{up:'速度',down:'特攻'},'天真':{up:'速度',down:'特防'},'认真':{up:'',down:''}};
-var NATURE_ALIAS={'开朗':'爽朗','保守':'内敛','沉着':'温和','胆怯':'胆小','轻率':'马虎','鲁莽':'马虎','谨慎':'慎重','散漫':'乐天','温吞':'慢吞吞','傲慢':'自大','冲动':'急躁','单纯':'天真','严肃':'认真','腼腆':'害羞','顽固':'固执','寂寞':'怕寂寞','顺从':'坦率','努力':'勤奋','温柔':'温顺'};
+var NATURES_DB=null;
+var naturesPromise=null;
+function ensureNatures(){if(naturesPromise)return naturesPromise;naturesPromise=hudFetch(PKM_DATA_BASE+'natures.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var byName={},alias={};var list=(j&&j.data&&Array.isArray(j.data))?j.data:[];for(var i=0;i<list.length;i++){var it=list[i];if(it&&it.name)byName[it.name]=it;}var al=(j&&j.alias&&typeof j.alias==='object'&&!Array.isArray(j.alias))?j.alias:{};for(var k in al){if(al[k])alias[k]=String(al[k]);}NATURES_DB={byName:byName,alias:alias};return NATURES_DB;}).catch(function(){NATURES_DB=NATURES_DB||{byName:{},alias:{}};return NATURES_DB;});return naturesPromise;}
+function natureLookup(n){n=t2s(String(n||'').trim());var db=NATURES_DB;if(!db||!db.byName)return null;if(db.byName[n])return db.byName[n];var k=db.alias[n];return (k&&db.byName[k])?db.byName[k]:null;}
 function natureEffectText(n){
-  n=t2s(String(n||'').trim());
-  var key=NATURE_MAP[n]?n:(NATURE_ALIAS[n]||n);
-  var e=NATURE_MAP[key];
+  var e=natureLookup(n);
   if(!e)return '';
   if(!e.up&&!e.down)return '无能力值变化';
   return (e.up?'+'+e.up:'')+' '+(e.down?'-'+e.down:'');
 }
 function showNatureInfo(name){
-  subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body"><div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div></div></div>';
-  subOverlay.classList.add('open');
+  var shown=esc(name);
+  var render=function(){
+    var e=natureLookup(name),rows='<div class="row"><span class="k">能力变化</span><span class="v">'+esc(natureEffectText(name)||'-')+'</span></div>';
+    if(e&&e.en)rows+='<div class="row"><span class="k">英文名</span><span class="v">'+esc(e.en)+'</span></div>';
+    if(e&&e.like)rows+='<div class="row"><span class="k">喜欢的口味</span><span class="v">'+esc(e.like)+'</span></div>';
+    if(e&&e.dislike)rows+='<div class="row"><span class="k">讨厌的口味</span><span class="v">'+esc(e.dislike)+'</span></div>';
+    subOverlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+shown+'</div><button class="close" data-sub-close>✕</button></div><div class="modal-body">'+rows+'</div></div>';
+    subOverlay.classList.add('open');
+  };
+  render();
+  ensureNatures().then(render);
 }
 function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-item-en="'+esc(c.ballEn||'')+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
 var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://img.baibai.cv/f/yeRrTj/1788410175968.png" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
