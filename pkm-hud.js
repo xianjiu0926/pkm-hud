@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='3.3.34';
+var PK_VER='3.3.35';
 /*PK_NOTICE_BEGIN
 修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
 PK_NOTICE_END*/
@@ -3105,32 +3105,6 @@ function fetchPkmSlug(name,cb){
     if(slug)lsSet('pk_slug_'+b,slug);
     cb&&cb(slug);
   }
-  function parsePage(title,onFail){
-    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(title)+'&format=json&prop=wikitext&variant=zh-hans&redirects=1&origin=*')
-      .then(function(r){return r.ok?r.json():Promise.reject();})
-      .then(function(j){
-        var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-        var d=wt?parsePkmn(wt):null;
-        var slug=(d&&d.enname)?String(d.enname).toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,''):'';
-        if(d&&d.ndex){pkmDexCache[b]=String(d.ndex);lsSet('pk_ndex_'+b,String(d.ndex));}
-        if(slug){finish(slug);}else{onFail();}
-      })
-      .catch(onFail);
-  }
-  function searchThen(){
-    hudFetch('https://wiki.52poke.com/api.php?action=query&list=search&srsearch='+encodeURIComponent(t2s(b))+'&srnamespace=0&srlimit=6&format=json&origin=*')
-      .then(function(r){return r.json();})
-      .then(function(j){
-        var rs=(j&&j.query&&j.query.search)||[];
-        var i=0;
-        function tryNext(){
-          if(i>=rs.length){finish('');return;}
-          parsePage(rs[i++].title,tryNext);
-        }
-        tryNext();
-      })
-      .catch(function(){finish('');});
-  }
   pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
     var hit=store&&pkmDbLookup('dex',b);
     if(hit&&hit.en){
@@ -3139,7 +3113,7 @@ function fetchPkmSlug(name,cb){
       finish(hit.en);
       return;
     }
-    parsePage(t2s(b),searchThen);
+    finish('');
   });
 }
 function resolvePkmImgs(scope){
@@ -5395,47 +5369,23 @@ function fetchPokemon(name,ndex,cb){
     pkmLoading[key]=null;
     for(var i=0;i<cbs.length;i++){try{cbs[i](d);}catch(e){}}
   }
-  function parsePage(title,onFail){
-    hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(title)+'&format=json&prop=wikitext&variant=zh-hans&redirects=1&origin=*')
-      .then(function(r){return r.ok?r.json():Promise.reject();})
-      .then(function(j){
-        var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-        var d2=wt?parsePkmn(wt):null;
-        if(d2&&d2.name){done(d2);}else{onFail();}
-      })
-      .catch(onFail);
-  }
-  function searchThen(){
-    hudFetch('https://wiki.52poke.com/api.php?action=query&list=search&srsearch='+encodeURIComponent(t2s(key))+'&srnamespace=0&srlimit=6&format=json&origin=*')
-      .then(function(r){return r.json();})
-      .then(function(j){
-        var rs=(j&&j.query&&j.query.search)||[];
-        var i=0;
-        function tryNext(){
-          if(i>=rs.length){done(null);return;}
-          parsePage(rs[i++].title,tryNext);
-        }
-        tryNext();
-      })
-      .catch(function(){done(null);});
-  }
   function localLookup(){
     var b=pkmFormParse(key).base;
     var no=parseInt(ndex,10)||0;
     var baseEn=(no&&PKM_DEX_EN[no])?PKM_DEX_EN[no]:'';
-    if(!b&&!baseEn){parsePage(t2s(key),searchThen);return;}
+    if(!b&&!baseEn){done(null);return;}
     pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
       var hit=store&&pkmDbLookup('dex',b);
       if(!hit&&baseEn)hit=store&&pkmDbLookup('dex',baseEn);
       if(!hit&&store)hit=pkmDbLookupPrefix('dex',b);
       var dexNo=(hit&&hit.no!=null)?(parseInt(hit.no,10)||0):no;
-      if(!dexNo){parsePage(t2s(key),searchThen);return;}
+      if(!dexNo){done(null);return;}
       if(!baseEn)baseEn=(PKM_DEX_EN[dexNo]||'');
       var gf=genFileOf(dexNo);
       pkmDbLoad('pkm_'+gf,'pokemon/'+gf,['en','name','no'],function(gstore){
         var entries=gstore?pkmDbLookupAll('pkm_'+gf,dexNo):[];
         var d=entries.length?genToPkmAll(entries,baseEn,dexNo):null;
-        if(d&&d.forms&&d.forms.length){done(d);}else{parsePage(t2s(key),searchThen);}
+        if(d&&d.forms&&d.forms.length){done(d);}else{done(null);}
       });
     });
   }
@@ -5445,10 +5395,6 @@ var curPkm=null,curPkmForm=0,curPkmForms=[],curPkmShiny=false,curPkmNdex=0;
 function pkmPreviewFallback(el){
   var cur=String(el.getAttribute('src')||'');
   if(!cur){el.style.display='none';return;}
-  if(cur.indexOf('media.52poke.com')>=0){
-    var fn=cur.split('/').pop();
-    if(fn){el.src='https://wiki.52poke.com/wiki/Special:FilePath/'+fn;return;}
-  }
   if(curPkm&&curPkm.enname){
     var _en=String(curPkm.enname).toLowerCase();
     var base=pkmRepoUrl('static','pokeos',_en,curPkmShiny);
@@ -6366,7 +6312,6 @@ function fetchItemSprite(name,enName,cb){
   itemEnOf(name,function(en){_fetchItemSprite(name,en||enName||'',cb);});
 }
 function _fetchItemSprite(name,enName,cb){
-  if(pkmItemSource==='serebii'){var _ov=itemImgOf(name);if(_ov!==undefined){cb&&cb(_ov);return;}var _slug=itemSlugOf(name,enName);var _u=_slug?serebiiItemUrl(_slug):'';cb&&cb(_u);return;}
   if(itemSpriteCache[name]){cb&&cb(itemSpriteCache[name]);return;}
   var _c=lsGet('pk_itemimg_'+name,'');if(_c){itemSpriteCache[name]=_c;cb&&cb(_c);return;}
   var _diy=diyGet('item',name);
@@ -6375,62 +6320,9 @@ function _fetchItemSprite(name,enName,cb){
     if(_ref.indexOf(HUD_DIY_SCHEME)===0){hudDiyAssetResolve(_ref).then(function(u){itemSpriteCache[name]=u;cb&&cb(u);});return;}
     if(/^(?:https?:|data:image\/|blob:)/i.test(_ref)){itemSpriteCache[name]=_ref;cb&&cb(_ref);return;}
   }
-  var cands=itemCands(name);
-  var bagEn=itemBagIconEn(name);
-  if(bagEn&&cands.indexOf(bagEn)<0)cands.push(bagEn);
-  var ens=itemEnCands(enName);
-  for(var x=0;x<ens.length;x++){if(cands.indexOf(ens[x])<0)cands.push(ens[x]);}
-  var ci=0,ti=0;
-  function _try(){
-  if(ci>=cands.length){itemSpriteCache[name]='';cb&&cb('');return;}
-  var titles=itemPageTitles(cands[ci]);
-  if(ti>=titles.length){ci++;ti=0;_try();return;}
-  var page=titles[ti++];
-  hudFetch('https://wiki.52poke.com/api.php?action=parse&page='+encodeURIComponent(page)+'&format=json&prop=wikitext|text&variant=zh-hans&origin=*&redirects=1')
-    .then(function(r){return r.ok?r.json():Promise.reject();})
-    .then(function(j){
-      var wt=(j&&j.parse&&j.parse.wikitext)?j.parse.wikitext['*']:'';
-      var html=(j&&j.parse&&j.parse.text)?j.parse.text['*']:'';
-      var url='';
-      var target='';
-      var box=wt.match(/\{\{\s*[^{}\n]*信息框[\s\S]*?\n\}\}/);
-      if(box){
-        var im=box[0].match(/\|\s*(?:sprite|image|图片|贴图|img|圖)\s*=\s*([^\n|]+)/i);
-        var primary=im?itemCleanTarget(im[1]):'';
-        var dream='';
-        var allre=/\|\s*(sprite\d*|image|img|图片|贴图|圖)\s*=\s*([^\n|]+)/gi;
-        var mm;
-        while((mm=allre.exec(box[0]))!==null){
-          var v=itemCleanTarget(mm[2]);
-          if(v&&/^Dream[_\s]/i.test(v)){dream=v;break;}
-        }
-        target=dream||primary;
-      }
-      if(target&&html){
-        var enc=encodeURIComponent(target);
-        var m3=html.match(new RegExp('src="([^"]*'+enc+'[^"]*)"','i'));
-        if(m3){url=m3[1];}
-      }
-      if(!url&&html&&!target){
-        var ownT=itemCleanTarget('Bag '+name+' Sprite');
-        if(ownT){
-          var ownEnc=encodeURIComponent(ownT);
-          var ownM=html.match(new RegExp('src="([^"]*'+ownEnc+'[^"]*)"','i'));
-          if(ownM){url=ownM[1];}
-        }
-      }
-      if(!url&&html){
-        var dm=html.match(/src="([^"]*Dream_[^"]*Sprite\.png[^"]*)"/);
-        if(dm){url=dm[1];}
-        if(!url){var m=html.match(/src="([^"]*Bag_[^"]*Sprite\.png[^"]*)"/);url=m?m[1]:'';}
-        if(!url){var m2=html.match(/https?:\/\/[^"']*?Sprite\.png[^"']*/);url=m2?m2[0]:'';}
-      }
-      if(url){itemSpriteCache[name]=url;lsSet('pk_itemimg_'+name,url);cb&&cb(url);}
-      else{_try();}
-    })
-    .catch(function(){_try();});
-  }
-  _try();
+  var _ov=itemImgOf(name);if(_ov!==undefined){itemSpriteCache[name]=_ov;cb&&cb(_ov);return;}
+  var _slug=itemSlugOf(name,enName);var _u=_slug?serebiiItemUrl(_slug):'';if(_u)itemSpriteCache[name]=_u;
+  cb&&cb(_u);
 }
 function resolveItemImgs(scope){
   var els=(scope||document).querySelectorAll('.item-wiki[data-item]');
@@ -8453,7 +8345,7 @@ var fir=e.target.closest('[data-fab-img-reset]');if(fir){e.stopPropagation();fab
 var dmb=e.target.closest('[data-dt-all]');if(dmb){e.stopPropagation();showAllMoves(dmb.getAttribute('data-dt-all'));return;}
 var mvt=e.target.closest('[data-mvtab]');if(mvt){e.stopPropagation();mvTabSwitch(mvt.getAttribute('data-mvtab'));return;}
     var mv=e.target.closest('[data-move]');if(mv){e.stopPropagation();showMoveInfo(mv.getAttribute('data-move'),mv.getAttribute('data-mvtype'),mv.getAttribute('data-mvcat'));return;}
-    var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{var _nd=cry.getAttribute('data-cry');var _u0=pkmRepoFirst(PKM_DATA_BASE+'cries/'+_nd+'.ogg');var _au=new Audio(_u0);_au.onerror=function(){var _m=pkmRepoMirror(_u0);var _pk=new Audio('https://cdn.jsdelivr.net/gh/PokeAPI/cries@main/cries/pokemon/latest/'+_nd+'.ogg');if(_m){var _au2=new Audio(_m);_au2.onerror=function(){try{_pk.play();}catch(e2){}};_au2.play();}else{try{_pk.play();}catch(e2){}}};_au.play();}catch(err){}return;}
+    var cry=e.target.closest('[data-cry]');if(cry){e.stopPropagation();try{var _nd=cry.getAttribute('data-cry');var _u0=pkmRepoFirst(PKM_DATA_BASE+'cries/'+_nd+'.ogg');var _au=new Audio(_u0);_au.onerror=function(){var _m=pkmRepoMirror(_u0);if(_m){var _au2=new Audio(_m);_au2.onerror=function(){};_au2.play();}};_au.play();}catch(err){}return;}
     var ab=e.target.closest('[data-ability]');if(ab){e.stopPropagation();showAbilityInfo(ab.getAttribute('data-ability'));return;}
 var nt=e.target.closest('[data-nature]');if(nt){e.stopPropagation();showNatureInfo(nt.getAttribute('data-nature'));return;}
 var st=e.target.closest('[data-shiny-toggle]');if(st){e.stopPropagation();if(curPkm){curPkmShiny=!curPkmShiny;renderPkmForm(curPkmForm);}return;}
