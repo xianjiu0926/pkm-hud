@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.7';
+var PK_VER='4.0.8';
 /*PK_NOTICE_BEGIN
 v4.0 大版本更新（数据彻底统一走仓库）：
 · 所有文字/图/叫声/图标/地图 100% 走数据仓库，删除全部外部图床与源站兜底
@@ -471,7 +471,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.bt-text{font-size:.8rem;color:#dce9ff;line-height:1.55;word-break:break-word;white-space:pre-wrap}'+
 '.rel-item{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:.82rem;color:var(--text)}'+
 '.rel-name{width:60px;text-align:left;flex-shrink:0;color:var(--dim);font-weight:600}'+
-'.rel-name.rel-click{cursor:pointer;text-decoration:underline dotted}'+
+'.rel-name.rel-click{cursor:pointer;color:#7bab7b}'+
 '.rel-settings{cursor:pointer;margin-left:4px;font-size:.8em;opacity:.75}'+
 '.rel-settings:hover{opacity:1}'+
 '.relset-list{max-height:60vh;overflow:auto}'+
