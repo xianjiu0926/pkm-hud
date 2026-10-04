@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.9';
+var PK_VER='4.0.10';
 /*PK_NOTICE_BEGIN
 v4.0.9 更新（人际关系立绘）：
 · 人际关系点击人物名查看立绘（主页 + 菜单都支持）
@@ -4698,8 +4698,8 @@ function quickHTML(){var Q=[['box','q-box',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/盒
 function tasksHTML(){var t=stat_data.任务||{},html='';if(t.主线)html+='<div class="task-item"><span class="task-tag main">主线</span><div class="task-text">'+esc(t.主线)+'</div></div>';if(t.传说)html+='<div class="task-item"><span class="task-tag legend">传说</span><div class="task-text">'+esc(t.传说)+'</div></div>';if(t.支线)html+='<div class="task-item"><span class="task-tag random">支线</span><div class="task-text">'+esc(t.支线).split(/[；;\n]/).join('<br>')+'</br></div></div>';if(!html)html='<div class="empty">暂无任务</div>';return frameP('任务',html);}
 function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){return esc(String(v||'')).split(/[；;]/).join('<br>');}if(w.附近遭遇)html+='<div class="event-item"><span class="event-type">📍 附近遭遇</span><p>'+ln(w.附近遭遇)+'</p></div>';if(w.地区新闻)html+='<div class="event-item"><span class="event-type">📰 地区新闻</span><p>'+ln(w.地区新闻)+'</p></div>';if(w.区域动态)html+='<div class="event-item"><span class="event-type">🌍 区域动态</span><p>'+ln(w.区域动态)+'</p></div>';if(!html)html='<div class="empty">暂无世界事件</div>';return '<div class="info-frame world-frame plain-frame"><div class="info-inner"><div class="info-title">世界动态</div>'+html+'</div></div>';}
 function relHTML(){var rel=stat_data.人际关系||{};var entries=Object.entries(rel);if(!entries.length)return frame('人际关系','<div class="empty">暂无</div>');var html=entries.map(function(kv){var val=kv[1];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name'+(relHasPortrait(kv[0])?' rel-click" data-rel="'+esc(kv[0])+'"':'"')+'>'+esc(kv[0])+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('');return frame('人际关系',html);}
-function relPortraitUrl(name){var s=t2s(String(name==null?'':name).trim());if(!s)return '';return pkmRepoFirst(PKM_DATA_BASE+'人物立绘/'+s+'/'+s+'.png');}
-function showRelPortrait(name){var s=t2s(String(name==null?'':name).trim());if(!s)return;clearBack();var user=relUserPortrait(name);var img;if(user){img=hudDiyImgTag(user,'referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>图片加载失败</div>\')"');}else{var url=relPortraitUrl(name);var mirror=pkmRepoMirror(url);var mAttr=mirror?(' data-m="'+esc(mirror)+'"'):'';img='<img src="'+esc(url)+'"'+mAttr+' referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="if(this.dataset.m){var m=this.dataset.m;this.dataset.m=\'\';this.src=m;}else{this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>暂无立绘</div>\')}">';}overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body" style="text-align:center;padding:14px">'+img+'</div></div>';overlay.classList.add('open');hudResolvePkidbImages(overlay);}
+function relPortraitUrl(name){var s=relNormName(name);if(!s)return '';return pkmRepoFirst(PKM_DATA_BASE+'人物立绘/'+s+'/'+s+'.png');}
+function showRelPortrait(name){var s=relNormName(name);if(!s)return;clearBack();var user=relUserPortrait(name);var img;if(user){img=hudDiyImgTag(user,'referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>图片加载失败</div>\')"');}else{var url=relPortraitUrl(name);var mirror=pkmRepoMirror(url);var mAttr=mirror?(' data-m="'+esc(mirror)+'"'):'';img='<img src="'+esc(url)+'"'+mAttr+' referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="if(this.dataset.m){var m=this.dataset.m;this.dataset.m=\'\';this.src=m;}else{this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>暂无立绘</div>\')}">';}overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body" style="text-align:center;padding:14px">'+img+'</div></div>';overlay.classList.add('open');hudResolvePkidbImages(overlay);}
 var PKM_PORTRAITS=null,PKM_PORTRAITS_LOADING=false,PKM_PORTRAITS_CBS=[];
 function ensurePortraits(cb){
   if(PKM_PORTRAITS){cb&&cb(PKM_PORTRAITS);return;}
@@ -4722,16 +4722,21 @@ function ensurePortraits(cb){
     })
     .catch(function(){done(Object.create(null));});
 }
+function relNormName(name){
+  var t=t2s(String(name==null?'':name).trim());
+  t=t.replace(/[（(][^（）()]*[）)]/g,'').trim();
+  return t;
+}
 function relUserMap(){
   try{var m=JSON.parse(WIN.localStorage.getItem('pk_rel_portraits')||'{}');return (m&&typeof m==='object')?m:{};}catch(e){return {};}
 }
 function relUserPortrait(name){
-  var k=t2s(String(name==null?'':name).trim());
+  var k=relNormName(name);
   if(!k)return '';
   return String(relUserMap()[k]||'');
 }
 function relSetUserPortrait(name,val){
-  var k=t2s(String(name==null?'':name).trim());
+  var k=relNormName(name);
   if(!k)return;
   var m=relUserMap();
   if(val){m[k]=String(val);}else{delete m[k];}
@@ -4740,7 +4745,7 @@ function relSetUserPortrait(name,val){
 function relHasPortrait(name){
   if(relUserPortrait(name))return true;
   if(!PKM_PORTRAITS)return true;
-  return !!PKM_PORTRAITS[t2s(String(name==null?'':name).trim())];
+  return !!PKM_PORTRAITS[relNormName(name)];
 }
 function refreshRelViews(){
   try{var hf=document.querySelector('#home-fold');if(hf){hf.innerHTML=homeFoldHTML();resolveItemImgs(hf);hudResolvePkidbImages(hf);}}catch(e){}
@@ -4794,7 +4799,7 @@ function openRelSettings(){
   clearBack();
   var rows=ks.map(function(k){
     var user=relUserPortrait(k);
-    var repo=!!(PKM_PORTRAITS&&PKM_PORTRAITS[t2s(String(k).trim())]);
+    var repo=!!(PKM_PORTRAITS&&PKM_PORTRAITS[relNormName(k)]);
     var status=user?'🖼 用户图':(repo?'✅ 有立绘':'— 无图');
     return '<div class="relset-row" data-relset-name="'+esc(k)+'"><span class="relset-name">'+esc(k)+'</span><span class="relset-status">'+status+'</span><span class="relset-btns"><button class="btn-small" data-relset-upload>📁 上传</button><button class="btn-small" data-relset-url>🔗 链接</button>'+(user?'<button class="btn-small" data-relset-clear style="background:rgba(150,50,50,.65)">清除</button>':'')+'</span></div>';
   }).join('');
