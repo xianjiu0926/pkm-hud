@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.1';
+var PK_VER='4.0.2';
 /*PK_NOTICE_BEGIN
 修复 Mega X/Y/Z 形态图读不到：仓库统一用 mega-x 命名，移除 showdown 的 megax 转换并兼容 megax 输入
 PK_NOTICE_END*/
@@ -163,6 +163,7 @@ function hudNewAbortController(){
   return {signal:null,abort:function(){}};
 }
 var PKM_REPO_RAW='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
+var PKM_DATA_BASE=PKM_REPO_RAW;
 var PKM_REPO_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/Pokemon@main/';
 function pkmRepoOrder(){var v='';try{v=String(localStorage.getItem('pk_repo_order')||'');}catch(e){}return v==='jsdelivr'?'jsdelivr':'raw';}
 function pkmRepoFirst(u){if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0&&pkmRepoOrder()==='jsdelivr')return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return u;}
@@ -4857,7 +4858,6 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
 var PKM_DATA_REV='r20260930p';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
