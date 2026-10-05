@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.15';
+var PK_VER='4.0.16';
 /*PK_NOTICE_BEGIN
 v4.0.13 更新：
 · 战场训练家名（📋）可点击查看人物立绘
@@ -7457,7 +7457,7 @@ function doClear(target){
       var dels=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(/^(?:pk_sprite_|pk_icon_|pk_slug_|pk_ndex_|pk_dexthumb_|pk_ps_|pk_psf_)/).test(k))dels.push(k);}dels.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
     }
     if(target==='item'){
-      itemListCache=null;itemSpriteCache={};itemCache={};hudCacheDeletePrefixes(['pk_item_','pk_itemlist','pk_itemimg_','pk_gh_item']);
+      itemListCache=null;itemSpriteCache={};itemCache={};PKM_DB['item']=null;hudCacheDeletePrefixes(['pk_item_','pk_itemlist','pk_itemimg_','pk_gh_item']);
       var deli=[];for(var i2=0;i2<localStorage.length;i2++){var k2=localStorage.key(i2);if(k2&&(k2.indexOf('pk_item_')===0||k2==='pk_itemlist'||k2.indexOf('pk_itemimg_')===0||k2.indexOf('pk_gh_item')===0))deli.push(k2);}deli.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});return;
     }
     var map={mv:'pk_mv_',pm:'pk_pm_',ab:'pk_ab_',dex:'pk_dexlist',fid:'pk_fid_'};
@@ -7470,11 +7470,11 @@ function doClear(target){
       for(var j=0;j<pre.length;j++){if(k.indexOf(pre[j])===0){del.push(k);break;}}
     }
     del.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
-    if(target==='all'||target==='mv')moveCache={};
+    if(target==='all'||target==='mv'){moveCache={};PKM_DB['move']=null;}
     if(target==='all'||target==='pm')pkmCache={};
-    if(target==='all'||target==='ab')abiCache={};
-    if(target==='all'||target==='dex')dexCache=null;
-    if(target==='all'){itemListCache=null;itemSpriteCache={};itemCache={};pkmSpriteCache={};pkmIconCache={};pkmSlugCache={};pkmDexCache={};nearbyTypeCache={};nearbyTypePending={};}
+    if(target==='all'||target==='ab'){abiCache={};PKM_DB['abil']=null;}
+    if(target==='all'||target==='dex'){dexCache=null;PKM_DB['dex']=null;}
+    if(target==='all'){itemListCache=null;itemSpriteCache={};itemCache={};pkmSpriteCache={};pkmIconCache={};pkmSlugCache={};pkmDexCache={};nearbyTypeCache={};nearbyTypePending={};PKM_DB['item']=null;}
   }catch(e){}
 }
 function confirmClearModal(){
