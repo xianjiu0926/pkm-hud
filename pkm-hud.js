@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.23';
+var PK_VER='4.0.24';
 /*PK_NOTICE_BEGIN
 v4.0.13 更新：
 · 战场训练家名（📋）可点击查看人物立绘
@@ -6546,12 +6546,51 @@ function typeChartCalc(){
   if(!h)h='<div class="empty">无克制/抵抗/免疫关系</div>';
   res.innerHTML=h;
 }
+function typeChartCalcAtk(){
+  var a=document.getElementById('tc-atk-1');
+  var res=document.getElementById('tc-atk-result');
+  if(!a||!res)return;
+  var v=a.value;
+  if(!v){res.innerHTML='<div class="empty">选择攻击方属性后，自动显示它能克制/打不动的属性</div>';return;}
+  var o2=[],o05=[],o0=[];
+  for(var i=0;i<TYPE_CHART.length;i++){
+    var def=TYPE_CHART[i][0];
+    var m=typeMul(v,def);
+    if(m===2)o2.push(def);
+    else if(m===0.5)o05.push(def);
+    else if(m===0)o0.push(def);
+  }
+  function row(lab,list){
+    if(!list.length)return '';
+    return '<div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0"><span class="dim" style="font-size:.72rem;flex-shrink:0;min-width:52px">'+lab+'</span><span style="display:flex;flex-wrap:wrap;gap:4px">'+list.map(function(t){return typeChipHTML(t);}).join('')+'</span></div>';
+  }
+  var h='';
+  h+=row('2× 克制',o2);
+  h+=row('½× 抵抗',o05);
+  h+=row('0× 无效',o0);
+  if(!h)h='<div class="empty">无克制/抵抗/免疫关系</div>';
+  res.innerHTML=h;
+}
+function typeChartSwitchMode(mode){
+  var def=document.getElementById('tc-def-wrap');
+  var atk=document.getElementById('tc-atk-wrap');
+  var btns=document.querySelectorAll('.tc-mode-btn');
+  for(var i=0;i<btns.length;i++){btns[i].classList.toggle('active',btns[i].getAttribute('data-tc-mode')===mode);}
+  if(def)def.style.display=(mode==='def')?'':'none';
+  if(atk)atk.style.display=(mode==='atk')?'':'none';
+  if(mode==='atk')typeChartCalcAtk();else typeChartCalc();
+}
 function typeChartHTML(){
   var opts='<option value="">无</option>'+TYPE_LIST.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('');
   var selStyle='flex:1;min-width:0;box-sizing:border-box;padding:6px 8px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none';
-  var h='<div class="set-title" style="margin-left:0">防御方属性（最多选两个）</div>';
+  var h='<div class="set-title" style="margin-left:0">视角</div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:8px"><button type="button" class="btn-small tc-mode-btn active" data-tc-mode="def">作为防守方</button><button type="button" class="btn-small tc-mode-btn" data-tc-mode="atk">作为攻击方</button></div>';
+  h+='<div id="tc-def-wrap"><div class="set-title" style="margin-left:0">防御方属性（最多选两个）</div>';
   h+='<div style="display:flex;gap:6px;margin-bottom:8px"><select id="tc-def-1" style="'+selStyle+'">'+opts+'</select><select id="tc-def-2" style="'+selStyle+'">'+opts+'</select></div>';
-  h+='<div id="tc-result"><div class="empty">选择防御方属性后，自动显示克制它的属性</div></div>';
+  h+='<div id="tc-result"><div class="empty">选择防御方属性后，自动显示克制它的属性</div></div></div>';
+  h+='<div id="tc-atk-wrap" style="display:none"><div class="set-title" style="margin-left:0">攻击方属性</div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:8px"><select id="tc-atk-1" style="'+selStyle+'">'+opts+'</select></div>';
+  h+='<div id="tc-atk-result"><div class="empty">选择攻击方属性后，自动显示它能克制/打不动的属性</div></div></div>';
   h+='<div class="set-title" style="margin-left:0;margin-top:6px">完整克制表</div>';
   h+='<div style="text-align:center"><img src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/属性相克表.webp')+'" referrerpolicy="origin" data-tc-big="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/属性相克表.webp')+'" style="max-width:100%;height:auto;border-radius:6px;cursor:zoom-in" onerror="this.style.display=\'none\'"><div class="dim" style="font-size:.72rem;margin-top:4px">点击图片放大查看</div></div>';
   return frameP('属性克制表',h);
@@ -7895,6 +7934,10 @@ var tc1=pageOverlay.querySelector('#tc-def-1');
 if(tc1){tc1.addEventListener('change',typeChartCalc);}
 var tc2=pageOverlay.querySelector('#tc-def-2');
 if(tc2){tc2.addEventListener('change',typeChartCalc);}
+var tca=pageOverlay.querySelector('#tc-atk-1');
+if(tca){tca.addEventListener('change',typeChartCalcAtk);}
+var tcms=pageOverlay.querySelectorAll('.tc-mode-btn');
+for(var _tcm=0;_tcm<tcms.length;_tcm++){tcms[_tcm].addEventListener('click',function(e){e.stopPropagation();typeChartSwitchMode(this.getAttribute('data-tc-mode'));});}
 typeChartCalc();
 var iso=pageOverlay.querySelector('[data-isz-open]');
 if(iso){iso.addEventListener('click',function(e){e.stopPropagation();openIconSize();});}
