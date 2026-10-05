@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.22';
+var PK_VER='4.0.23';
 /*PK_NOTICE_BEGIN
 v4.0.13 更新：
 · 战场训练家名（📋）可点击查看人物立绘
@@ -5003,7 +5003,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930s';
+var PKM_DATA_REV='r20260930t';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -5510,6 +5510,25 @@ function fetchPokemon(name,ndex,cb){
   localLookup();
 }
 var curPkm=null,curPkmForm=0,curPkmForms=[],curPkmShiny=false,curPkmNdex=0;
+var FORM_CRY_MAP={},formCryPromise=null;
+function ensureFormCryMap(){
+  if(formCryPromise)return formCryPromise;
+  formCryPromise=hudFetch(PKM_DATA_BASE+'form-cry-map.json')
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(j){
+      var m=(j&&typeof j==='object'&&!Array.isArray(j))?j:{};
+      for(var k in m){if(m[k])FORM_CRY_MAP[String(k).toLowerCase()]=m[k];}
+      if(curPkm&&typeof renderPkmForm==='function'){try{renderPkmForm(curPkmForm);}catch(e){}}
+      return FORM_CRY_MAP;
+    })
+    .catch(function(){return FORM_CRY_MAP;});
+  return formCryPromise;
+}
+function pkmCryId(f,d){
+  var nd=parseInt(d&&d.ndex,10)||0;
+  if(f&&f.en){var fid=FORM_CRY_MAP[String(f.en).toLowerCase()];if(fid)return fid;}
+  return nd;
+}
 function pkmPreviewFallback(el){
   var cur=String(el.getAttribute('src')||'');
   if(!cur){el.style.display='none';return;}
@@ -5636,7 +5655,7 @@ if(big){
     }
     if(f.stats&&(f.stats.hp||f.stats.atk||f.stats.def||f.stats.spa||f.stats.spd||f.stats.spe)){out+='<div class="row block"><span class="k">种族值</span><span class="v" style="width:100%"><div style="display:flex;align-items:center;gap:8px;margin:2px 0"><span class="dim" style="font-size:.72rem">等级</span><div id="pkm-lv" data-val="50" style="flex:1;position:relative;height:24px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer"><div class="pkm-rail" style="position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;background:rgba(0,0,0,.72);border-radius:999px;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)"></div><div class="pkm-fill" style="position:absolute;left:0;top:50%;height:4px;margin-top:-2px;width:50%;background:linear-gradient(180deg,#7cc4f8,#4a9dd8);border-radius:999px"></div><div class="pkm-thumb" style="position:absolute;top:50%;left:calc(50% - 9px);width:18px;height:18px;margin-top:-9px;background:#fff;border:2px solid #7cc4f8;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div></div><span id="pkm-lv-num" style="font-size:.8rem;font-weight:800">50级</span></div><div id="pkm-stats" style="font-size:.82rem;line-height:1.6"></div></span></div>';}
     if(d.ndex)out+='<div class="row"><span class="k">全国图鉴</span><span class="v">#'+esc(d.ndex)+'</span></div>';
-    var nd=parseInt(d.ndex,10)||0;
+    var nd=pkmCryId(f,d);
     if(nd>0)out+='<div class="row"><span class="k">叫声</span><span class="v"><button class="btn-small" data-cry="'+nd+'">🔊 播放</button></span></div>';
     if(f.height)out+='<div class="row"><span class="k">身高</span><span class="v">'+esc(f.height)+' m</span></div>';
     if(f.weight)out+='<div class="row"><span class="k">体重</span><span class="v">'+esc(f.weight)+' kg</span></div>';
@@ -5833,6 +5852,7 @@ function mvTabSwitch(tab){
 }
 function showPokemonInfo(name,ndex){
   curPkmNdex=parseInt(ndex,10)||0;
+  ensureFormCryMap();
   clearBack();
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body"><div id="pkm-formbar"></div><div class="pkm-big" id="pkm-big" data-shiny-toggle title="点击切换普通/闪光"><div class="empty">加载中...</div></div><div id="pkm-body"></div></div></div>';
   overlay.classList.add('open');
