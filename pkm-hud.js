@@ -3,12 +3,14 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.11';
+var PK_VER='4.0.12';
 /*PK_NOTICE_BEGIN
-v4.0.9 更新（人际关系立绘）：
+v4.0.11 更新（人物立绘功能）：
 · 人际关系点击人物名查看立绘（主页 + 菜单都支持）
+· 战场里训练家名（📋）也可点击查看立绘
 · 有立绘的角色名显示绿色、可点击；没有立绘的角色不显示成可点状态
 · 人际关系标题后新增 📷 配图设置：可给任意角色上传本地图或填链接，配图后即可点击查看，并优先显示你配的图
+· 修复角色名带(劲敌)等括号标注时无法匹配立绘的问题
 · 修复菜单图标与地图不显示的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
