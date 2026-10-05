@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.24';
+var PK_VER='4.0.25';
 /*PK_NOTICE_BEGIN
 v4.0.13 更新：
 · 战场训练家名（📋）可点击查看人物立绘
@@ -6584,8 +6584,8 @@ function typeChartHTML(){
   var opts='<option value="">无</option>'+TYPE_LIST.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('');
   var selStyle='flex:1;min-width:0;box-sizing:border-box;padding:6px 8px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none';
   var h='<div class="set-title" style="margin-left:0">视角</div>';
-  h+='<div style="display:flex;gap:6px;margin-bottom:8px"><button type="button" class="btn-small tc-mode-btn active" data-tc-mode="def">作为防守方</button><button type="button" class="btn-small tc-mode-btn" data-tc-mode="atk">作为攻击方</button></div>';
-  h+='<div id="tc-def-wrap"><div class="set-title" style="margin-left:0">防御方属性（最多选两个）</div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:8px"><button type="button" class="btn-small tc-mode-btn" data-tc-mode="def">作为防御方</button><button type="button" class="btn-small tc-mode-btn" data-tc-mode="atk">作为攻击方</button></div>';
+  h+='<div id="tc-def-wrap" style="display:none"><div class="set-title" style="margin-left:0">防御方属性（最多选两个）</div>';
   h+='<div style="display:flex;gap:6px;margin-bottom:8px"><select id="tc-def-1" style="'+selStyle+'">'+opts+'</select><select id="tc-def-2" style="'+selStyle+'">'+opts+'</select></div>';
   h+='<div id="tc-result"><div class="empty">选择防御方属性后，自动显示克制它的属性</div></div></div>';
   h+='<div id="tc-atk-wrap" style="display:none"><div class="set-title" style="margin-left:0">攻击方属性</div>';
@@ -7938,7 +7938,7 @@ var tca=pageOverlay.querySelector('#tc-atk-1');
 if(tca){tca.addEventListener('change',typeChartCalcAtk);}
 var tcms=pageOverlay.querySelectorAll('.tc-mode-btn');
 for(var _tcm=0;_tcm<tcms.length;_tcm++){tcms[_tcm].addEventListener('click',function(e){e.stopPropagation();typeChartSwitchMode(this.getAttribute('data-tc-mode'));});}
-typeChartCalc();
+
 var iso=pageOverlay.querySelector('[data-isz-open]');
 if(iso){iso.addEventListener('click',function(e){e.stopPropagation();openIconSize();});}
 var fbo=pageOverlay.querySelector('[data-fab-open]');
