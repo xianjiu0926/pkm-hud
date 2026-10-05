@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.18';
+var PK_VER='4.0.19';
 /*PK_NOTICE_BEGIN
 v4.0.13 更新：
 · 战场训练家名（📋）可点击查看人物立绘
@@ -4694,7 +4694,7 @@ function quickHTML(){var Q=[['box','q-box',pkmRepoFirst(PKM_DATA_BASE+'UI/ui/盒
 
 function tasksHTML(){var t=stat_data.任务||{},html='';if(t.主线)html+='<div class="task-item"><span class="task-tag main">主线</span><div class="task-text">'+esc(t.主线)+'</div></div>';if(t.传说)html+='<div class="task-item"><span class="task-tag legend">传说</span><div class="task-text">'+esc(t.传说)+'</div></div>';if(t.支线)html+='<div class="task-item"><span class="task-tag random">支线</span><div class="task-text">'+esc(t.支线).split(/[；;\n]/).join('<br>')+'</br></div></div>';if(!html)html='<div class="empty">暂无任务</div>';return frameP('任务',html);}
 function worldHTML(){var w=stat_data.世界事件||{},html='';function ln(v){return esc(String(v||'')).split(/[；;]/).join('<br>');}if(w.附近遭遇)html+='<div class="event-item"><span class="event-type">📍 附近遭遇</span><p>'+ln(w.附近遭遇)+'</p></div>';if(w.地区新闻)html+='<div class="event-item"><span class="event-type">📰 地区新闻</span><p>'+ln(w.地区新闻)+'</p></div>';if(w.区域动态)html+='<div class="event-item"><span class="event-type">🌍 区域动态</span><p>'+ln(w.区域动态)+'</p></div>';if(!html)html='<div class="empty">暂无世界事件</div>';return '<div class="info-frame world-frame plain-frame"><div class="info-inner"><div class="info-title">世界动态</div>'+html+'</div></div>';}
-function relHTML(){var rel=stat_data.人际关系||{};var entries=Object.entries(rel);if(!entries.length)return frame('人际关系','<div class="empty">暂无</div>');var html=entries.map(function(kv){var val=kv[1];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name'+(relHasPortrait(kv[0])?' rel-click" data-rel="'+esc(kv[0])+'"':'"')+'>'+esc(kv[0])+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('');return frame('人际关系',html);}
+function relHTML(){var rel=stat_data.人际关系||{};var entries=Object.entries(rel);if(!entries.length)return frame('人际关系','<div class="empty">暂无</div>');var html=entries.map(function(kv){var val=kv[1];var score=(typeof val==='object'&&val)?num(val.好感度,0):(typeof val==='number'?val:0);return '<div class="rel-item"><span class="rel-name'+(relHasPortrait(kv[0])?' rel-click" data-rel="'+esc(kv[0])+'"':'"')+'>'+esc(kv[0])+'</span><div class="rel-bar"><div class="rel-fill" style="width:'+Math.max(0,Math.min(100,score))+'%"></div></div><span class="rel-val">'+score+'</span></div>';}).join('');return frame('人际关系 <button class="btn-small" data-rel-del-open title="删除人物" style="vertical-align:middle;margin-left:4px;padding:1px 6px;font-size:.7rem">🗑️</button>',html);}
 function relPortraitUrl(name){var s=relNormName(name);if(!s)return '';return pkmRepoFirst(PKM_DATA_BASE+'人物立绘/'+s+'/'+s+'.png');}
 function showRelPortrait(name){var s=relNormName(name);if(!s)return;clearBack();var user=relUserPortrait(name);var img;if(user){img=hudDiyImgTag(user,'referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>图片加载失败</div>\')"');}else{var url=relPortraitUrl(name);var mirror=pkmRepoMirror(url);var mAttr=mirror?(' data-m="'+esc(mirror)+'"'):'';img='<img src="'+esc(url)+'"'+mAttr+' referrerpolicy="origin" alt="'+esc(name)+'" style="max-width:100%;max-height:72vh;object-fit:contain" onerror="if(this.dataset.m){var m=this.dataset.m;this.dataset.m=\'\';this.src=m;}else{this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=empty>暂无立绘</div>\')}">';}overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body" style="text-align:center;padding:14px">'+img+'</div></div>';overlay.classList.add('open');hudResolvePkidbImages(overlay);}
 var PKM_PORTRAITS=null,PKM_PORTRAITS_LOADING=false,PKM_PORTRAITS_CBS=[];
@@ -4801,6 +4801,31 @@ function openRelSettings(){
     return '<div class="relset-row" data-relset-name="'+esc(k)+'"><span class="relset-name">'+esc(k)+'</span><span class="relset-status">'+status+'</span><span class="relset-btns"><button class="btn-small" data-relset-upload>📁 上传</button><button class="btn-small" data-relset-url>🔗 链接</button>'+(user?'<button class="btn-small" data-relset-clear style="background:rgba(150,50,50,.65)">清除</button>':'')+'</span></div>';
   }).join('');
   overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">人际关系配图</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="relset-list">'+rows+'</div><div class="dim" style="font-size:.72rem;margin-top:8px">上传本地图或填链接；配图后该角色即可点击查看，并优先显示你配的图。</div></div></div>';
+  overlay.classList.add('open');
+}
+function deleteRel(name){
+  name=String(name||'').trim();
+  if(!name||!stat_data.人际关系||!stat_data.人际关系[name]){hudMsg('人物不存在');return;}
+  var old=stat_data.人际关系[name];
+  delete stat_data.人际关系[name];
+  hudSend('请删除人际关系中的「'+name+'」条目，并更新状态栏。',function(){stat_data.人际关系[name]=old;},'删除人际关系中的'+name);
+  if(overlay)overlay.classList.remove('open');
+  render();resizeFrame();
+  try{openPage('rel');}catch(e){}
+  hudMsg('已删除人物「'+name+'」');
+}
+function deleteRelAsk(name){
+  hudConfirm('删除人物','确定删除「'+name+'」吗？将静默发送指令让 AI 同步删除该条目。',function(){deleteRel(name);});
+}
+function openRelDelete(){
+  var rel=stat_data.人际关系||{};
+  var ks=Object.keys(rel);
+  if(!ks.length){hudMsg('暂无人际关系人物');return;}
+  clearBack();
+  var rows=ks.map(function(k){
+    return '<div class="relset-row"><span class="relset-name">'+esc(k)+'</span><span class="relset-btns"><button class="btn-small" data-reldel="'+esc(k)+'" style="background:rgba(150,50,50,.65)">删除</button></span></div>';
+  }).join('');
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">删除人际关系人物</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="relset-list">'+rows+'</div><div class="dim" style="font-size:.72rem;margin-top:8px">点击删除后，会静默发送指令让 AI 删除对应变量条目。</div></div></div>';
   overlay.classList.add('open');
 }
 function rivalsHTML(){var r=stat_data.劲敌||{};var entries=Object.entries(r);if(!entries.length)return frameP('劲敌','<div class="empty">尚未遭遇劲敌</div>');var html=entries.map(function(kv){return '<div class="nearby-item" style="cursor:default"><div class="nearby-info"><div class="nearby-name">'+esc(kv[0])+'</div><div class="nearby-sub">'+esc(kv[1])+'</div></div></div>';}).join('');return frameP('劲敌',html);}
@@ -7694,6 +7719,7 @@ function hudRemoveAction(id){
 function bindHudCmdBar(){}
 
 function bindPageInteractions(){
+  var rdo=pageOverlay.querySelector('[data-rel-del-open]');if(rdo){rdo.addEventListener('click',function(e){e.stopPropagation();openRelDelete();});}
   pageOverlay.querySelectorAll('.rel-name[data-rel]').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();showRelPortrait(el.getAttribute('data-rel'));});});
   pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);clearBack();overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);}});});
 pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){el.addEventListener('click',function(){var key=el.getAttribute('data-nearby');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');resolvePkmImgs(overlay);resolveNearbyTypes(overlay);}});});
@@ -8405,6 +8431,7 @@ if(tb){e.stopPropagation();overlay.innerHTML='<div class="modal" style="max-widt
 var rup=e.target.closest('[data-relset-upload]');if(rup){e.stopPropagation();var _rr=rup.closest('.relset-row');relSettingsUpload(_rr?_rr.getAttribute('data-relset-name'):'');return;}
 var rul=e.target.closest('[data-relset-url]');if(rul){e.stopPropagation();var _rr2=rul.closest('.relset-row');relSettingsUrl(_rr2?_rr2.getAttribute('data-relset-name'):'');return;}
 var rcl=e.target.closest('[data-relset-clear]');if(rcl){e.stopPropagation();var _rr3=rcl.closest('.relset-row');relSettingsClear(_rr3?_rr3.getAttribute('data-relset-name'):'');return;}
+var rdl=e.target.closest('[data-reldel]');if(rdl){e.stopPropagation();deleteRelAsk(rdl.getAttribute('data-reldel'));return;}
 var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true,itm.getAttribute('data-item-en')||'');return;}
     if(e.target===overlay){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();var _pb2=popBack();if(_pb2){overlay.innerHTML=_pb2;}else{overlay.classList.remove('open');}return;}
         if(e.target.closest('[data-close]')){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();overlay.classList.remove('open');clearBack();return;}
