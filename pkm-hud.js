@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.13';
+var PK_VER='4.0.14';
 /*PK_NOTICE_BEGIN
 v4.0.13 更新：
 · 战场训练家名（📋）可点击查看人物立绘
@@ -467,7 +467,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.bt-text{font-size:.8rem;color:#dce9ff;line-height:1.55;word-break:break-word;white-space:pre-wrap}'+
 '.rel-item{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:.82rem;color:var(--text)}'+
 '.rel-name{width:60px;text-align:left;flex-shrink:0;color:var(--dim);font-weight:600}'+
-'.rel-name.rel-click{cursor:pointer;color:#7bab7b}'+
+'.rel-click{cursor:pointer;color:#7bab7b}'+
 '.rel-settings{cursor:pointer;margin-left:4px;font-size:.8em;opacity:.75}'+
 '.rel-settings:hover{opacity:1}'+
 '.relset-list{max-height:60vh;overflow:auto}'+
