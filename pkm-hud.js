@@ -3,10 +3,13 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.28';
+var PK_VER='4.0.29';
 /*PK_NOTICE_BEGIN
-v4.0.13 更新：
-· 战场训练家名（📋）可点击查看人物立绘
+v4.0.29 更新：
+· 背包道具：没有效果数据的道具不再能点开查看，也不再弹「数据获取失败」
+· 道具名写错也能看效果：自动按图标里的英文名反查官方道具（如 potion.png → 伤药）
+· 中文名正确时优先按名字出效果，图标写错不受影响
+· DIY 自创道具：填了介绍/效果才可点，只有图片无效果的不可点
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
