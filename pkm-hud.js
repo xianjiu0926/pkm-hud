@@ -3,13 +3,23 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.36';
+var PK_VER='4.0.37';
 /*PK_NOTICE_BEGIN
-v4.0.36 更新：
-· 修复图鉴详情大图/缩略图、道具图、闪光星标未走镜像的问题
-· 国内网切到 jsDelivr 镜像后，这些图片也能正常加载
+v4.0.37 更新：
+· 检查更新/修复重装也支持 jsDelivr 镜像兜底，国内网能正常检查到新版本并下载更新
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
+var PKM_UPDATE_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js';
+function pkmUpdateFetch(){
+  var urls=pkmRepoOrder()==='jsdelivr'?[PKM_UPDATE_MIRROR,PK_UPDATE_URL]:[PK_UPDATE_URL,PKM_UPDATE_MIRROR];
+  var i=0,q='?t='+Date.now();
+  function next(err){
+    if(i>=urls.length)return Promise.reject(err||new Error('fetch failed'));
+    var u=urls[i++];
+    return hudFetch(u+q,{cache:'no-store'}).then(function(r){ if(r&&r.ok)return r.text(); throw 0; }).catch(function(e){ return next(e); });
+  }
+  return next();
+}
 function pkVerCompare(a,b){
   function p(v){var m=String(v==null?'':v).match(/^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?$/);return m?[Number(m[1]),Number(m[2]),Number(m[3]),m[4]||'']:null;}
   var x=p(a),y=p(b);
@@ -7283,8 +7293,7 @@ function pkMarkHasUpdate(ver){
 }
 function pkAutoCheckUpdate(){
   try{
-    hudFetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
-      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+    pkmUpdateFetch()
       .then(function(txt){
         var m=txt.match(/PK_VER='([^']+)'/);
         var ver=m?m[1]:null;
@@ -7322,8 +7331,7 @@ function pkCheckUpdate(){
   var updBtn=document.querySelector('[data-pk-do-update]');
   if(updBtn) updBtn.style.display='none';
   try{
-    hudFetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
-      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+    pkmUpdateFetch()
       .then(function(txt){
   pkLatestContent=txt;
   var m=txt.match(/PK_VER='([^']+)'/);
@@ -7565,8 +7573,7 @@ function pkDoUpdate(){
 function pkRepair(){
   pkSetUpdateMsg('正在重新下载最新脚本...');
   try{
-    hudFetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
-      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+    pkmUpdateFetch()
       .then(function(txt){
         var m=txt.match(/PK_VER='([^']+)'/);
         var ver=m?m[1]:null;
