@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.29';
+var PK_VER='4.0.30';
 /*PK_NOTICE_BEGIN
 v4.0.29 更新：
 · 背包道具：没有效果数据的道具不再能点开查看，也不再弹「数据获取失败」
@@ -890,7 +890,7 @@ css+='#pkm-hud-win,#pkm-hud-inline{--frame:rgba(255,255,255,.12);--text:#f4f7fb;
 '#pkm-hud-win input[type="text"],#pkm-hud-win input[type="password"],#pkm-hud-win input[type="search"],#pkm-hud-win textarea,#pkm-hud-win select,#pkm-hud-inline input[type="text"],#pkm-hud-inline input[type="password"],#pkm-hud-inline input[type="search"],#pkm-hud-inline textarea,#pkm-hud-inline select{background:#121a26!important;border-color:rgba(255,255,255,.12)!important;color:#eef3f9!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.18)!important}'+
 '#pkm-hud-win input[type="text"]:focus,#pkm-hud-win input[type="password"]:focus,#pkm-hud-win input[type="search"]:focus,#pkm-hud-win textarea:focus,#pkm-hud-win select:focus,#pkm-hud-inline input[type="text"]:focus,#pkm-hud-inline input[type="password"]:focus,#pkm-hud-inline input[type="search"]:focus,#pkm-hud-inline textarea:focus,#pkm-hud-inline select:focus{outline:none!important;border-color:rgba(99,179,237,.58)!important;box-shadow:0 0 0 2px rgba(99,179,237,.09)!important}'+
 '.item-icon-wrap{background:rgba(255,255,255,.035);border-radius:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}.item-icon.placeholder{background:rgba(255,255,255,.045)}'+
-'.item-entry{transition:background-color .1s ease}.item-entry:hover{background:rgba(255,255,255,.022)}'+
+'.item-entry{transition:background-color .1s ease}.item-entry:not(.item-no-click):hover{background:rgba(255,255,255,.022)}'+
 '.box-cell{background:rgba(255,255,255,.025);box-shadow:inset 0 0 0 1px rgba(255,255,255,.055)}.box-cell:hover{background:rgba(99,179,237,.06)}'+
 '.dex-cell{background:rgba(255,255,255,.027);border-color:var(--pk-line);box-shadow:none;transition:background-color .12s ease,border-color .12s ease,transform .08s ease}.dex-cell:hover{filter:none!important;background:rgba(99,179,237,.06);border-color:rgba(99,179,237,.25)}'+
 '.dex-cell.caught{background:rgba(99,200,106,.055);border-color:rgba(99,200,106,.24)}.dex-cell.seen{background:rgba(99,179,237,.04);border-color:rgba(99,179,237,.18)}.dex-cell.unknown{background:rgba(0,0,0,.16);border-color:rgba(255,255,255,.055)}'+
@@ -6512,6 +6512,8 @@ function resolveBagItemClick(scope){
       if(_diy.text||_diy.detail||_diy.effect){
         el.setAttribute('data-item',name);
         el.style.cursor='pointer';
+      }else{
+        el.classList.add('item-no-click');
       }
       el.removeAttribute('data-bag-item');
     }else{
@@ -6539,6 +6541,8 @@ function resolveBagItemClick(scope){
         el2.setAttribute('data-item',name2);
         if(enAttr)el2.setAttribute('data-item-en',enAttr);
         el2.style.cursor='pointer';
+      }else{
+        el2.classList.add('item-no-click');
       }
       el2.removeAttribute('data-bag-item');
     }
