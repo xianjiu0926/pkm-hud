@@ -3,15 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.40';
+var PK_VER='4.0.41';
 /*PK_NOTICE_BEGIN
-v4.0.40 更新：
-· 数据源新增 Fastly、Gcore 两个国内 CDN 镜像（gitmirror 已失效未加入）
-· 设置里新增「⚡ 测速」按钮：自动测各源延迟并选最快
-· 检查更新也支持多镜像兜底
+v4.0.41 更新：
+· 回退数据源相关改动，恢复自动探测（移除手动切换源/多镜像/测速）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
-var PKM_UPDATE_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js';
 function pkVerCompare(a,b){
   function p(v){var m=String(v==null?'':v).match(/^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?$/);return m?[Number(m[1]),Number(m[2]),Number(m[3]),m[4]||'']:null;}
   var x=p(a),y=p(b);
@@ -169,16 +166,11 @@ function hudNewAbortController(){
 var PKM_REPO_RAW='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
 var PKM_DATA_BASE=PKM_REPO_RAW;
 var PKM_REPO_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/Pokemon@main/';
-var PKM_REPO_SOURCES=[
-  {id:'raw',label:'GitHub（海外）',base:PKM_REPO_RAW},
-  {id:'jsdelivr',label:'jsDelivr',base:PKM_REPO_MIRROR},
-  {id:'fastly',label:'Fastly',base:'https://fastly.jsdelivr.net/gh/xianjiu0926/Pokemon@main/'},
-  {id:'gcore',label:'Gcore',base:'https://gcore.jsdelivr.net/gh/xianjiu0926/Pokemon@main/'}
-];
-function pkmRepoSourceById(id){for(var i=0;i<PKM_REPO_SOURCES.length;i++){if(PKM_REPO_SOURCES[i].id===id)return PKM_REPO_SOURCES[i];}return PKM_REPO_SOURCES[0];}
-function pkmRepoOrder(){var v='';try{v=String(localStorage.getItem('pk_repo_mode')||localStorage.getItem('pk_repo_auto')||'');}catch(e){}if(v==='jsdelivr'||v==='fastly'||v==='gcore')return v;return 'raw';}
-function pkmRepoFirst(u){var order='raw';try{order=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw');}catch(e){order='raw';}if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0){var src=pkmRepoSourceById(order);if(src&&src.base!==PKM_REPO_RAW)return src.base+u.slice(PKM_REPO_RAW.length);}return u;}
-function pkmRepoMirror(u){if(typeof u!=='string')return null;var rel=null;if(u.indexOf(PKM_REPO_RAW)===0)rel=u.slice(PKM_REPO_RAW.length);else{for(var i=0;i<PKM_REPO_SOURCES.length;i++){var b=PKM_REPO_SOURCES[i].base;if(b!==PKM_REPO_RAW&&u.indexOf(b)===0){rel=u.slice(b.length);break;}}}if(rel==null)return null;var order='raw';try{order=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw');}catch(e){}var fallback=pkmRepoSourceById(order==='jsdelivr'?'fastly':'jsdelivr');var m=fallback.base+rel;return (m===u)?null:m;}
+function pkmRepoOrder(){var v='';try{v=String(localStorage.getItem('pk_repo_auto')||'');}catch(e){}return v==='jsdelivr'?'jsdelivr':'raw';}
+function pkmRepoFirst(u){pkmRepoAutoDetect();if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0&&pkmRepoOrder()==='jsdelivr')return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return u;}
+function pkmRepoMirror(u){if(typeof u!=='string')return null;if(u.indexOf(PKM_REPO_RAW)===0)return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);if(u.indexOf(PKM_REPO_MIRROR)===0)return PKM_REPO_RAW+u.slice(PKM_REPO_MIRROR.length);return null;}
+var pkmRepoAutoDetected=false;
+function pkmRepoAutoDetect(){if(pkmRepoAutoDetected)return;pkmRepoAutoDetected=true;try{var probe='types.json',rawMs=null,jsdMs=null,rawDone=false,jsdDone=false;function finish(){if(!rawDone||!jsdDone)return;var v='raw';if(rawMs===null&&jsdMs!==null)v='jsdelivr';else if(rawMs!==null&&jsdMs!==null)v=(rawMs<=jsdMs)?'raw':'jsdelivr';try{localStorage.setItem('pk_repo_auto',v);}catch(e){}}var ts=Date.now();WIN.fetch(PKM_REPO_RAW+probe,{cache:'no-store'}).then(function(r){rawMs=r.ok?(Date.now()-ts):null;rawDone=true;finish();}).catch(function(){rawMs=null;rawDone=true;finish();});WIN.fetch(PKM_REPO_MIRROR+probe,{cache:'no-store'}).then(function(r){jsdMs=r.ok?(Date.now()-ts):null;jsdDone=true;finish();}).catch(function(){jsdMs=null;jsdDone=true;finish();});}catch(e){}}
 function hudFetch(url,opt){
   var baseOpt=opt&&typeof opt==='object'?Object.assign({},opt):{};
   var firstUrl=pkmRepoFirst(url);
@@ -198,62 +190,6 @@ function hudFetch(url,opt){
   var first=once(firstUrl);
   if(!secondUrl)return first;
   return first.then(function(r){return (r&&r.ok)?r:once(secondUrl);},function(){return once(secondUrl);});
-}
-function pkmUpdateFetch(){
-  var PKM_UPDATE_SOURCES=[
-    {id:'raw',url:PK_UPDATE_URL},
-    {id:'jsdelivr',url:PKM_UPDATE_MIRROR},
-    {id:'fastly',url:'https://fastly.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js'},
-    {id:'gcore',url:'https://gcore.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js'}
-  ];
-  var mode='raw';
-  try{ mode=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw'); }catch(e){ mode='raw'; }
-  var urls=[];
-  var prefer=null;
-  for(var pi=0;pi<PKM_UPDATE_SOURCES.length;pi++){if(PKM_UPDATE_SOURCES[pi].id===mode){prefer=PKM_UPDATE_SOURCES[pi];break;}}
-  if(prefer)urls.push(prefer.url);
-  for(var pj=0;pj<PKM_UPDATE_SOURCES.length;pj++){if(urls.indexOf(PKM_UPDATE_SOURCES[pj].url)<0)urls.push(PKM_UPDATE_SOURCES[pj].url);}
-  var i=0,q='?t='+Date.now();
-  function next(err){
-    if(i>=urls.length)return Promise.reject(err||new Error('fetch failed'));
-    var u=urls[i++];
-    return hudFetch(u+q,{cache:'no-store'}).then(function(r){ if(r&&r.ok)return r.text(); throw 0; }).catch(function(e){ return next(e); });
-  }
-  return next();
-}
-function pkmRepoSpeedTest(){
-  var res=document.getElementById('repo-speed-result');
-  if(res)res.textContent='正在测速...';
-  var probe='types.json';
-  var results=[],done=0;
-  PKM_REPO_SOURCES.forEach(function(s){
-    var ts=Date.now();
-    WIN.fetch(s.base+probe+'?t='+Date.now(),{cache:'no-store'}).then(function(r){
-      var ms=Date.now()-ts;
-      results.push({id:s.id,label:s.label,ms:r.ok?ms:-1,ok:!!r.ok});
-      done++;if(done===PKM_REPO_SOURCES.length)finish();
-    }).catch(function(){
-      results.push({id:s.id,label:s.label,ms:-1,ok:false});
-      done++;if(done===PKM_REPO_SOURCES.length)finish();
-    });
-  });
-  function finish(){
-    var ok=results.filter(function(r){return r.ok;}).sort(function(a,b){return a.ms-b.ms;});
-    var best=ok[0];
-    var html=results.map(function(r){return r.label+': '+(r.ok?r.ms+'ms':'✗');}).join(' · ');
-    if(res)res.textContent=html;
-    if(best){
-      var fastest=best.id;
-      try{localStorage.setItem('pk_repo_mode',fastest);try{localStorage.removeItem('pk_repo_auto');}catch(e2){}}catch(e){}
-      var radios=document.querySelectorAll('input[data-repo]');
-      for(var i=0;i<radios.length;i++){if(radios[i].getAttribute('data-repo')===fastest){radios[i].checked=true;}}
-      pokeosPxClearSpriteCache();
-      hudMsg('测速完成，最快源「'+best.label+'」('+best.ms+'ms)，已自动选中，刷新页面后生效');
-    }else{
-      if(res)res.textContent='测速失败：所有源都不可达';
-      hudMsg('测速失败：所有源都不可达');
-    }
-  }
 }
 
 
@@ -3016,7 +2952,7 @@ function toHalfWidth(s){return String(s==null?'':s).replace(/[！-～]/g,functio
 function normItemName(s){return toHalfWidth(String(s==null?'':s)).replace(/[\s\u3000]+/g,'');}
 function serebiiItemSlug(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'');}
 function serebiiItemSlugAlt(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'.');}
-function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?pkmRepoFirst(PKM_ITEM_SEREBII_BASE+s+'.png'):'';}
+function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?PKM_ITEM_SEREBII_BASE+s+'.png':'';}
 function itemSlugOf(name,iconField){
   var n=String(name||'');
   var s=String(iconField||'').trim();
@@ -3732,7 +3668,7 @@ function nearbyCardPriority(raw){var m=nearbyCategoryMeta(raw),s=0;if(m.legendar
 function nearbySortedKeys(obj){return Object.keys(obj||{}).map(function(k){return {key:k,score:nearbyCardPriority(obj[k])};}).sort(function(a,b){return b.score-a.score;}).map(function(x){return x.key;});}
 function nearbyMarkHTML(kind,label,text,style){return '<span class="nb-mark '+kind+'"'+(style?' style="'+style+'"':'')+' title="'+esc(label)+'"><span>'+text+'</span></span>';}
 function nearbyPillHTML(kind,label,text,style){return '<span class="nb-pill '+kind+'"'+(style?' style="'+style+'"':'')+'><span class="nb-pill-ic">'+text+'</span><span class="nb-pill-tx">'+esc(label)+'</span></span>';}
-function nearbyNameIconsHTML(m){var a=[];if(m.mega)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超进化.png')+'" alt="Mega" onerror="this.remove()">');if(m.dynamax)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超极巨化.png')+'" alt="超极巨化" onerror="this.remove()">');if(m.boss)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">');if(m.shiny)a.push('<img class="mega-ic" style="height:14px" src="https://cdn.jsdelivr.net/gh/msikma/pokesprite@master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=\'https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png\';}else{this.remove();}">');return a.join('');}
+function nearbyNameIconsHTML(m){var a=[];if(m.mega)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超进化.png')+'" alt="Mega" onerror="this.remove()">');if(m.dynamax)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超极巨化.png')+'" alt="超极巨化" onerror="this.remove()">');if(m.boss)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">');if(m.shiny)a.push('<img class="mega-ic" style="height:14px" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">');return a.join('');}
 function nearbyPillsHTML(m){var a=[];if(m.legendary)a.push(nearbyPillHTML('legendary','神兽','✦','--nb-pill1:'+m.accent1+';--nb-pill2:'+m.accent2+';--nb-pill-soft:'+m.glow1+';'));if(m.mythical)a.push(nearbyPillHTML('mythical','幻兽','◇'));if(m.ultra)a.push(nearbyPillHTML('ultra','异兽','UB'));return a.join('');}
 function nearbyCellClasses(m){var cls=['nb-primary-'+m.primary];if(m.legendary)cls.push('is-legendary');if(m.mythical)cls.push('is-mythical');if(m.ultra)cls.push('is-ultra');if(m.boss)cls.push('is-boss');if(m.mega)cls.push('is-mega');if(m.dynamax)cls.push('is-dynamax');if(m.shiny)cls.push('is-shiny');return cls.join(' ');}
 function nearbyCellStyle(m){return '--nb-accent1:'+m.accent1+';--nb-accent2:'+m.accent2+';--nb-soft1:'+m.soft1+';--nb-soft2:'+m.soft2+';--nb-glow1:'+m.glow1+';--nb-glow2:'+m.glow2+';';}
@@ -4347,7 +4283,7 @@ var MAPS_DATA=[
 var MAPS=pkmHudClone(MAPS_DATA);
 
 /* 地图图片直接走 URL + 浏览器 HTTP 缓存（图床返回 Cache-Control max-age=28 天），不再写入 IndexedDB，省约 30MB 空间与内存。 */
-function mapImgSrc(url){return url?pkmRepoFirst(url):'';}
+function mapImgSrc(url){return url||'';}
 /* 升级清理：删除旧版地图 IndexedDB 缓存库，释放其占用空间。 */
 (function(){
   try{
@@ -4544,7 +4480,7 @@ function mapWrapHTML(v,spot,loc,pinNote){
     if(spot){
       pin='<div class="map-pin-label" data-x="'+spot.x+'" data-y="'+spot.y+'">'+esc(spot.name)+'</div><div class="map-pin" data-x="'+spot.x+'" data-y="'+spot.y+'"></div>';
     }
-    var inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(v.img)+'" src="'+esc(mapImgSrc(v.img))+'" data-m="'+esc(pkmRepoMirror(mapImgSrc(v.img))||'')+'" draggable="false" onerror="if(!this.dataset.f){this.dataset.f=1;var m=this.getAttribute(\'data-m\');if(m){this.src=m;}else{this.style.display=\'none\';}}else{this.style.display=\'none\';}"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
+    var inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(v.img)+'" src="'+esc(mapImgSrc(v.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
     var framed=mapViewerFrameHTML(inner);
     if(!spot)framed+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+(pinNote||'（本图未匹配到坐标）')+'</div>';
     return framed;
@@ -4578,7 +4514,7 @@ function mapHTML(){
       }).join('');
       var inner2='';
       if(m.img){
-        inner2=mapViewerFrameHTML('<div class="map-wrap" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(m.img)+'" src="'+esc(mapImgSrc(m.img))+'" data-m="'+esc(pkmRepoMirror(mapImgSrc(m.img))||'')+'" draggable="false" onerror="if(!this.dataset.f){this.dataset.f=1;var m=this.getAttribute(\'data-m\');if(m){this.src=m;}else{this.style.display=\'none\';}}else{this.style.display=\'none\';}"></div><div class="map-labels">'+labels+'</div></div>');
+        inner2=mapViewerFrameHTML('<div class="map-wrap" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(m.img)+'" src="'+esc(mapImgSrc(m.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+labels+'</div></div>');
       }else{
         inner2='<div class="empty">该地图没配图片链接</div>';
       }
@@ -5242,7 +5178,7 @@ function dexCellImgUrl(ndex){
   if(!n||n<=0)return '';
   var slug=PKM_DEX_EN[n];
   if(!slug)return '';
-  var full=pkmRepoFirst(pkmRepoUrl('static','pokeos',slug,false));
+  var full=pkmRepoUrl('static','pokeos',slug,false);
   return PKM_POKEOS_PROXY+encodeURIComponent(full)+'&w='+PKM_POKEOS_W;
 }
 var dexLazyObs=null;
@@ -5597,11 +5533,9 @@ function pkmCryId(f,d){
 function pkmPreviewFallback(el){
   var cur=String(el.getAttribute('src')||'');
   if(!cur){el.style.display='none';return;}
-  var mir=pkmRepoMirror(cur);
-  if(mir&&mir!==cur){el.src=mir;return;}
   if(curPkm&&curPkm.enname){
     var _en=String(curPkm.enname).toLowerCase();
-    var base=pkmRepoFirst(pkmRepoUrl('static','pokeos',_en,curPkmShiny));
+    var base=pkmRepoUrl('static','pokeos',_en,curPkmShiny);
     if(base&&base!==cur){el.src=base;return;}
   }
   el.style.display='none';
@@ -5783,7 +5717,7 @@ function md5(str){
   if(!en)return '';
   var suf=(f&&f.suffix)||'';
   var slug=en+suf;
-  return pkmRepoFirst(pkmRepoUrl('static','pokeos',slug,shiny));
+  return pkmRepoUrl('static','pokeos',slug,shiny);
 }
 var evolutionCache=null,evolutionLoading=false,evolutionCbs=[];
 function loadEvolution(cb){
@@ -6819,7 +6753,7 @@ function showNatureInfo(name){
   ensureNatures().then(render);
 }
 function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-item-en="'+esc(c.ballEn||'')+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
-var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://cdn.jsdelivr.net/gh/msikma/pokesprite@master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=\'https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png\';}else{this.remove();}">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
+var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
 if(c.where==='team') hudActions+='<button class="act-btn" data-pkm-store>存入盒子</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-withdraw>取出到队伍</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-movebox>切换盒子</button>';
@@ -7301,7 +7235,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">PokeOS</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">数据源</div><div class="set-opts">'+PKM_REPO_SOURCES.map(function(s){return '<label class="set-opt"><input type="radio" name="pk-repo" value="'+s.id+'"'+(pkmRepoOrder()===s.id?' checked':'')+' data-repo="'+s.id+'">'+esc(s.label)+'</label>';}).join('')+'<button class="btn-small" data-repo-speedtest style="width:100%;justify-content:center">⚡ 测速（自动选最快）</button><div id="repo-speed-result" class="dim" style="font-size:.72rem;width:100%"></div><div class="dim" style="font-size:.72rem;width:100%">国内网推荐 jsDelivr / Fastly / Gcore；切换后刷新页面生效</div></div><div class="set-title">主题颜色</div><div class="set-opts"><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">'+presetBtns+'</div><label class="set-opt">主题色<input type="color" id="pk-theme-hue" value="'+themeHue+'" data-theme-hue style="margin-left:auto;width:42px;height:26px;border:1px solid var(--pk-line);border-radius:5px;background:transparent;cursor:pointer"></label><div class="set-opt" style="justify-content:space-between">深浅<button type="button" id="pk-theme-light-toggle" class="btn-small" data-theme-light-toggle style="margin-left:auto;min-width:46px">'+themeLight+'</button></div><div class="set-opt" id="pk-theme-light-wrap" style="display:none"><input type="range" id="pk-theme-light" min="0" max="100" value="'+themeLight+'" data-theme-light style="flex:1;accent-color:var(--pk-blue)"><span id="pk-theme-light-val" class="dim" style="min-width:28px;text-align:right">'+themeLight+'</span></div><button class="act-btn" data-theme-color-reset>↺ 恢复默认主题色</button></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📋 复制脚本内容</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">PokeOS</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">主题颜色</div><div class="set-opts"><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">'+presetBtns+'</div><label class="set-opt">主题色<input type="color" id="pk-theme-hue" value="'+themeHue+'" data-theme-hue style="margin-left:auto;width:42px;height:26px;border:1px solid var(--pk-line);border-radius:5px;background:transparent;cursor:pointer"></label><div class="set-opt" style="justify-content:space-between">深浅<button type="button" id="pk-theme-light-toggle" class="btn-small" data-theme-light-toggle style="margin-left:auto;min-width:46px">'+themeLight+'</button></div><div class="set-opt" id="pk-theme-light-wrap" style="display:none"><input type="range" id="pk-theme-light" min="0" max="100" value="'+themeLight+'" data-theme-light style="flex:1;accent-color:var(--pk-blue)"><span id="pk-theme-light-val" class="dim" style="min-width:28px;text-align:right">'+themeLight+'</span></div><button class="act-btn" data-theme-color-reset>↺ 恢复默认主题色</button></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📋 复制脚本内容</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -7348,7 +7282,8 @@ function pkMarkHasUpdate(ver){
 }
 function pkAutoCheckUpdate(){
   try{
-    pkmUpdateFetch()
+    hudFetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
       .then(function(txt){
         var m=txt.match(/PK_VER='([^']+)'/);
         var ver=m?m[1]:null;
@@ -7386,7 +7321,8 @@ function pkCheckUpdate(){
   var updBtn=document.querySelector('[data-pk-do-update]');
   if(updBtn) updBtn.style.display='none';
   try{
-    pkmUpdateFetch()
+    hudFetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
       .then(function(txt){
   pkLatestContent=txt;
   var m=txt.match(/PK_VER='([^']+)'/);
@@ -7628,7 +7564,8 @@ function pkDoUpdate(){
 function pkRepair(){
   pkSetUpdateMsg('正在重新下载最新脚本...');
   try{
-    pkmUpdateFetch()
+    hudFetch(PK_UPDATE_URL+'?t='+Date.now(), {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
       .then(function(txt){
         var m=txt.match(/PK_VER='([^']+)'/);
         var ver=m?m[1]:null;
@@ -8094,9 +8031,6 @@ if(fbo){fbo.addEventListener('click',function(e){e.stopPropagation();openFabSize
 var iho=pageOverlay.querySelector('[data-inline-h-open]');
 if(iho){iho.addEventListener('click',function(e){e.stopPropagation();openInlineH();});}
 pageOverlay.querySelectorAll('input[data-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmSource=r.getAttribute('data-source');try{localStorage.setItem('pk_source',pkmSource);}catch(e){}pokeosPxClearSpriteCache();render();openPage('settings');}});});
-pageOverlay.querySelectorAll('input[data-repo]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){var m=r.getAttribute('data-repo');try{localStorage.setItem('pk_repo_mode',m);try{localStorage.removeItem('pk_repo_auto');}catch(e2){}}catch(e){}pokeosPxClearSpriteCache();var _s=pkmRepoSourceById(m);hudMsg('数据源已切换为「'+(_s?_s.label:m)+'」，已清理图片缓存，刷新页面后生效');}});});
-var rst=pageOverlay.querySelector('[data-repo-speedtest]');
-if(rst){rst.addEventListener('click',function(e){e.stopPropagation();pkmRepoSpeedTest();});}
 var th=pageOverlay.querySelector('#pk-theme-hue');if(th){th.addEventListener('input',function(){pkThemeSetHue(th.value);});}
 var tlt=pageOverlay.querySelector('#pk-theme-light-toggle');if(tlt){tlt.addEventListener('click',function(e){e.stopPropagation();var w=pageOverlay.querySelector('#pk-theme-light-wrap');if(w){w.style.display=(w.style.display==='none')?'flex':'none';}});}
 var tl=pageOverlay.querySelector('#pk-theme-light');if(tl){tl.addEventListener('input',function(){pkThemeSetLight(tl.value);var lv=pageOverlay.querySelector('#pk-theme-light-val');if(lv)lv.textContent=tl.value;var tg=pageOverlay.querySelector('#pk-theme-light-toggle');if(tg)tg.textContent=tl.value;});}
