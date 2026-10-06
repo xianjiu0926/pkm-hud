@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.35';
+var PK_VER='4.0.36';
 /*PK_NOTICE_BEGIN
-v4.0.35 更新：
-· 移除数据源自动探测，改为设置里手动切换
-· 新增「数据源」设置：GitHub（海外）/ jsDelivr 镜像（国内推荐），国内网可正常出图和效果
+v4.0.36 更新：
+· 修复图鉴详情大图/缩略图、道具图、闪光星标未走镜像的问题
+· 国内网切到 jsDelivr 镜像后，这些图片也能正常加载
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -2951,7 +2951,7 @@ function toHalfWidth(s){return String(s==null?'':s).replace(/[！-～]/g,functio
 function normItemName(s){return toHalfWidth(String(s==null?'':s)).replace(/[\s\u3000]+/g,'');}
 function serebiiItemSlug(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'');}
 function serebiiItemSlugAlt(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'.');}
-function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?PKM_ITEM_SEREBII_BASE+s+'.png':'';}
+function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?pkmRepoFirst(PKM_ITEM_SEREBII_BASE+s+'.png'):'';}
 function itemSlugOf(name,iconField){
   var n=String(name||'');
   var s=String(iconField||'').trim();
@@ -3667,7 +3667,7 @@ function nearbyCardPriority(raw){var m=nearbyCategoryMeta(raw),s=0;if(m.legendar
 function nearbySortedKeys(obj){return Object.keys(obj||{}).map(function(k){return {key:k,score:nearbyCardPriority(obj[k])};}).sort(function(a,b){return b.score-a.score;}).map(function(x){return x.key;});}
 function nearbyMarkHTML(kind,label,text,style){return '<span class="nb-mark '+kind+'"'+(style?' style="'+style+'"':'')+' title="'+esc(label)+'"><span>'+text+'</span></span>';}
 function nearbyPillHTML(kind,label,text,style){return '<span class="nb-pill '+kind+'"'+(style?' style="'+style+'"':'')+'><span class="nb-pill-ic">'+text+'</span><span class="nb-pill-tx">'+esc(label)+'</span></span>';}
-function nearbyNameIconsHTML(m){var a=[];if(m.mega)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超进化.png')+'" alt="Mega" onerror="this.remove()">');if(m.dynamax)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超极巨化.png')+'" alt="超极巨化" onerror="this.remove()">');if(m.boss)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">');if(m.shiny)a.push('<img class="mega-ic" style="height:14px" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">');return a.join('');}
+function nearbyNameIconsHTML(m){var a=[];if(m.mega)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超进化.png')+'" alt="Mega" onerror="this.remove()">');if(m.dynamax)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/超极巨化.png')+'" alt="超极巨化" onerror="this.remove()">');if(m.boss)a.push('<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">');if(m.shiny)a.push('<img class="mega-ic" style="height:14px" src="https://cdn.jsdelivr.net/gh/msikma/pokesprite@master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=\'https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png\';}else{this.remove();}">');return a.join('');}
 function nearbyPillsHTML(m){var a=[];if(m.legendary)a.push(nearbyPillHTML('legendary','神兽','✦','--nb-pill1:'+m.accent1+';--nb-pill2:'+m.accent2+';--nb-pill-soft:'+m.glow1+';'));if(m.mythical)a.push(nearbyPillHTML('mythical','幻兽','◇'));if(m.ultra)a.push(nearbyPillHTML('ultra','异兽','UB'));return a.join('');}
 function nearbyCellClasses(m){var cls=['nb-primary-'+m.primary];if(m.legendary)cls.push('is-legendary');if(m.mythical)cls.push('is-mythical');if(m.ultra)cls.push('is-ultra');if(m.boss)cls.push('is-boss');if(m.mega)cls.push('is-mega');if(m.dynamax)cls.push('is-dynamax');if(m.shiny)cls.push('is-shiny');return cls.join(' ');}
 function nearbyCellStyle(m){return '--nb-accent1:'+m.accent1+';--nb-accent2:'+m.accent2+';--nb-soft1:'+m.soft1+';--nb-soft2:'+m.soft2+';--nb-glow1:'+m.glow1+';--nb-glow2:'+m.glow2+';';}
@@ -5177,7 +5177,7 @@ function dexCellImgUrl(ndex){
   if(!n||n<=0)return '';
   var slug=PKM_DEX_EN[n];
   if(!slug)return '';
-  var full=pkmRepoUrl('static','pokeos',slug,false);
+  var full=pkmRepoFirst(pkmRepoUrl('static','pokeos',slug,false));
   return PKM_POKEOS_PROXY+encodeURIComponent(full)+'&w='+PKM_POKEOS_W;
 }
 var dexLazyObs=null;
@@ -5532,9 +5532,11 @@ function pkmCryId(f,d){
 function pkmPreviewFallback(el){
   var cur=String(el.getAttribute('src')||'');
   if(!cur){el.style.display='none';return;}
+  var mir=pkmRepoMirror(cur);
+  if(mir&&mir!==cur){el.src=mir;return;}
   if(curPkm&&curPkm.enname){
     var _en=String(curPkm.enname).toLowerCase();
-    var base=pkmRepoUrl('static','pokeos',_en,curPkmShiny);
+    var base=pkmRepoFirst(pkmRepoUrl('static','pokeos',_en,curPkmShiny));
     if(base&&base!==cur){el.src=base;return;}
   }
   el.style.display='none';
@@ -5716,7 +5718,7 @@ function md5(str){
   if(!en)return '';
   var suf=(f&&f.suffix)||'';
   var slug=en+suf;
-  return pkmRepoUrl('static','pokeos',slug,shiny);
+  return pkmRepoFirst(pkmRepoUrl('static','pokeos',slug,shiny));
 }
 var evolutionCache=null,evolutionLoading=false,evolutionCbs=[];
 function loadEvolution(cb){
@@ -6752,7 +6754,7 @@ function showNatureInfo(name){
   ensureNatures().then(render);
 }
 function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-item-en="'+esc(c.ballEn||'')+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
-var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
+var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(c.name)+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="https://cdn.jsdelivr.net/gh/msikma/pokesprite@master/misc/special-attribute/shiny-stars.png" alt="闪光" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=\'https://raw.githubusercontent.com/msikma/pokesprite/master/misc/special-attribute/shiny-stars.png\';}else{this.remove();}">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+typesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
 if(c.where==='team') hudActions+='<button class="act-btn" data-pkm-store>存入盒子</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-withdraw>取出到队伍</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-movebox>切换盒子</button>';
