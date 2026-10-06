@@ -3,11 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.39';
+var PK_VER='4.0.40';
 /*PK_NOTICE_BEGIN
-v4.0.39 更新：
-· 修复国内网地图图片（关都等）不出的问题：地图图片实时跟随数据源，加载失败自动切镜像
-· 切换数据源时自动清理图片缓存
+v4.0.40 更新：
+· 数据源新增 Fastly、Gcore 两个国内 CDN 镜像（gitmirror 已失效未加入）
+· 设置里新增「⚡ 测速」按钮：自动测各源延迟并选最快
+· 检查更新也支持多镜像兜底
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 var PKM_UPDATE_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js';
@@ -168,9 +169,16 @@ function hudNewAbortController(){
 var PKM_REPO_RAW='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
 var PKM_DATA_BASE=PKM_REPO_RAW;
 var PKM_REPO_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/Pokemon@main/';
-function pkmRepoOrder(){var v='';try{v=String(localStorage.getItem('pk_repo_mode')||localStorage.getItem('pk_repo_auto')||'');}catch(e){}return v==='jsdelivr'?'jsdelivr':'raw';}
-function pkmRepoFirst(u){var order='raw';try{order=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw');}catch(e){order='raw';}if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0&&order==='jsdelivr')return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return u;}
-function pkmRepoMirror(u){if(typeof u!=='string')return null;if(u.indexOf(PKM_REPO_RAW)===0)return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);if(u.indexOf(PKM_REPO_MIRROR)===0)return PKM_REPO_RAW+u.slice(PKM_REPO_MIRROR.length);return null;}
+var PKM_REPO_SOURCES=[
+  {id:'raw',label:'GitHub（海外）',base:PKM_REPO_RAW},
+  {id:'jsdelivr',label:'jsDelivr',base:PKM_REPO_MIRROR},
+  {id:'fastly',label:'Fastly',base:'https://fastly.jsdelivr.net/gh/xianjiu0926/Pokemon@main/'},
+  {id:'gcore',label:'Gcore',base:'https://gcore.jsdelivr.net/gh/xianjiu0926/Pokemon@main/'}
+];
+function pkmRepoSourceById(id){for(var i=0;i<PKM_REPO_SOURCES.length;i++){if(PKM_REPO_SOURCES[i].id===id)return PKM_REPO_SOURCES[i];}return PKM_REPO_SOURCES[0];}
+function pkmRepoOrder(){var v='';try{v=String(localStorage.getItem('pk_repo_mode')||localStorage.getItem('pk_repo_auto')||'');}catch(e){}if(v==='jsdelivr'||v==='fastly'||v==='gcore')return v;return 'raw';}
+function pkmRepoFirst(u){var order='raw';try{order=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw');}catch(e){order='raw';}if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0){var src=pkmRepoSourceById(order);if(src&&src.base!==PKM_REPO_RAW)return src.base+u.slice(PKM_REPO_RAW.length);}return u;}
+function pkmRepoMirror(u){if(typeof u!=='string')return null;var rel=null;if(u.indexOf(PKM_REPO_RAW)===0)rel=u.slice(PKM_REPO_RAW.length);else{for(var i=0;i<PKM_REPO_SOURCES.length;i++){var b=PKM_REPO_SOURCES[i].base;if(b!==PKM_REPO_RAW&&u.indexOf(b)===0){rel=u.slice(b.length);break;}}}if(rel==null)return null;var order='raw';try{order=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw');}catch(e){}var fallback=pkmRepoSourceById(order==='jsdelivr'?'fastly':'jsdelivr');var m=fallback.base+rel;return (m===u)?null:m;}
 function hudFetch(url,opt){
   var baseOpt=opt&&typeof opt==='object'?Object.assign({},opt):{};
   var firstUrl=pkmRepoFirst(url);
@@ -192,9 +200,19 @@ function hudFetch(url,opt){
   return first.then(function(r){return (r&&r.ok)?r:once(secondUrl);},function(){return once(secondUrl);});
 }
 function pkmUpdateFetch(){
+  var PKM_UPDATE_SOURCES=[
+    {id:'raw',url:PK_UPDATE_URL},
+    {id:'jsdelivr',url:PKM_UPDATE_MIRROR},
+    {id:'fastly',url:'https://fastly.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js'},
+    {id:'gcore',url:'https://gcore.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js'}
+  ];
   var mode='raw';
   try{ mode=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw'); }catch(e){ mode='raw'; }
-  var urls=mode==='jsdelivr'?[PKM_UPDATE_MIRROR,PK_UPDATE_URL]:[PK_UPDATE_URL,PKM_UPDATE_MIRROR];
+  var urls=[];
+  var prefer=null;
+  for(var pi=0;pi<PKM_UPDATE_SOURCES.length;pi++){if(PKM_UPDATE_SOURCES[pi].id===mode){prefer=PKM_UPDATE_SOURCES[pi];break;}}
+  if(prefer)urls.push(prefer.url);
+  for(var pj=0;pj<PKM_UPDATE_SOURCES.length;pj++){if(urls.indexOf(PKM_UPDATE_SOURCES[pj].url)<0)urls.push(PKM_UPDATE_SOURCES[pj].url);}
   var i=0,q='?t='+Date.now();
   function next(err){
     if(i>=urls.length)return Promise.reject(err||new Error('fetch failed'));
@@ -202,6 +220,40 @@ function pkmUpdateFetch(){
     return hudFetch(u+q,{cache:'no-store'}).then(function(r){ if(r&&r.ok)return r.text(); throw 0; }).catch(function(e){ return next(e); });
   }
   return next();
+}
+function pkmRepoSpeedTest(){
+  var res=document.getElementById('repo-speed-result');
+  if(res)res.textContent='正在测速...';
+  var probe='types.json';
+  var results=[],done=0;
+  PKM_REPO_SOURCES.forEach(function(s){
+    var ts=Date.now();
+    WIN.fetch(s.base+probe+'?t='+Date.now(),{cache:'no-store'}).then(function(r){
+      var ms=Date.now()-ts;
+      results.push({id:s.id,label:s.label,ms:r.ok?ms:-1,ok:!!r.ok});
+      done++;if(done===PKM_REPO_SOURCES.length)finish();
+    }).catch(function(){
+      results.push({id:s.id,label:s.label,ms:-1,ok:false});
+      done++;if(done===PKM_REPO_SOURCES.length)finish();
+    });
+  });
+  function finish(){
+    var ok=results.filter(function(r){return r.ok;}).sort(function(a,b){return a.ms-b.ms;});
+    var best=ok[0];
+    var html=results.map(function(r){return r.label+': '+(r.ok?r.ms+'ms':'✗');}).join(' · ');
+    if(res)res.textContent=html;
+    if(best){
+      var fastest=best.id;
+      try{localStorage.setItem('pk_repo_mode',fastest);try{localStorage.removeItem('pk_repo_auto');}catch(e2){}}catch(e){}
+      var radios=document.querySelectorAll('input[data-repo]');
+      for(var i=0;i<radios.length;i++){if(radios[i].getAttribute('data-repo')===fastest){radios[i].checked=true;}}
+      pokeosPxClearSpriteCache();
+      hudMsg('测速完成，最快源「'+best.label+'」('+best.ms+'ms)，已自动选中，刷新页面后生效');
+    }else{
+      if(res)res.textContent='测速失败：所有源都不可达';
+      hudMsg('测速失败：所有源都不可达');
+    }
+  }
 }
 
 
@@ -7249,7 +7301,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">PokeOS</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">数据源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-repo" value="raw"'+(pkmRepoOrder()==='raw'?' checked':'')+' data-repo="raw">GitHub（海外）</label><label class="set-opt"><input type="radio" name="pk-repo" value="jsdelivr"'+(pkmRepoOrder()==='jsdelivr'?' checked':'')+' data-repo="jsdelivr">jsDelivr 镜像（国内推荐）</label><div class="dim" style="font-size:.72rem;width:100%">国内网加载慢/图片不显示时切到 jsDelivr 镜像；切换后刷新页面生效</div></div><div class="set-title">主题颜色</div><div class="set-opts"><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">'+presetBtns+'</div><label class="set-opt">主题色<input type="color" id="pk-theme-hue" value="'+themeHue+'" data-theme-hue style="margin-left:auto;width:42px;height:26px;border:1px solid var(--pk-line);border-radius:5px;background:transparent;cursor:pointer"></label><div class="set-opt" style="justify-content:space-between">深浅<button type="button" id="pk-theme-light-toggle" class="btn-small" data-theme-light-toggle style="margin-left:auto;min-width:46px">'+themeLight+'</button></div><div class="set-opt" id="pk-theme-light-wrap" style="display:none"><input type="range" id="pk-theme-light" min="0" max="100" value="'+themeLight+'" data-theme-light style="flex:1;accent-color:var(--pk-blue)"><span id="pk-theme-light-val" class="dim" style="min-width:28px;text-align:right">'+themeLight+'</span></div><button class="act-btn" data-theme-color-reset>↺ 恢复默认主题色</button></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📋 复制脚本内容</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">PokeOS</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">数据源</div><div class="set-opts">'+PKM_REPO_SOURCES.map(function(s){return '<label class="set-opt"><input type="radio" name="pk-repo" value="'+s.id+'"'+(pkmRepoOrder()===s.id?' checked':'')+' data-repo="'+s.id+'">'+esc(s.label)+'</label>';}).join('')+'<button class="btn-small" data-repo-speedtest style="width:100%;justify-content:center">⚡ 测速（自动选最快）</button><div id="repo-speed-result" class="dim" style="font-size:.72rem;width:100%"></div><div class="dim" style="font-size:.72rem;width:100%">国内网推荐 jsDelivr / Fastly / Gcore；切换后刷新页面生效</div></div><div class="set-title">主题颜色</div><div class="set-opts"><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">'+presetBtns+'</div><label class="set-opt">主题色<input type="color" id="pk-theme-hue" value="'+themeHue+'" data-theme-hue style="margin-left:auto;width:42px;height:26px;border:1px solid var(--pk-line);border-radius:5px;background:transparent;cursor:pointer"></label><div class="set-opt" style="justify-content:space-between">深浅<button type="button" id="pk-theme-light-toggle" class="btn-small" data-theme-light-toggle style="margin-left:auto;min-width:46px">'+themeLight+'</button></div><div class="set-opt" id="pk-theme-light-wrap" style="display:none"><input type="range" id="pk-theme-light" min="0" max="100" value="'+themeLight+'" data-theme-light style="flex:1;accent-color:var(--pk-blue)"><span id="pk-theme-light-val" class="dim" style="min-width:28px;text-align:right">'+themeLight+'</span></div><button class="act-btn" data-theme-color-reset>↺ 恢复默认主题色</button></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📋 复制脚本内容</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -8042,7 +8094,9 @@ if(fbo){fbo.addEventListener('click',function(e){e.stopPropagation();openFabSize
 var iho=pageOverlay.querySelector('[data-inline-h-open]');
 if(iho){iho.addEventListener('click',function(e){e.stopPropagation();openInlineH();});}
 pageOverlay.querySelectorAll('input[data-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmSource=r.getAttribute('data-source');try{localStorage.setItem('pk_source',pkmSource);}catch(e){}pokeosPxClearSpriteCache();render();openPage('settings');}});});
-pageOverlay.querySelectorAll('input[data-repo]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){var m=r.getAttribute('data-repo');try{localStorage.setItem('pk_repo_mode',m);try{localStorage.removeItem('pk_repo_auto');}catch(e2){}}catch(e){}pokeosPxClearSpriteCache();hudMsg('数据源已切换为 '+(m==='jsdelivr'?'jsDelivr 镜像':'GitHub')+'，已清理图片缓存，刷新页面后生效');}});});
+pageOverlay.querySelectorAll('input[data-repo]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){var m=r.getAttribute('data-repo');try{localStorage.setItem('pk_repo_mode',m);try{localStorage.removeItem('pk_repo_auto');}catch(e2){}}catch(e){}pokeosPxClearSpriteCache();var _s=pkmRepoSourceById(m);hudMsg('数据源已切换为「'+(_s?_s.label:m)+'」，已清理图片缓存，刷新页面后生效');}});});
+var rst=pageOverlay.querySelector('[data-repo-speedtest]');
+if(rst){rst.addEventListener('click',function(e){e.stopPropagation();pkmRepoSpeedTest();});}
 var th=pageOverlay.querySelector('#pk-theme-hue');if(th){th.addEventListener('input',function(){pkThemeSetHue(th.value);});}
 var tlt=pageOverlay.querySelector('#pk-theme-light-toggle');if(tlt){tlt.addEventListener('click',function(e){e.stopPropagation();var w=pageOverlay.querySelector('#pk-theme-light-wrap');if(w){w.style.display=(w.style.display==='none')?'flex':'none';}});}
 var tl=pageOverlay.querySelector('#pk-theme-light');if(tl){tl.addEventListener('input',function(){pkThemeSetLight(tl.value);var lv=pageOverlay.querySelector('#pk-theme-light-val');if(lv)lv.textContent=tl.value;var tg=pageOverlay.querySelector('#pk-theme-light-toggle');if(tg)tg.textContent=tl.value;});}
