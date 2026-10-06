@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.41';
+var PK_VER='4.0.42';
 /*PK_NOTICE_BEGIN
-v4.0.41 更新：
-· 回退数据源相关改动，恢复自动探测（移除手动切换源/多镜像/测速）
+v4.0.42 更新：
+· 移除数据源自动探测，固定走 jsDelivr 镜像（国内可用）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -166,11 +166,8 @@ function hudNewAbortController(){
 var PKM_REPO_RAW='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
 var PKM_DATA_BASE=PKM_REPO_RAW;
 var PKM_REPO_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/Pokemon@main/';
-function pkmRepoOrder(){var v='';try{v=String(localStorage.getItem('pk_repo_auto')||'');}catch(e){}return v==='jsdelivr'?'jsdelivr':'raw';}
-function pkmRepoFirst(u){pkmRepoAutoDetect();if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0&&pkmRepoOrder()==='jsdelivr')return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return u;}
+function pkmRepoFirst(u){if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0)return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return u;}
 function pkmRepoMirror(u){if(typeof u!=='string')return null;if(u.indexOf(PKM_REPO_RAW)===0)return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);if(u.indexOf(PKM_REPO_MIRROR)===0)return PKM_REPO_RAW+u.slice(PKM_REPO_MIRROR.length);return null;}
-var pkmRepoAutoDetected=false;
-function pkmRepoAutoDetect(){if(pkmRepoAutoDetected)return;pkmRepoAutoDetected=true;try{var probe='types.json',rawMs=null,jsdMs=null,rawDone=false,jsdDone=false;function finish(){if(!rawDone||!jsdDone)return;var v='raw';if(rawMs===null&&jsdMs!==null)v='jsdelivr';else if(rawMs!==null&&jsdMs!==null)v=(rawMs<=jsdMs)?'raw':'jsdelivr';try{localStorage.setItem('pk_repo_auto',v);}catch(e){}}var ts=Date.now();WIN.fetch(PKM_REPO_RAW+probe,{cache:'no-store'}).then(function(r){rawMs=r.ok?(Date.now()-ts):null;rawDone=true;finish();}).catch(function(){rawMs=null;rawDone=true;finish();});WIN.fetch(PKM_REPO_MIRROR+probe,{cache:'no-store'}).then(function(r){jsdMs=r.ok?(Date.now()-ts):null;jsdDone=true;finish();}).catch(function(){jsdMs=null;jsdDone=true;finish();});}catch(e){}}
 function hudFetch(url,opt){
   var baseOpt=opt&&typeof opt==='object'?Object.assign({},opt):{};
   var firstUrl=pkmRepoFirst(url);
