@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.38';
+var PK_VER='4.0.39';
 /*PK_NOTICE_BEGIN
-v4.0.38 更新：
-· 修复部分环境报「pkmRepoOrder is not defined」导致检查更新失败、图鉴大图/地图图片不出的问题
-· 调整数据源函数定义顺序消除前向引用，并增加防御性降级
+v4.0.39 更新：
+· 修复国内网地图图片（关都等）不出的问题：地图图片实时跟随数据源，加载失败自动切镜像
+· 切换数据源时自动清理图片缓存
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 var PKM_UPDATE_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js';
@@ -4295,7 +4295,7 @@ var MAPS_DATA=[
 var MAPS=pkmHudClone(MAPS_DATA);
 
 /* 地图图片直接走 URL + 浏览器 HTTP 缓存（图床返回 Cache-Control max-age=28 天），不再写入 IndexedDB，省约 30MB 空间与内存。 */
-function mapImgSrc(url){return url||'';}
+function mapImgSrc(url){return url?pkmRepoFirst(url):'';}
 /* 升级清理：删除旧版地图 IndexedDB 缓存库，释放其占用空间。 */
 (function(){
   try{
@@ -4492,7 +4492,7 @@ function mapWrapHTML(v,spot,loc,pinNote){
     if(spot){
       pin='<div class="map-pin-label" data-x="'+spot.x+'" data-y="'+spot.y+'">'+esc(spot.name)+'</div><div class="map-pin" data-x="'+spot.x+'" data-y="'+spot.y+'"></div>';
     }
-    var inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(v.img)+'" src="'+esc(mapImgSrc(v.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
+    var inner='<div class="'+wrapCls+'" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(v.img)+'" src="'+esc(mapImgSrc(v.img))+'" data-m="'+esc(pkmRepoMirror(mapImgSrc(v.img))||'')+'" draggable="false" onerror="if(!this.dataset.f){this.dataset.f=1;var m=this.getAttribute(\'data-m\');if(m){this.src=m;}else{this.style.display=\'none\';}}else{this.style.display=\'none\';}"></div><div class="map-labels">'+spotLabels+pin+'</div></div>';
     var framed=mapViewerFrameHTML(inner);
     if(!spot)framed+='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+(pinNote||'（本图未匹配到坐标）')+'</div>';
     return framed;
@@ -4526,7 +4526,7 @@ function mapHTML(){
       }).join('');
       var inner2='';
       if(m.img){
-        inner2=mapViewerFrameHTML('<div class="map-wrap" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(m.img)+'" src="'+esc(mapImgSrc(m.img))+'" draggable="false" onerror="this.style.display=\'none\'"></div><div class="map-labels">'+labels+'</div></div>');
+        inner2=mapViewerFrameHTML('<div class="map-wrap" data-mapwrap><div class="map-stage"><img class="map-img" data-src="'+esc(m.img)+'" src="'+esc(mapImgSrc(m.img))+'" data-m="'+esc(pkmRepoMirror(mapImgSrc(m.img))||'')+'" draggable="false" onerror="if(!this.dataset.f){this.dataset.f=1;var m=this.getAttribute(\'data-m\');if(m){this.src=m;}else{this.style.display=\'none\';}}else{this.style.display=\'none\';}"></div><div class="map-labels">'+labels+'</div></div>');
       }else{
         inner2='<div class="empty">该地图没配图片链接</div>';
       }
@@ -8042,7 +8042,7 @@ if(fbo){fbo.addEventListener('click',function(e){e.stopPropagation();openFabSize
 var iho=pageOverlay.querySelector('[data-inline-h-open]');
 if(iho){iho.addEventListener('click',function(e){e.stopPropagation();openInlineH();});}
 pageOverlay.querySelectorAll('input[data-source]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){pkmSource=r.getAttribute('data-source');try{localStorage.setItem('pk_source',pkmSource);}catch(e){}pokeosPxClearSpriteCache();render();openPage('settings');}});});
-pageOverlay.querySelectorAll('input[data-repo]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){var m=r.getAttribute('data-repo');try{localStorage.setItem('pk_repo_mode',m);try{localStorage.removeItem('pk_repo_auto');}catch(e2){}}catch(e){}hudMsg('数据源已切换为 '+(m==='jsdelivr'?'jsDelivr 镜像':'GitHub')+'，刷新页面后生效');}});});
+pageOverlay.querySelectorAll('input[data-repo]').forEach(function(r){r.addEventListener('change',function(){if(r.checked){var m=r.getAttribute('data-repo');try{localStorage.setItem('pk_repo_mode',m);try{localStorage.removeItem('pk_repo_auto');}catch(e2){}}catch(e){}pokeosPxClearSpriteCache();hudMsg('数据源已切换为 '+(m==='jsdelivr'?'jsDelivr 镜像':'GitHub')+'，已清理图片缓存，刷新页面后生效');}});});
 var th=pageOverlay.querySelector('#pk-theme-hue');if(th){th.addEventListener('input',function(){pkThemeSetHue(th.value);});}
 var tlt=pageOverlay.querySelector('#pk-theme-light-toggle');if(tlt){tlt.addEventListener('click',function(e){e.stopPropagation();var w=pageOverlay.querySelector('#pk-theme-light-wrap');if(w){w.style.display=(w.style.display==='none')?'flex':'none';}});}
 var tl=pageOverlay.querySelector('#pk-theme-light');if(tl){tl.addEventListener('input',function(){pkThemeSetLight(tl.value);var lv=pageOverlay.querySelector('#pk-theme-light-val');if(lv)lv.textContent=tl.value;var tg=pageOverlay.querySelector('#pk-theme-light-toggle');if(tg)tg.textContent=tl.value;});}
