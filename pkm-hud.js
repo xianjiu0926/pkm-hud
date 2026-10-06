@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.30';
+var PK_VER='4.0.31';
 /*PK_NOTICE_BEGIN
+v4.0.31 更新：
+· 新增道具「阿尔宙斯手机」及立绘（传说 阿尔宙斯）
 v4.0.29 更新：
 · 背包道具：没有效果数据的道具不再能点开查看，也不再弹「数据获取失败」
 · 道具名写错也能看效果：自动按图标里的英文名反查官方道具（如 potion.png → 伤药）
@@ -2982,6 +2984,7 @@ var ITEM_IMG={
   'Z强力手环':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/Z强力手环.png'),
   'Z手环':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/Z手环.png'),
   '洛托姆手机':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/洛托姆手机.png'),
+  '阿尔宙斯手机':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/阿尔宙斯手机.png'),
   '太晶珠':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/太晶珠.png'),
   '钥石':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/钥石.png'),
   '极巨腕带':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/极巨腕带.png'),
@@ -5006,7 +5009,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930u';
+var PKM_DATA_REV='r20260930v';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
