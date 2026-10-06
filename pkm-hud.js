@@ -3,23 +3,14 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.37';
+var PK_VER='4.0.38';
 /*PK_NOTICE_BEGIN
-v4.0.37 更新：
-· 检查更新/修复重装也支持 jsDelivr 镜像兜底，国内网能正常检查到新版本并下载更新
+v4.0.38 更新：
+· 修复部分环境报「pkmRepoOrder is not defined」导致检查更新失败、图鉴大图/地图图片不出的问题
+· 调整数据源函数定义顺序消除前向引用，并增加防御性降级
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 var PKM_UPDATE_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/pkm-hud@main/pkm-hud.js';
-function pkmUpdateFetch(){
-  var urls=pkmRepoOrder()==='jsdelivr'?[PKM_UPDATE_MIRROR,PK_UPDATE_URL]:[PK_UPDATE_URL,PKM_UPDATE_MIRROR];
-  var i=0,q='?t='+Date.now();
-  function next(err){
-    if(i>=urls.length)return Promise.reject(err||new Error('fetch failed'));
-    var u=urls[i++];
-    return hudFetch(u+q,{cache:'no-store'}).then(function(r){ if(r&&r.ok)return r.text(); throw 0; }).catch(function(e){ return next(e); });
-  }
-  return next();
-}
 function pkVerCompare(a,b){
   function p(v){var m=String(v==null?'':v).match(/^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?$/);return m?[Number(m[1]),Number(m[2]),Number(m[3]),m[4]||'']:null;}
   var x=p(a),y=p(b);
@@ -178,7 +169,7 @@ var PKM_REPO_RAW='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/';
 var PKM_DATA_BASE=PKM_REPO_RAW;
 var PKM_REPO_MIRROR='https://cdn.jsdelivr.net/gh/xianjiu0926/Pokemon@main/';
 function pkmRepoOrder(){var v='';try{v=String(localStorage.getItem('pk_repo_mode')||localStorage.getItem('pk_repo_auto')||'');}catch(e){}return v==='jsdelivr'?'jsdelivr':'raw';}
-function pkmRepoFirst(u){if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0&&pkmRepoOrder()==='jsdelivr')return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return u;}
+function pkmRepoFirst(u){var order='raw';try{order=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw');}catch(e){order='raw';}if(typeof u==='string'&&u.indexOf(PKM_REPO_RAW)===0&&order==='jsdelivr')return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);return u;}
 function pkmRepoMirror(u){if(typeof u!=='string')return null;if(u.indexOf(PKM_REPO_RAW)===0)return PKM_REPO_MIRROR+u.slice(PKM_REPO_RAW.length);if(u.indexOf(PKM_REPO_MIRROR)===0)return PKM_REPO_RAW+u.slice(PKM_REPO_MIRROR.length);return null;}
 function hudFetch(url,opt){
   var baseOpt=opt&&typeof opt==='object'?Object.assign({},opt):{};
@@ -199,6 +190,18 @@ function hudFetch(url,opt){
   var first=once(firstUrl);
   if(!secondUrl)return first;
   return first.then(function(r){return (r&&r.ok)?r:once(secondUrl);},function(){return once(secondUrl);});
+}
+function pkmUpdateFetch(){
+  var mode='raw';
+  try{ mode=(typeof pkmRepoOrder==='function'?pkmRepoOrder():'raw'); }catch(e){ mode='raw'; }
+  var urls=mode==='jsdelivr'?[PKM_UPDATE_MIRROR,PK_UPDATE_URL]:[PK_UPDATE_URL,PKM_UPDATE_MIRROR];
+  var i=0,q='?t='+Date.now();
+  function next(err){
+    if(i>=urls.length)return Promise.reject(err||new Error('fetch failed'));
+    var u=urls[i++];
+    return hudFetch(u+q,{cache:'no-store'}).then(function(r){ if(r&&r.ok)return r.text(); throw 0; }).catch(function(e){ return next(e); });
+  }
+  return next();
 }
 
 
