@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.49';
+var PK_VER='4.0.50';
 /*PK_NOTICE_BEGIN
 v4.0.48 更新：
 · 更新合众地图
@@ -3995,7 +3995,7 @@ var MAPS_DATA=[
       {name:'涟漪镇',x:83.8,y:41.5},
       {name:'山路镇',x:69,y:40.2},
       {name:'青海波市',x:94.5,y:30.5},
-      {name:'宝可梦联盟',x:65.3,y:4.4}
+      {name:'宝可梦联盟',x:60.4,y:7.6}
     ],
     roads:[
       {name:'1号道路',x:89.7,y:79.2},
