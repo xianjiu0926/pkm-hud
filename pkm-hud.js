@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.48';
+var PK_VER='4.0.49';
 /*PK_NOTICE_BEGIN
 v4.0.48 更新：
 · 更新合众地图
@@ -4039,7 +4039,7 @@ var MAPS_DATA=[
       {name:'雪花湿地',x:30.6,y:15.1},
       {name:'圆筒桥',x:40,y:25.1},
       {name:'村庄桥',x:58.9,y:23.5},
-      {name:'连入',x:50.5,y:41.1},
+      {name:'连入之森',x:50.5,y:41.1},
       {name:'汇合大道',x:51.1,y:59.9},
       {name:'古代城',x:43.1,y:60.8},
       {name:'古代密道',x:37.4,y:68.6},
