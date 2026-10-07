@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.47';
+var PK_VER='4.0.48';
 /*PK_NOTICE_BEGIN
-v4.0.42 更新：
-· 移除数据源自动探测，固定走 jsDelivr 镜像（国内可用）
+v4.0.48 更新：
+· 更新合众地图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
