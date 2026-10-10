@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='4.0.52';
+var PK_VER='4.0.53';
 /*PK_NOTICE_BEGIN
 v4.0.48 更新：
 · 更新合众地图
@@ -3822,7 +3822,7 @@ var MAPS_DATA=[
     name:'丰缘',
     img:pkmRepoFirst(PKM_DATA_BASE+'UI/地图/丰缘.jpg'),
     towns:[
-      {name:'末白镇',x:20.1,y:70.8},
+      {name:'未白镇',x:20.1,y:70.8},
       {name:'古玫镇',x:20.2,y:62.1},
       {name:'橙华市',x:13,y:62.7},
       {name:'卡那兹市',x:8.5,y:45.8},
