@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.0.0';
+var PK_VER='5.0.1';
 /*PK_NOTICE_BEGIN
+v5.0.1 更新：
+· 图鉴列表只显示基础形态名（谢米/武道熊师等不再显示「天空形态」「一击流」等形态/流派后缀）
 v5.0.0 更新（适配新版变量格式）：
 · 气场升级为三槽制：主页只显示启用槽，拥有多个气场时标题出现 ⇄ 切换键，点击弹窗列表、点选即启用（直接写回变量）
 · 任务·传说支持最多 3 条，自动换行分段显示
@@ -5373,7 +5375,7 @@ var caught=devUnlocked()||hitSpecies(owned,bn);
 var seen=!caught&&hitSpecies(sSet,bn);
 var known=caught||seen;
 var cls=caught?'caught':(seen?'seen':'unknown');
-var label=known?name:'？？？';
+var label=known?bn:'？？？';
 var attr=known?' data-name="'+esc(bn)+'"':' data-noclick="1"';
 var imgHtml='';
 if(showThumbs){var img=dexCellImgUrl(ndex);if(img){var sil=(label==='？？？')?' style="filter:brightness(0) opacity(.45) !important"':'';imgHtml='<span class="dex-img"><img decoding="async" data-dexsrc="'+esc(img)+'" referrerpolicy="origin" alt=""'+sil+'></span>';}}
