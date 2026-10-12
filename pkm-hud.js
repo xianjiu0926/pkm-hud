@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.0.3';
+var PK_VER='5.0.4';
 /*PK_NOTICE_BEGIN
 v5.0.2 更新：
 · 修复基格尔德 10% 形态图片错用 50% 形态图的问题（形态后缀修正为 -10）
@@ -183,6 +183,7 @@ function hudFetch(url,opt){
   var secondUrl=pkmRepoMirror(firstUrl);
   function once(u){
     var o=Object.assign({},baseOpt);
+    if(o.cache===undefined)o.cache='no-store';
     var timeout=Math.max(1000,Math.min(120000,Number(o.timeout)||30000)),outerSignal=o.signal;delete o.timeout;
     var ctl=hudScope.controller(hudNewAbortController()),done=false,tm=0,timedOut=false;
     if(outerSignal){if(outerSignal.aborted){try{ctl.abort();}catch(e){}}else try{outerSignal.addEventListener('abort',function(){try{ctl.abort();}catch(e){}},{once:true});}catch(e){}}
@@ -5124,7 +5125,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930x';
+var PKM_DATA_REV='r20260930y';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
