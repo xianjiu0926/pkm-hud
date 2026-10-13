@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.0.5';
+var PK_VER='5.0.6';
 /*PK_NOTICE_BEGIN
+v5.0.6 更新：
+· 修复全图鉴种族值数值反向的问题（HP/物攻/物防 与 速度/特防/特攻 全部对调错误，现已修正）
 v5.0.2 更新：
 · 修复基格尔德 10% 形态图片错用 50% 形态图的问题（形态后缀修正为 -10）
 v5.0.1 更新：
@@ -5125,7 +5127,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930z';
+var PKM_DATA_REV='r20260930aa';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
