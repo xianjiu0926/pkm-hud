@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.0.6';
+var PK_VER='5.0.7';
 /*PK_NOTICE_BEGIN
+v5.0.7 更新：
+· 图鉴精灵名兼容映射：urshifu-rapidstrike（连击流连写）也能正确出图
 v5.0.6 更新：
 · 修复全图鉴种族值数值反向的问题（HP/物攻/物防 与 速度/特防/特攻 全部对调错误，现已修正）
 v5.0.2 更新：
@@ -3162,7 +3164,7 @@ fetchPkmSlug(name,function(slug){
     })(els[i]);
   }
 }
-var SLUG_FIX={'hooh':'ho-oh','mrmime':'mr-mime','porygonz':'porygon-z','typenull':'type-null','jangmoo':'jangmo-o','hakamoo':'hakamo-o','kommoo':'kommo-o','tapukoko':'tapu-koko','tapulele':'tapu-lele','tapubulu':'tapu-bulu','tapufini':'tapu-fini','nidoranf':'nidoran-f','nidoranm':'nidoran-m','mimejr':'mime-jr','mrrime':'mr-rime','ironmoth':'iron-moth','ironbundle':'iron-bundle','ironhands':'iron-hands','ironjugulis':'iron-jugulis','ironthorns':'iron-thorns','ironvaliant':'iron-valiant','ironleaves':'iron-leaves','ironboulder':'iron-boulder','ironcrown':'iron-crown','irontreads':'iron-treads','greattusk':'great-tusk','screamtail':'scream-tail','brutebonnet':'brute-bonnet','fluttermane':'flutter-mane','slitherwing':'slither-wing','sandyshocks':'sandy-shocks','roaringmoon':'roaring-moon','wochien':'wo-chien','chienpao':'chien-pao','tinglu':'ting-lu','chiyu':'chi-yu','walkingwake':'walking-wake','gougingfire':'gouging-fire','ragingbolt':'raging-bolt'};
+var SLUG_FIX={'hooh':'ho-oh','mrmime':'mr-mime','porygonz':'porygon-z','typenull':'type-null','jangmoo':'jangmo-o','hakamoo':'hakamo-o','kommoo':'kommo-o','tapukoko':'tapu-koko','tapulele':'tapu-lele','tapubulu':'tapu-bulu','tapufini':'tapu-fini','nidoranf':'nidoran-f','nidoranm':'nidoran-m','mimejr':'mime-jr','mrrime':'mr-rime','ironmoth':'iron-moth','ironbundle':'iron-bundle','ironhands':'iron-hands','ironjugulis':'iron-jugulis','ironthorns':'iron-thorns','ironvaliant':'iron-valiant','ironleaves':'iron-leaves','ironboulder':'iron-boulder','ironcrown':'iron-crown','irontreads':'iron-treads','greattusk':'great-tusk','screamtail':'scream-tail','brutebonnet':'brute-bonnet','fluttermane':'flutter-mane','slitherwing':'slither-wing','sandyshocks':'sandy-shocks','roaringmoon':'roaring-moon','wochien':'wo-chien','chienpao':'chien-pao','tinglu':'ting-lu','chiyu':'chi-yu','walkingwake':'walking-wake','gougingfire':'gouging-fire','ragingbolt':'raging-bolt','urshifurapidstrike':'urshifu-rapid-strike','urshifu-rapidstrike':'urshifu-rapid-strike'};
 function fixSlug(n){return SLUG_FIX[n]||n;}
 function slugCandidates(n){
   var out=[n];
