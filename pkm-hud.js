@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.3.1';
+var PK_VER='5.3.2';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -6631,6 +6631,40 @@ function fabImgReset(){
   overlay.classList.remove('open');
   hudMsg('悬浮球图片已恢复默认');
 }
+function hudReadWidth(){
+  try{var v=parseInt(localStorage.getItem('pk_hud_width'),10);return (v>=420&&v<=1600)?v:600;}catch(e){return 600;}
+}
+function applyHudWidth(w){
+  if(w==null)w=hudReadWidth();
+  w=Math.max(420,Math.min(1600,w));
+  var hud=document.querySelector('.hud');
+  if(hud){hud.style.maxWidth=w+'px';}
+  return w;
+}
+function openWidth(){
+  var w=hudReadWidth();
+  clearBack();
+  overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">调节面板宽度</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="set-opt" style="justify-content:space-between"><input type="range" id="hud-width-range" min="420" max="1600" step="20" value="'+w+'" data-width-range style="flex:1;accent-color:var(--pk-blue)"><span id="hud-width-val" class="dim" style="min-width:44px;text-align:right">'+w+'px</span></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">'+[600,700,800,900,1000,1200,1400].map(function(p){return '<button class="btn-small" data-width-preset="'+p+'">'+p+'</button>';}).join('')+'</div><div class="action-btns" style="margin-top:12px"><button class="act-btn" data-width-apply>✔ 应用</button><button class="act-btn" data-width-reset>↺ 恢复默认(600px)</button></div></div></div>';
+  overlay.classList.add('open');
+  var wr=overlay.querySelector('#hud-width-range');
+  if(wr){wr.addEventListener('input',function(){var v=overlay.querySelector('#hud-width-val');if(v)v.textContent=this.value+'px';});}
+}
+function widthApply(){
+  var el=document.getElementById('hud-width-range');
+  var w=el?parseInt(el.value,10):hudReadWidth();
+  if(isNaN(w))w=600;
+  w=Math.max(420,Math.min(1600,w));
+  try{localStorage.setItem('pk_hud_width',String(w));}catch(e){}
+  applyHudWidth(w);
+  overlay.classList.remove('open');
+  resizeFrame();
+}
+function widthReset(){
+  try{localStorage.removeItem('pk_hud_width');}catch(e){}
+  applyHudWidth(600);
+  overlay.classList.remove('open');
+  resizeFrame();
+}
 function openIconSize(){
   clearBack();
   overlay.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-head"><div class="modal-name">自定义图标大小</div><button class="close" data-close>✕</button></div><div class="modal-body">'+iconSizeListHTML()+'<div class="action-btns" style="margin-top:10px"><button class="act-btn" data-isz-apply>✔ 应用</button><button class="act-btn" data-isz-reset>↺ 恢复默认</button></div></div></div>';
@@ -6847,7 +6881,7 @@ function settingsHTML(){
 var winChk=(winMode==='1')?' checked':'';
 var inlineOpt=(winMode==='0')?'<label class="set-opt" style="cursor:default">内嵌模式高度：<b>'+inlineH+'</b> px</label><button class="act-btn" data-inline-h-open>📏 调整内嵌模式高度</button>':'';
 var fabOpt=(winMode==='1')?'<button class="act-btn" data-fab-open>🔵 悬浮球大小</button><button class="act-btn" data-fab-img-open>🖼 悬浮球图片</button>':'';
-return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'</div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">PokeOS</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">主题颜色</div><div class="set-opts"><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">'+presetBtns+'</div><label class="set-opt">主题色<input type="color" id="pk-theme-hue" value="'+themeHue+'" data-theme-hue style="margin-left:auto;width:42px;height:26px;border:1px solid var(--pk-line);border-radius:5px;background:transparent;cursor:pointer"></label><div class="set-opt" style="justify-content:space-between">深浅<button type="button" id="pk-theme-light-toggle" class="btn-small" data-theme-light-toggle style="margin-left:auto;min-width:46px">'+themeLight+'</button></div><div class="set-opt" id="pk-theme-light-wrap" style="display:none"><input type="range" id="pk-theme-light" min="0" max="100" value="'+themeLight+'" data-theme-light style="flex:1;accent-color:var(--pk-blue)"><span id="pk-theme-light-val" class="dim" style="min-width:28px;text-align:right">'+themeLight+'</span></div><button class="act-btn" data-theme-color-reset>↺ 恢复默认主题色</button></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📋 复制脚本内容</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
+return frame('设置','<div class="set-title">功能开关</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="itemclick"'+itemChk+'>点击道具查看效果</label></div>'+entertainmentModeHTML()+'<div class="set-title">界面模式</div><div class="set-opts"><label class="set-opt"><input type="checkbox" data-toggle="winmode"'+winChk+'>悬浮窗模式（关闭则显示在AI回复下方，刷新后生效）</label>'+inlineOpt+'<button class="act-btn" data-width-open>📐 调节面板宽度</button></div><div class="set-title">精灵图源</div><div class="set-opts"><label class="set-opt"><input type="radio" name="pk-source" value="pokeos"'+(pkmSource==='pokeos'?' checked':'')+' data-source="pokeos">PokeOS</label><label class="set-opt"><input type="radio" name="pk-source" value="showdown"'+(pkmSource==='showdown'?' checked':'')+' data-source="showdown">Showdown</label></div><div class="set-title">主题颜色</div><div class="set-opts"><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">'+presetBtns+'</div><label class="set-opt">主题色<input type="color" id="pk-theme-hue" value="'+themeHue+'" data-theme-hue style="margin-left:auto;width:42px;height:26px;border:1px solid var(--pk-line);border-radius:5px;background:transparent;cursor:pointer"></label><div class="set-opt" style="justify-content:space-between">深浅<button type="button" id="pk-theme-light-toggle" class="btn-small" data-theme-light-toggle style="margin-left:auto;min-width:46px">'+themeLight+'</button></div><div class="set-opt" id="pk-theme-light-wrap" style="display:none"><input type="range" id="pk-theme-light" min="0" max="100" value="'+themeLight+'" data-theme-light style="flex:1;accent-color:var(--pk-blue)"><span id="pk-theme-light-val" class="dim" style="min-width:28px;text-align:right">'+themeLight+'</span></div><button class="act-btn" data-theme-color-reset>↺ 恢复默认主题色</button></div><div class="set-title">图标</div><div class="set-opts"><button class="act-btn" data-isz-open>🎨 自定义图标大小</button>'+fabOpt+'</div><div class="set-title">清理缓存</div><div class="set-opts">'+radios+'</div><button class="act-btn" data-clear-start>清理所选缓存</button><div class="dim" style="font-size:.72rem;margin-top:8px">需连续确认 3 次；清理后缓存重新联网获取，图鉴进度只保留队伍和盒子里的</div><div class="set-title">运行诊断</div><div class="set-opts">'+diagHTML()+'</div><div class="set-title">脚本更新</div><div class="set-opts"><div class="info-row"><span class="k">当前版本</span><span class="v">v'+PK_VER+'</span></div>'+(pkHasUpdate?'<div class="info-row"><span class="k">新版本</span><span class="v" style="color:#ffe066">v'+esc(pkLatestVer||'')+' 可更新</span></div>':'')+'<button class="act-btn" data-pk-check-update>🔍 检查更新</button><button class="act-btn" data-pk-do-update style="display:none">⬆️ 更新到最新版</button><button class="act-btn" data-pk-show-content style="display:none">📋 复制脚本内容</button><button class="act-btn" data-pk-repair>🔧 修复（重新下载安装最新脚本）</button><div id="pk-update-msg" class="dim" style="font-size:.72rem;margin-top:4px"></div></div><div class="set-title">开发者选项</div><div class="set-opts"><div style="display:flex;gap:6px;align-items:center"><input type="password" id="dev-pwd" placeholder="输入开发者密码" style="flex:1;min-width:0;padding:6px 10px;font-family:inherit;font-size:.85rem;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);outline:none"><button class="btn-small" data-dev-unlock>解锁</button></div><div id="dev-panel">'+devPanelHTML()+'</div></div><details class="src-fold"><summary>资料来源</summary><div class="dim" style="font-size:.72rem;line-height:1.9;word-break:break-all;overflow-wrap:anywhere">图鉴、道具、招式、特性、种族值等文字数据及道具、精灵球图标图片：神奇宝贝百科（52poke）：<br>　　https://wiki.52poke.com<br>技能机（TM/TR/HM）图标：PokéSprite：<br>　　https://github.com/msikma/pokesprite<br>精灵图：<br>· Pokémon Showdown（像素小动图）：<br>　　https://play.pokemonshowdown.com<br>· PokeOS（高清HOME动图）：<br>　　https://www.pokeos.com/</div></details>');
 }
 
 var pkLatestContent=null, pkLatestVer=null, pkLatestNotice='';
@@ -7643,6 +7677,8 @@ for(var _tcm=0;_tcm<tcms.length;_tcm++){tcms[_tcm].addEventListener('click',func
 
 var iso=pageOverlay.querySelector('[data-isz-open]');
 if(iso){iso.addEventListener('click',function(e){e.stopPropagation();openIconSize();});}
+var wdo=pageOverlay.querySelector('[data-width-open]');
+if(wdo){wdo.addEventListener('click',function(e){e.stopPropagation();openWidth();});}
 var fbo=pageOverlay.querySelector('[data-fab-open]');
 if(fbo){fbo.addEventListener('click',function(e){e.stopPropagation();openFabSize();});}
 var iho=pageOverlay.querySelector('[data-inline-h-open]');
@@ -8128,7 +8164,7 @@ function render(){
   var app=inline?document.getElementById('pkm-hud-inline'):document.getElementById('pkm-hud-slot');
   if(!app){app=document.createElement('div');app.id=inline?'pkm-hud-inline':'pkm-hud-slot';if(inline){document.body.appendChild(app);}else{try{ensureHud();}catch(e){}var win=document.getElementById('pkm-hud-win');var slot=document.getElementById('pkm-hud-slot');if(slot){app=slot;}else if(win){win.appendChild(app);}else{document.body.appendChild(app);}}}
   if(inline)applyInlineH(app);
-  if(app._pkmOptimizedReady&&app.querySelector('.hud')){refreshHudPanels(app);resizeFrame();return;}
+  if(app._pkmOptimizedReady&&app.querySelector('.hud')){applyHudWidth();refreshHudPanels(app);resizeFrame();return;}
   app.innerHTML='<div class="hud"><div class="hud-inner" id="hud-inner">'+
   '<div class="tab-panel active" id="tab-1">'+hudCmdBarHTML()+trainerHTML()+teamHTML()+quickHTML()+nearbyHTML()+'<div id="home-fold">'+homeFoldHTML()+'</div></div>'+
 '<div class="tab-panel" id="tab-2">'+envStripHTML()+worldHTML()+tasksHTML()+rivalsHTML()+'</div>'+
@@ -8136,6 +8172,7 @@ function render(){
   '<div class="tab-panel" id="tab-4">'+menuHTML()+'</div>'+
   '</div>'+
   '<div class="tab-bar"><button class="tab-btn active" data-tab="1">主页</button><button class="tab-btn" data-tab="2">世界</button><button class="tab-btn" data-tab="3">战场</button><button class="tab-btn" data-tab="4">菜单</button></div></div>';
+applyHudWidth();
 hudBindRefreshProgrammaticGuard(app);
 ensureT2S();
 ensureItemAlias();
@@ -8235,6 +8272,9 @@ var ip=e.target.closest('[data-isz-plus]');if(ip){e.stopPropagation();iszStep(ip
 var im=e.target.closest('[data-isz-minus]');if(im){e.stopPropagation();iszStep(im.getAttribute('data-isz-minus'),-1);return;}
 var ia=e.target.closest('[data-isz-apply]');if(ia){e.stopPropagation();iszApply();return;}
 var ir=e.target.closest('[data-isz-reset]');if(ir){e.stopPropagation();iszReset();return;}
+var wp2=e.target.closest('[data-width-preset]');if(wp2){var _r=document.getElementById('hud-width-range');if(_r){_r.value=wp2.getAttribute('data-width-preset');var _v2=document.getElementById('hud-width-val');if(_v2)_v2.textContent=_r.value+'px';}return;}
+var wa2=e.target.closest('[data-width-apply]');if(wa2){e.stopPropagation();widthApply();return;}
+var wr3=e.target.closest('[data-width-reset]');if(wr3){e.stopPropagation();widthReset();return;}
 var fp=e.target.closest('[data-fab-plus]');if(fp){e.stopPropagation();fabStep(1);return;}
 var fm=e.target.closest('[data-fab-minus]');if(fm){e.stopPropagation();fabStep(-1);return;}
 var fa=e.target.closest('[data-fab-apply]');if(fa){e.stopPropagation();fabApply();return;}
