@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.1.7';
+var PK_VER='5.1.8';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -510,7 +510,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.rel-fill{height:100%;background:#f08888;border-radius:4px}'+
 '.rel-val{width:30px;text-align:right;flex-shrink:0;color:var(--dim)}'+
 '.empty{text-align:center;padding:10px 0;color:var(--dim);letter-spacing:2px;font-size:.82rem}'+
-'.bag-tabs{display:flex;gap:4px;margin-bottom:5px;justify-content:flex-end}'+
+'.bag-tabs{display:flex;gap:4px;margin-bottom:5px;justify-content:center}'+
 '.bag-tab{flex:0 0 auto;padding:3px 7px;font-family:inherit;font-size:.72rem;text-align:center;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}'+
 '.bag-tab.active{background:rgba(43,74,111,.8);color:#fff}'+
 '.bag-list{display:flex;flex-direction:column;gap:6px;max-height:min(280px,46vh);overflow-y:auto;padding-right:4px}'+
