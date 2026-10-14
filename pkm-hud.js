@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.0.8';
+var PK_VER='5.0.9';
 /*PK_NOTICE_BEGIN
+v5.0.9 更新：
+· 战斗中（战场有战斗内容）锁定气场切换：主页切换键显示「战斗中」，不可点击
 v5.0.8 更新：
 · 精灵图 slug 修正表迁至仓库 slug-fix.json，以后新增别名无需再改 HUD 代码
 v5.0.7 更新：
@@ -3428,10 +3430,11 @@ function parseAura(raw){raw=String(raw||'').trim();var out={slots:[],active:1,ra
 function auraActiveSlot(ap){for(var i=0;i<ap.slots.length;i++){if(ap.slots[i].n===ap.active)return ap.slots[i];}return null;}
 function auraNonEmptyCount(ap){var c=0;ap.slots.forEach(function(s){if(!s.empty)c++;});return c;}
 function auraRebuild(ap,active){var slots=[];for(var n=1;n<=3;n++){var found=null;for(var i=0;i<ap.slots.length;i++){if(ap.slots[i].n===n){found=ap.slots[i];break;}}if(found&&!found.empty)slots.push(n+'.'+found.text);else slots.push(n+'.空');}return slots.join('‖')+'‖启用'+active;}
-function auraRowHTML(){var ap=parseAura((stat_data.训练家||{}).气场||'');var cnt=auraNonEmptyCount(ap);if(!cnt)return '<div class="info-row block" id="aura-entry"><span class="k">气场</span><span class="v"><span class="dim">无</span></span></div>';var act=auraActiveSlot(ap);var cycle=cnt>1?' <span class="badge-region" id="aura-cycle" title="点击切换气场">'+esc(ap.active+' 号')+' ⇄</span>':'';var body=act&&!act.empty?'<div class="aura-line">'+esc(act.text)+'</div>':'<span class="dim">无</span>';return '<div class="info-row block" id="aura-entry"><span class="k">气场'+cycle+'</span><span class="v">'+body+'</span></div>';}
+function inBattle(){var b=stat_data.战场||{};if(!b)return false;if(b.规则||b.场景)return true;var f=b.场上||{};if(Object.keys(f).length)return true;var s=b.各方||{};return Object.keys(s).length>0;}
+function auraRowHTML(){var ap=parseAura((stat_data.训练家||{}).气场||'');var cnt=auraNonEmptyCount(ap);if(!cnt)return '<div class="info-row block" id="aura-entry"><span class="k">气场</span><span class="v"><span class="dim">无</span></span></div>';var act=auraActiveSlot(ap);var cycle='';if(cnt>1){cycle=inBattle()?' <span class="badge-region" id="aura-busy" title="战斗中无法切换气场">战斗中</span>':' <span class="badge-region" id="aura-cycle" title="点击切换气场">'+esc(ap.active+' 号')+' ⇄</span>';}var body=act&&!act.empty?'<div class="aura-line">'+esc(act.text)+'</div>':'<span class="dim">无</span>';return '<div class="info-row block" id="aura-entry"><span class="k">气场'+cycle+'</span><span class="v">'+body+'</span></div>';}
 function auraPickerHTML(){var ap=parseAura((stat_data.训练家||{}).气场||'');var rows=ap.slots.map(function(s){var cls='aura-slot'+(s.n===ap.active?' active':'')+(s.empty?' empty':'');var body=s.empty?'<span class="dim">空</span>':esc(s.text);var dot=s.n===ap.active?'●':'○';return '<div class="'+cls+'" data-aura="'+s.n+'"><span class="aura-n">'+dot+' '+s.n+' 号</span><div class="aura-body">'+body+'</div></div>';}).join('');return '<div class="modal"><div class="modal-head"><div class="modal-name">选择气场</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="aura-list">'+rows+'</div><div class="dim" style="font-size:.72rem;margin-top:8px">点击气场即启用（当前 ● 为生效气场）</div></div></div>';}
-function openAuraPicker(){clearBack();overlay.innerHTML=auraPickerHTML();overlay.classList.add('open');}
-function setActiveAura(n){n=parseInt(n,10);if(!n||n<1||n>3)return;var tr=stat_data.训练家||{};var ap=parseAura(tr.气场||'');if(ap.active===n){overlay.classList.remove('open');clearBack();return;}tr.气场=auraRebuild(ap,n);overlay.classList.remove('open');clearBack();pkmHudPersistStatData().then(function(){pkmHudRenderCurrent();},function(){pkmHudRenderCurrent();});}
+function openAuraPicker(){if(inBattle()){hudMsg('战斗中无法切换气场');return;}clearBack();overlay.innerHTML=auraPickerHTML();overlay.classList.add('open');}
+function setActiveAura(n){if(inBattle()){hudMsg('战斗中无法切换气场');return;}n=parseInt(n,10);if(!n||n<1||n>3)return;var tr=stat_data.训练家||{};var ap=parseAura(tr.气场||'');if(ap.active===n){overlay.classList.remove('open');clearBack();return;}tr.气场=auraRebuild(ap,n);overlay.classList.remove('open');clearBack();pkmHudPersistStatData().then(function(){pkmHudRenderCurrent();},function(){pkmHudRenderCurrent();});}
 function badgePageHTML(){var rs=parseBadges(),regions=Object.keys(BADGE_MAP);var cur=badgeSel||pickRegion(rs)||regions[0];if(regions.indexOf(cur)<0)cur=regions[0];var tabs=regions.map(function(r){return '<button class="badge-tab'+(r===cur?' active':'')+'" data-bregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('');var rec=null;rs.forEach(function(r){if(r.region===cur)rec=r;});if(!rec)rec={region:cur,list:[],cnt:0};var tab=BADGE_MAP[cur]||[],cells=tab.map(function(e,i){return badgeImg(cur,e,badgeGot(rec,e,i),true);}).join('');var mh=badgeMinH();return frame('徽章盒 '+esc(cur)+' '+badgeCount(rec)+'/'+tab.length,'<div class="badge-tabs">'+tabs+'</div><div class="badge-grid" style="min-height:'+mh+'px">'+cells+'</div>');}
 function baseName(s){var t=String(s||'').trim(),i=t.indexOf('-');if(i>0)t=t.slice(0,i);var pre=['搭档','头目','霸主','闪光','原始回归','原始','超极巨化','超极巨','极巨化','极巨','太晶化','太晶','阿罗拉','伽勒尔','洗翠','帕底亚','Mega','mega'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){if(t.indexOf(pre[k])===0&&t.length>pre[k].length){t=t.slice(pre[k].length).trim();go=true;}}}return t;}
 function addSpecies(o,n){n=baseName(n);if(n)o[n]=1;}
@@ -8673,6 +8676,7 @@ function hudBindRootDelegation(app){
     var item=x('#home-fold .item-entry[data-item]');if(item){e.stopPropagation();if(itemClickEnabled)showItemInfo(item.getAttribute('data-item'),false,item.getAttribute('data-item-en')||'');return;}
     var bc=x('#badge-cycle');if(bc){badgeClick(e);return;}
     var ac=x('#aura-cycle');if(ac){e.stopPropagation();openAuraPicker();return;}
+    var ab=x('#aura-busy');if(ab){e.stopPropagation();hudMsg('战斗中无法切换气场');return;}
     var bo=x('[data-badge-open]');if(bo){e.stopPropagation();openPage('badge');return;}
     var card=x('.card-frame[data-slot]');if(card){var sl=parseInt(card.getAttribute('data-slot'),10),c=null;for(var i=0;i<cards.length;i++)if(cards[i].slot===sl){c=cards[i];break;}if(c){currentDetailCard=c;clearBack();overlay.innerHTML=detailHTML(c);overlay.classList.add('open');resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);hudResolvePkidbImages(overlay);}return;}
     var nb=x('[data-nearby-open]');if(nb){e.stopPropagation();var key=nb.getAttribute('data-nearby-open'),pk=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(pk){clearBack();overlay.innerHTML=actionHTML(pk,key);overlay.classList.add('open');resolvePkmImgs(overlay);resolveNearbyTypes(overlay);hudResolvePkidbImages(overlay);}return;}
