@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.0.9';
+var PK_VER='5.1.0';
 /*PK_NOTICE_BEGIN
+v5.1.0 更新：
+· 新增「手机」重要物品：点开可切换手机壳，选中的手机壳会写回背包图标
 v5.0.9 更新：
 · 战斗中（战场有战斗内容）锁定气场切换：主页切换键显示「战斗中」，不可点击
 v5.0.8 更新：
@@ -538,6 +540,14 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.close{margin-left:auto;background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;opacity:.8}'+
 '.close:hover{opacity:1}'+
 '.modal-body{padding:10px 14px 14px}'+
+'.phone-preview{display:flex;align-items:center;justify-content:center;padding:8px 0;border-bottom:1px dashed rgba(170,204,255,.25);margin-bottom:10px}'+
+'.phone-preview img{width:120px;height:120px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6))}'+
+'.phone-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:60vh;overflow-y:auto;padding:4px}'+
+'.phone-cell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--frame);border-radius:8px;cursor:pointer;background:rgba(170,204,255,.06)}'+
+'.phone-cell:hover{background:rgba(99,179,237,.12);border-color:rgba(99,179,237,.5)}'+
+'.phone-cell.on{border-color:var(--pk-blue);background:rgba(99,179,237,.14);box-shadow:inset 0 -2px 0 rgba(99,179,237,.76)}'+
+'.phone-cell img{width:48px;height:48px;object-fit:contain;image-rendering:pixelated}'+
+'.phone-cell-name{font-size:.62rem;color:var(--dim);text-align:center;line-height:1.2;word-break:break-all;max-width:100%}'+
 '.pkm-big{position:relative;display:flex;align-items:center;justify-content:center;min-height:130px;padding:6px 0;border-bottom:1px dashed rgba(170,204,255,.25)}'+
 '.pkm-big-img{width:120px;height:120px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6));cursor:pointer}'+
 '.pkm-shiny-tag{position:absolute;top:6px;right:10px;font-size:.68rem;font-weight:800;color:#ffe066;text-shadow:0 0 6px rgba(255,224,102,.8);pointer-events:none}'+
@@ -3003,6 +3013,7 @@ var ITEM_IMG={
   'Z强力手环':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/Z强力手环.png'),
   'Z手环':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/Z手环.png'),
   '阿尔宙斯手机':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/阿尔宙斯手机.png'),
+  '手机':pkmRepoFirst(PKM_DATA_BASE+'phone-cases/手机.webp'),
   '太晶珠':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/太晶珠.png'),
   '钥石':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/钥石.png'),
   '极巨腕带':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/极巨腕带.png'),
@@ -3727,7 +3738,7 @@ function openNearbyPage(){pageOverlayPopout(false);pageOverlay.innerHTML='<div c
 
 function bagCategories(){var cats=[{key:'道具',label:'道具',items:[]},{key:'精灵球',label:'精灵球',items:[]},{key:'重要物品',label:'重要物品',items:[]}];var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var c=cats.find(function(x){return x.key===it.类型;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
 var activeBag='道具';
-function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0||it.name.indexOf('招式学习器')>=0);var tmMove=isTM?tmMoveName(it.name):'';var icon;if(tmMove){var iconSlug=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');icon=iconSlug?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconSlug,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder tm-wiki" data-tm="'+esc(tmMove)+'">?</span></span>';}else if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else if(pkmItemSource==='serebii'){var ov2=itemImgOf(it.name);if(ov2!==undefined){icon=ov2?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov2)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-item-en="'+esc(it.icon||'')+'" data-cls="item-icon">?</span></span>';}}else{var ov=itemImgOf(it.name);if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=tmMove?' data-tm="'+esc(tmMove)+'" style="cursor:pointer"':((!isTM&&itemClickEnabled)?' data-bag-item="'+esc(it.name)+'" data-bag-icon="'+esc(it.icon||'')+'"':'');return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
+function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0||it.name.indexOf('招式学习器')>=0);var tmMove=isTM?tmMoveName(it.name):'';var icon;if(tmMove){var iconSlug=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');icon=iconSlug?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconSlug,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder tm-wiki" data-tm="'+esc(tmMove)+'">?</span></span>';}else if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else if(pkmItemSource==='serebii'){var ov2=bagPhoneIcon(it.name)||itemImgOf(it.name);if(ov2!==undefined){icon=ov2?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov2)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-item-en="'+esc(it.icon||'')+'" data-cls="item-icon">?</span></span>';}}else{var ov=bagPhoneIcon(it.name)||itemImgOf(it.name);if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=tmMove?' data-tm="'+esc(tmMove)+'" style="cursor:pointer"':((!isTM&&itemClickEnabled)?' data-bag-item="'+esc(it.name)+'" data-bag-icon="'+esc(it.icon||'')+'"':'');return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
 function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'">'+c.label+'</button>';}).join('');return frame('背包','<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
 
 var MAPS_DATA=[
@@ -5149,7 +5160,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930ab';
+var PKM_DATA_REV='r20260930ac';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -6552,18 +6563,80 @@ function fetchItem(name,enName,cb){
     cb&&cb(null);
   });
 }
+var phoneCasesPromise=null;
+function loadPhoneCases(){
+  if(phoneCasesPromise)return phoneCasesPromise;
+  phoneCasesPromise=hudFetch(PKM_DATA_BASE+'phone-cases.json').then(function(r){return r&&r.ok?r.json():null;}).then(function(j){
+    if(Array.isArray(j))return j;
+    if(j&&Array.isArray(j.cases))return j.cases;
+    return [];
+  }).catch(function(){return [];});
+  return phoneCasesPromise;
+}
+function phoneCaseIconURL(n){
+  n=String(n||'').trim();
+  if(!n)return '';
+  if(/^https?:/i.test(n))return n;
+  return pkmRepoFirst(PKM_DATA_BASE+'phone-cases/'+encodeURIComponent(n)+'.webp');
+}
+function phoneCurrentIconURL(){
+  var it=(stat_data&&stat_data.背包)?stat_data.背包['手机']:null;
+  var s=(it&&it.图标)?String(it.图标).trim():'';
+  if(s)return phoneCaseIconURL(s);
+  return itemImgOf('手机')||pkmRepoFirst(PKM_DATA_BASE+'phone-cases/手机.webp');
+}
+function bagPhoneIcon(name){
+  if(name!=='手机')return undefined;
+  var it=(stat_data&&stat_data.背包)?stat_data.背包['手机']:null;
+  var s=(it&&it.图标)?String(it.图标).trim():'';
+  if(!s)return undefined;
+  return phoneCaseIconURL(s);
+}
+function openPhoneCasePicker(){
+  loadPhoneCases().then(function(cases){
+    if(!cases||!cases.length){hudMsg('手机壳数据加载失败');return;}
+    var cur=(stat_data.背包&&stat_data.背包['手机']&&stat_data.背包['手机'].图标)?String(stat_data.背包['手机'].图标).trim():'';
+    var grid='<div class="phone-cell'+(cur?'':' on')+'" data-phone-pick=""><img src="'+esc(itemImgOf('手机')||pkmRepoFirst(PKM_DATA_BASE+'phone-cases/手机.webp'))+'" onerror="itemImgErr(this)"><span class="phone-cell-name">默认</span></div>';
+    grid+=cases.map(function(n){
+      var on=(cur===n)?' on':'';
+      return '<div class="phone-cell'+on+'" data-phone-pick="'+esc(n)+'"><img src="'+esc(phoneCaseIconURL(n))+'" onerror="itemImgErr(this)"><span class="phone-cell-name">'+esc(n)+'</span></div>';
+    }).join('');
+    clearBack();
+    overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">选择手机壳</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="phone-grid">'+grid+'</div></div></div>';
+    overlay.classList.add('open');
+  });
+}
+function pickPhoneCase(name){
+  name=String(name==null?'':name);
+  var bag=stat_data.背包=stat_data.背包||{};
+  var it=bag['手机']=bag['手机']||{类型:'重要物品',数量:1,图标:''};
+  if(name===''){delete it.图标;}
+  else{it.图标=name;}
+  var done=function(){
+    overlay.classList.remove('open');
+    clearBack();
+    if(pageOverlay&&pageOverlay.classList.contains('open')){
+      var list=pageOverlay.querySelector('#bag-list');
+      if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}
+    }else{
+      pkmHudRenderCurrent();
+    }
+  };
+  pkmHudPersistStatData().then(done,done);
+}
 function showItemInfo(name,back,enName){
   var toSub=!!(back&&subOverlay);
   var target=toSub?subOverlay:overlay;
   var closeAttr=toSub?'data-sub-close':'data-move-back';
+  var isPhone=(name==='手机');
   if(!toSub){if(back){pushBack();}else{clearBack();}}
-  target.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" '+closeAttr+'>✕</button></div><div class="modal-body" id="item-body"><div class="empty">道具数据加载中...</div></div></div>';
+  target.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div>'+(isPhone?'<button class="btn-small" data-phone-case-btn>切换手机壳</button>':'')+'<button class="close" '+closeAttr+'>✕</button></div><div class="modal-body" id="item-body"><div class="empty">道具数据加载中...</div></div></div>';
   target.classList.add('open');
   fetchItem(name,enName,function(d){
     var b=document.getElementById('item-body');
     if(!b)return;
     if(!d||!d.text){b.innerHTML='<div class="empty">道具数据获取失败</div>';return;}
-    var _body='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text||'').replace(/\n/g,'<br>')+'</span></div>';
+    var _body=(isPhone?'<div class="phone-preview"><img src="'+esc(phoneCurrentIconURL())+'" onerror="itemImgErr(this)"></div>':'')+'<div class="row block"><span class="k">介绍</span><span class="v">'+esc(d.text||'').replace(/\n/g,'<br>')+'</span></div>';
     if(d.detail&&d.detail!==d.text)_body+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>';
     b.innerHTML=_body;
   });
@@ -8762,6 +8835,8 @@ var rup=e.target.closest('[data-relset-upload]');if(rup){e.stopPropagation();var
 var rul=e.target.closest('[data-relset-url]');if(rul){e.stopPropagation();var _rr2=rul.closest('.relset-row');relSettingsUrl(_rr2?_rr2.getAttribute('data-relset-name'):'');return;}
 var rcl=e.target.closest('[data-relset-clear]');if(rcl){e.stopPropagation();var _rr3=rcl.closest('.relset-row');relSettingsClear(_rr3?_rr3.getAttribute('data-relset-name'):'');return;}
 var rdl=e.target.closest('[data-reldel]');if(rdl){e.stopPropagation();deleteRelAsk(rdl.getAttribute('data-reldel'));return;}
+var pcb=e.target.closest('[data-phone-case-btn]');if(pcb){e.stopPropagation();openPhoneCasePicker();return;}
+var pcp=e.target.closest('[data-phone-pick]');if(pcp){e.stopPropagation();pickPhoneCase(pcp.getAttribute('data-phone-pick')||'');return;}
 var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true,itm.getAttribute('data-item-en')||'');return;}
     if(e.target===overlay){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();var _pb2=popBack();if(_pb2){overlay.innerHTML=_pb2;}else{overlay.classList.remove('open');}return;}
         if(e.target.closest('[data-close]')){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();overlay.classList.remove('open');clearBack();return;}
