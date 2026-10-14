@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.2.7';
+var PK_VER='5.2.8';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -529,7 +529,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.bag-list>.item-entry .item-icon-wrap{width:28px;min-width:28px}'+
 '.bag-list>.item-entry .item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
 '.bag-list>.item-entry .item-count{width:36px;min-width:36px;text-align:right;justify-self:end}'+
-'.bag-list>.item-entry>[data-bag-discard]{width:58px;min-width:58px;justify-self:end;text-align:center;padding-left:6px;padding-right:6px}'+
+'.bag-list>.item-entry>[data-bag-discard]{justify-self:end;text-align:center;padding-left:6px;padding-right:6px}'+
 '.box-select{background:rgba(43,74,111,.7);color:#fff;border:1px solid var(--frame);border-radius:4px;padding:1px 14px;font-family:inherit;font-size:.75rem;margin-bottom:5px;width:auto;min-width:120px;text-align:center;text-align-last:center;float:right}'+
 '.box-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:280px;overflow-y:auto;padding-right:4px;clear:both}'+
 '.box-cell{display:flex;flex-direction:column;align-items:center;padding:6px;cursor:pointer;border-radius:6px;transition:background .12s}'+
