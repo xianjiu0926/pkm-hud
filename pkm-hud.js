@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.1.5';
+var PK_VER='5.1.6';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -3715,9 +3715,9 @@ function resolveNearbyTypes(scope){
     });
   })(els[i]);}
 }
-var NEARBY_LEGENDARY_SET=nearbyLookup('急冻鸟|闪电鸟|火焰鸟|超梦|洛奇亚|凤王|雷公|炎帝|水君|雷吉洛克|雷吉艾斯|雷吉斯奇鲁|拉帝亚斯|拉帝欧斯|盖欧卡|固拉多|烈空坐|由克希|艾姆利多|亚克诺姆|帝牙卢卡|帕路奇亚|席多蓝恩|雷吉奇卡斯|骑拉帝纳|克雷色利亚|勾帕路翁|代拉基翁|毕力吉翁|龙卷云|雷电云|土地云|莱希拉姆|捷克罗姆|酋雷姆|哲尔尼亚斯|伊裴尔塔尔|基格尔德|卡璞·鸣鸣|卡璞·蝶蝶|卡璞·哞哞|卡璞·鳍鳍|科斯莫古|科斯莫姆|索尔迦雷欧|露奈雅拉|奈克洛兹玛|属性：空|银伴战兽|苍响|藏玛然特|无极汰那|熊徒弟|武道熊师|雷吉艾勒奇|雷吉铎拉戈|雪暴马|灵幽马|蕾冠王|眷恋云|古剑豹|古鼎鹿|古简蜗|古玉鱼|故勒顿|密勒顿|够赞狗|愿增猿|吉雉鸡|厄诡椪|太乐巴戈斯');
-var NEARBY_MYTHICAL_SET=nearbyLookup('梦幻|时拉比|基拉祈|代欧奇希斯|玛纳霏|霏欧纳|达克莱伊|谢米|阿尔宙斯|比克提尼|凯路迪欧|美洛耶塔|盖诺赛克特|蒂安希|胡帕|波尔凯尼恩|玛机雅娜|玛夏多|捷拉奥拉|美录坦|美录梅塔|萨戮德|桃歹郎');
-var NEARBY_ULTRA_SET=nearbyLookup('虚吾伊德|爆肌蚊|费洛美螂|电束木|铁火辉夜|纸御剑|恶食大王|毒贝比|四颚针龙|垒磊石|砰头小丑');
+var NEARBY_SPECIAL={};
+var nearbySpecialPromise=null;
+function ensureNearbySpecial(){if(nearbySpecialPromise)return nearbySpecialPromise;nearbySpecialPromise=hudFetch(PKM_DATA_BASE+'nearby-special.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var m=(j&&j.data&&typeof j.data==='object'&&!Array.isArray(j.data))?j.data:((j&&typeof j==='object'&&!Array.isArray(j))?j:{});NEARBY_SPECIAL={};for(var k in m){if(m[k])NEARBY_SPECIAL[k]=String(m[k]);}try{pkmHudRenderCurrent();}catch(e){}return NEARBY_SPECIAL;}).catch(function(){return NEARBY_SPECIAL;});return nearbySpecialPromise;}
 function nearbyTruthy(v){if(v===true||v===1)return true;if(v===false||v===0||v==null)return false;var s=String(v).trim().toLowerCase();if(!s)return false;if(/^(?:否|false|0|no|n|普通|非闪光|非異色|非异色)$/.test(s))return false;return /^(?:是|true|1|yes|y|闪光|異色|异色|shiny)$/.test(s)||/闪光|異色|异色|shiny/.test(s);}
 function nearbyList(v){if(v==null)return [];if(Array.isArray(v))return v.map(function(x){return String(x||'').trim();}).filter(Boolean);if(typeof v==='object')return Object.keys(v).filter(function(k){return v[k];});return String(v).split(/[\/、,，|;+；]+/).map(function(x){return x.trim();}).filter(Boolean);}
 function nearbyNormalizeEntry(raw){raw=(raw&&typeof raw==='object')?raw:{};var p=Object.assign({},raw),nm=String(p.名字||p.名称||p.name||p.species||'').trim(),en=String(p.英文名||p.EnglishName||p.englishName||p.name_en||'').trim(),types=[];[p.属性1,p.类型1].some(function(x){if(String(x||'').trim()){types.push(String(x).trim());return true;}return false;});[p.属性2,p.类型2].some(function(x){if(String(x||'').trim()&&String(x).trim()!=='无'){types.push(String(x).trim());return true;}return false;});if(!types.length){var mixed=nearbyList(p.属性||p.类型||p.types);types=mixed.slice(0,2);}var tags=[];[p.状态,p.标签,p.特征,p.稀有度,p.分类,p.形态,p.特殊形态,p.form,p.tags].forEach(function(v){nearbyList(v).forEach(function(x){if(tags.indexOf(x)<0)tags.push(x);});});p.名字=nm;p.英文名=en;p.数量=Math.max(1,parseInt(p.数量||p.count||p.数量上限||1,10)||1);p.是否闪光=nearbyTruthy(p.是否闪光!=null?p.是否闪光:(p.闪光!=null?p.闪光:p.shiny));p.状态=String(p.状态||p.status||'普通');p.图标=String(p.图标||p.图片||p.icon||p.img||'');p.属性1=types[0]||'';p.属性2=types[1]||'无';p._nearbyTags=tags;return p;}
@@ -3725,7 +3725,7 @@ function nearbyNormName(name){var t=String(name||'').trim();try{if(typeof baseNa
 function nearbyTypeColor(tp){return NEARBY_TYPE_COLORS[String(tp||'').trim()]||'#7d95b5';}
 function nearbyHexToRgba(hex,a){hex=String(hex||'').replace('#','');if(hex.length===3)hex=hex.replace(/(.)/g,'$1$1');var n=parseInt(hex,16);if(!isFinite(n))return 'rgba(125,149,181,'+(a||1)+')';var r=(n>>16)&255,g=(n>>8)&255,b=n&255;return 'rgba('+r+','+g+','+b+','+(a==null?1:a)+')';}
 function nearbyAllText(p){p=(p&&Array.isArray(p._nearbyTags))?p:nearbyNormalizeEntry(p);return [p.名字,p.英文名,p.状态,(p._nearbyTags||[]).join(' ')].join(' ');}
-function nearbyCategoryMeta(raw){var p=nearbyNormalizeEntry(raw),nm=nearbyNormName(p.名字),txt=nearbyAllText(p),shiny=p.是否闪光,boss=/霸主|头目|頭目|首领|首領|boss|alpha/i.test(txt),mega=/(?:^|[\s·_-])mega(?:[\s·_-]|$)|\bmage\b|mega进化|mega進化|超级进化|超級進化|超进化|超進化/i.test(txt)||/^(?:Mega|mega|MAGE|mage)/.test(String(p.名字||'')),dynamax=/超极巨|超極巨|极巨化|極巨化|极巨|極巨|dynamax|gigantamax|g-max/i.test(txt),ultra=/异兽|異獸|究极异兽|究極異獸|ultra\s*beast|\bUB\b/i.test(txt)||!!NEARBY_ULTRA_SET[nm],mythical=/幻兽|幻獸|mythical/i.test(txt)||!!NEARBY_MYTHICAL_SET[nm],legendary=!mythical&&!ultra&&(/神兽|神獸|传说宝可梦|傳說寶可夢|legendary/i.test(txt)||!!NEARBY_LEGENDARY_SET[nm]),t1=String(p.属性1||'').trim(),t2=String(p.属性2||'').trim();if(t2==='无')t2='';if(!t1){var _nt=nearbyTypeCache[nearbyTypeCacheKeyOf(p)];if(_nt){t1=_nt.type1||'';if(!t2)t2=_nt.type2||'';}}var c1=nearbyTypeColor(t1||(legendary?'龙':'一般')),c2=t2?nearbyTypeColor(t2):c1,primary=legendary?'legendary':mythical?'mythical':ultra?'ultra':boss?'boss':mega?'mega':dynamax?'dynamax':shiny?'shiny':'normal';if(primary==='mythical'){c1='#ff78a9';c2='#b98cff';}else if(primary==='ultra'){c1='#00e5ff';c2='#7c3aed';}else if(primary==='boss'){c1='#ff9a3d';c2='#dc2626';}else if(primary==='mega'){c1='#58c8ff';c2='#8b5cf6';}else if(primary==='dynamax'){c1='#ff5cac';c2='#e11d48';}else if(primary==='shiny'){c1='#ffe47a';c2='#e6b800';}return {pokemon:p,name:nm,text:txt,legendary:legendary,mythical:mythical,ultra:ultra,boss:boss,mega:mega,dynamax:dynamax,shiny:shiny,type1:t1,type2:t2,primary:primary,accent1:c1,accent2:c2,soft1:nearbyHexToRgba(c1,.28),soft2:nearbyHexToRgba(c2,.20),glow1:nearbyHexToRgba(c1,.38),glow2:nearbyHexToRgba(c2,.28)};}
+function nearbyCategoryMeta(raw){var p=nearbyNormalizeEntry(raw),nm=nearbyNormName(p.名字),txt=nearbyAllText(p),shiny=p.是否闪光,boss=/霸主|头目|頭目|首领|首領|boss|alpha/i.test(txt),mega=/(?:^|[\s·_-])mega(?:[\s·_-]|$)|\bmage\b|mega进化|mega進化|超级进化|超級進化|超进化|超進化/i.test(txt)||/^(?:Mega|mega|MAGE|mage)/.test(String(p.名字||'')),dynamax=/超极巨|超極巨|极巨化|極巨化|极巨|極巨|dynamax|gigantamax|g-max/i.test(txt),ultra=/异兽|異獸|究极异兽|究極異獸|ultra\s*beast|\bUB\b/i.test(txt)||NEARBY_SPECIAL[nm]==='ultra',mythical=/幻兽|幻獸|mythical/i.test(txt)||NEARBY_SPECIAL[nm]==='mythical',legendary=!mythical&&!ultra&&(/神兽|神獸|传说宝可梦|傳說寶可夢|legendary/i.test(txt)||NEARBY_SPECIAL[nm]==='legendary'),t1=String(p.属性1||'').trim(),t2=String(p.属性2||'').trim();if(t2==='无')t2='';if(!t1){var _nt=nearbyTypeCache[nearbyTypeCacheKeyOf(p)];if(_nt){t1=_nt.type1||'';if(!t2)t2=_nt.type2||'';}}var c1=nearbyTypeColor(t1||(legendary?'龙':'一般')),c2=t2?nearbyTypeColor(t2):c1,primary=legendary?'legendary':mythical?'mythical':ultra?'ultra':boss?'boss':mega?'mega':dynamax?'dynamax':shiny?'shiny':'normal';if(primary==='mythical'){c1='#ff78a9';c2='#b98cff';}else if(primary==='ultra'){c1='#00e5ff';c2='#7c3aed';}else if(primary==='boss'){c1='#ff9a3d';c2='#dc2626';}else if(primary==='mega'){c1='#58c8ff';c2='#8b5cf6';}else if(primary==='dynamax'){c1='#ff5cac';c2='#e11d48';}else if(primary==='shiny'){c1='#ffe47a';c2='#e6b800';}return {pokemon:p,name:nm,text:txt,legendary:legendary,mythical:mythical,ultra:ultra,boss:boss,mega:mega,dynamax:dynamax,shiny:shiny,type1:t1,type2:t2,primary:primary,accent1:c1,accent2:c2,soft1:nearbyHexToRgba(c1,.28),soft2:nearbyHexToRgba(c2,.20),glow1:nearbyHexToRgba(c1,.38),glow2:nearbyHexToRgba(c2,.28)};}
 function nearbyCardPriority(raw){var m=nearbyCategoryMeta(raw),s=0;if(m.legendary)s+=700;if(m.mythical)s+=640;if(m.ultra)s+=580;if(m.boss)s+=440;if(m.mega)s+=360;if(m.dynamax)s+=300;if(m.shiny)s+=240;s+=(Number(m.pokemon&&m.pokemon.数量)||0);return s;}
 function nearbySortedKeys(obj){return Object.keys(obj||{}).map(function(k){return {key:k,score:nearbyCardPriority(obj[k])};}).sort(function(a,b){return b.score-a.score;}).map(function(x){return x.key;});}
 function nearbyMarkHTML(kind,label,text,style){return '<span class="nb-mark '+kind+'"'+(style?' style="'+style+'"':'')+' title="'+esc(label)+'"><span>'+text+'</span></span>';}
@@ -5181,7 +5181,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930af';
+var PKM_DATA_REV='r20260930ag';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -8797,6 +8797,7 @@ ensureItemAlias();
 ensureMoveAlias();
 ensurePortraits();
 ensureItemCategories();
+ensureNearbySpecial();
 
 resolvePkmImgs(app);
 resolveItemImgs(app);
