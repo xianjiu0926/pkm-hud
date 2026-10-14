@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.2.0';
+var PK_VER='5.2.1';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -3417,8 +3417,10 @@ function resolvePkmBgRepo(el,slug,shiny,name){
   resolvePkmBgRepo(el,slug,shiny,name);
 }
 
-var BADGE_DIR={'关都':'guandu','城都':'chengdu','丰缘':'fengyuan','神奥':'shenao','合众':'hezhong','卡洛斯':'kaluosi','伽勒尔':'jialeer','帕底亚':'padiya'};
-var BADGE_MAP={'关都':[[1,'岩石','灰色徽章','深灰市'],[2,'水','蓝色徽章','华蓝市'],[3,'电','橙色徽章','枯叶市'],[4,'草','彩虹徽章','玉虹市'],[5,'毒','粉红徽章','浅红市'],[6,'超能力','金黄徽章','金黄市'],[7,'火','深红徽章','红莲镇'],[8,'地面','绿色徽章','常青市']],'城都':[[1,'飞行','飞翼徽章','桔梗市'],[2,'虫','昆虫徽章','桧皮镇'],[3,'一般','常规徽章','满金市'],[4,'幽灵','幻影徽章','圆珠市'],[5,'格斗','打击徽章','湛蓝市'],[6,'钢','钢铁徽章','浅葱市'],[7,'冰','冰雪徽章','卡吉镇'],[8,'龙','升龙徽章','烟墨市']],'丰缘':[[1,'岩石','岩石徽章','卡那兹市'],[2,'格斗','拳击徽章','武斗镇'],[3,'电','电力徽章','紫堇市'],[4,'火','烈焰徽章','釜炎镇'],[5,'一般','天秤徽章','橙华市'],[6,'飞行','白羽徽章','茵郁市'],[7,'超能力','心灵徽章','绿岭市'],[8,'水','雨滴徽章','琉璃市']],'神奥':[[1,'岩石','石炭徽章','黑金市'],[2,'草','森林徽章','百代市'],[3,'格斗','铺石徽章','帷幕市'],[4,'水','湿地徽章','野原市'],[5,'幽灵','遗迹徽章','家缘市'],[6,'钢','矿山徽章','水脉市'],[7,'冰','冰河徽章','雪峰市'],[8,'电','灯塔徽章','滨海市']],'合众':[[1,'草/火/水','三元徽章','三曜市'],[2,'一般','基础徽章','七宝市'],[3,'毒','毒烟徽章','立涌市'],[4,'虫','甲虫徽章','飞云市'],[5,'电','伏特徽章','雷文市'],[6,'地面','震动徽章','帆巴市'],[7,'飞行','喷射徽章','吹寄市'],[8,'冰','冰柱徽章','雪花市'],[9,'龙','传说徽章','双龙市'],[10,'水','海浪徽章','青海波市']],'卡洛斯':[[1,'虫','虫虫徽章','白檀市'],[2,'岩石','崖壁徽章','遥香市'],[3,'格斗','战斗徽章','娑罗市'],[4,'草','植物徽章','比翼市'],[5,'电','电压徽章','密阿雷市'],[6,'妖精','妖精徽章','香薰市'],[7,'超能力','幻彩徽章','百刻市'],[8,'冰','冰山徽章','映雪市']],'伽勒尔':[[1,'草','草之徽章','草路镇'],[2,'水','水之徽章','水舟镇'],[3,'火','火之徽章','机擎市'],[4,'格斗','格斗徽章','溯传镇'],[5,'幽灵','幽灵徽章','溯传镇'],[6,'妖精','妖精徽章','舞姿镇'],[7,'岩石','岩石徽章','战竞镇'],[8,'冰','冰之徽章','战竞镇'],[9,'恶','恶之徽章','尖钉镇'],[10,'龙','龙之徽章','拳关市']],'帕底亚':[[1,'虫','虫之徽章','圆模镇'],[2,'草','草之徽章','深钵镇'],[3,'水','水之徽章','玻瓶市'],[4,'电','电之徽章','酿光市'],[5,'一般','一般徽章','锦汇市'],[6,'冰','冰之徽章','霜抹山'],[7,'幽灵','幽灵徽章','冰柜镇'],[8,'超能力','超能徽章','焙固镇']]};
+var BADGE_DIR={};
+var BADGE_MAP={};
+var badgeRulesPromise=null;
+function ensureBadgeRules(){if(badgeRulesPromise)return badgeRulesPromise;badgeRulesPromise=hudFetch(PKM_DATA_BASE+'badge-rules.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var d=(j&&j.data&&typeof j.data==='object'&&!Array.isArray(j.data))?j.data:((j&&typeof j==='object'&&!Array.isArray(j))?j:{});BADGE_DIR={};BADGE_MAP={};for(var k in d){var it=d[k];if(!it||typeof it!=='object')continue;if(it.dir)BADGE_DIR[k]=String(it.dir);if(Array.isArray(it.badges))BADGE_MAP[k]=it.badges;}try{pkmHudRenderCurrent();}catch(e){}return BADGE_MAP;}).catch(function(){return BADGE_MAP;});return badgeRulesPromise;}
 var badgeSel=null;
 var badgeMinHCache=0;
 function badgeMinH(){if(badgeMinHCache)return badgeMinHCache;var d=document.createElement('div');d.className='badge-grid';d.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;width:100%;';var tab=BADGE_MAP['合众']||[];var rec={region:'合众',list:[],cnt:0};d.innerHTML=tab.map(function(e,i){return badgeImg('合众',e,badgeGot(rec,e,i),true);}).join('');document.body.appendChild(d);badgeMinHCache=d.offsetHeight||0;if(d.parentNode)d.parentNode.removeChild(d);return badgeMinHCache;}
@@ -5181,7 +5183,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930ah';
+var PKM_DATA_REV='r20260930ai';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -8798,6 +8800,7 @@ ensureMoveAlias();
 ensurePortraits();
 ensureItemCategories();
 ensureNearbySpecial();
+ensureBadgeRules();
 
 resolvePkmImgs(app);
 resolveItemImgs(app);
