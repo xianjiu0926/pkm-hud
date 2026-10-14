@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.1.8';
+var PK_VER='5.1.9';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -3741,13 +3741,13 @@ function nearbyPageHTML(){var obj=stat_data.附近宝可梦||{};var keys=nearbyS
 function openNearbyPage(){pageOverlayPopout(false);pageOverlay.innerHTML='<div class="page nearby-page"><div class="page-head"><button class="page-close" data-page-close>✕</button></div><div class="page-body nearby-body">'+nearbyPageHTML()+'</div></div>';pageOverlay.classList.add('open');bindPageInteractions();resolvePkmImgs(pageOverlay);resolveNearbyTypes(pageOverlay);hudResolvePkidbImages(pageOverlay);}
 
 var BAG_CATS=[
-{key:'回复',icon:'回复.png',color:'#ff6b9d'},
-{key:'精灵球',icon:'精灵球.png',color:'#ff4d4d'},
-{key:'战斗道具',icon:'战斗道具.png',color:'#ff8a3d'},
-{key:'树果',icon:'树果.png',color:'#5ec23a'},
-{key:'道具',icon:'道具.png',color:'#4da3ff'},
-{key:'招式学习器',icon:'招式学习器.png',color:'#9d5cff'},
-{key:'重要物品',icon:'重要物品.png',color:'#ffc94d'}
+{key:'回复',icon:'回复.png',color:'#ffa6c4'},
+{key:'精灵球',icon:'精灵球.png',color:'#ff9494'},
+{key:'战斗道具',icon:'战斗道具.png',color:'#ffb98b'},
+{key:'树果',icon:'树果.png',color:'#86c270'},
+{key:'道具',icon:'道具.png',color:'#94c8ff'},
+{key:'招式学习器',icon:'招式学习器.png',color:'#c49dff'},
+{key:'重要物品',icon:'重要物品.png',color:'#ffdf94'}
 ];
 var BAG_CAT_KEYS=BAG_CATS.map(function(c){return c.key;});
 var ITEM_CAT_MAP={};
