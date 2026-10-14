@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.1.0';
+var PK_VER='5.1.1';
 /*PK_NOTICE_BEGIN
+v5.1.1 更新：
+· 修复切换手机壳后主页背包快捷栏图标不刷新的问题
 v5.1.0 更新：
 · 新增「手机」重要物品：点开可切换手机壳，选中的手机壳会写回背包图标
 v5.0.9 更新：
@@ -6618,9 +6620,8 @@ function pickPhoneCase(name){
     if(pageOverlay&&pageOverlay.classList.contains('open')){
       var list=pageOverlay.querySelector('#bag-list');
       if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}
-    }else{
-      pkmHudRenderCurrent();
     }
+    pkmHudRenderCurrent();
   };
   pkmHudPersistStatData().then(done,done);
 }
