@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.1.1';
+var PK_VER='5.1.2';
 /*PK_NOTICE_BEGIN
+v5.1.2 更新：
+· 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
 v5.1.1 更新：
 · 修复切换手机壳后主页背包快捷栏图标不刷新的问题
 v5.1.0 更新：
@@ -6578,6 +6580,7 @@ function loadPhoneCases(){
 function phoneCaseIconURL(n){
   n=String(n||'').trim();
   if(!n)return '';
+  if(n==='默认手机壳')return pkmRepoFirst(PKM_DATA_BASE+'phone-cases/手机.webp');
   if(/^https?:/i.test(n))return n;
   return pkmRepoFirst(PKM_DATA_BASE+'phone-cases/'+encodeURIComponent(n)+'.webp');
 }
@@ -6598,7 +6601,8 @@ function openPhoneCasePicker(){
   loadPhoneCases().then(function(cases){
     if(!cases||!cases.length){hudMsg('手机壳数据加载失败');return;}
     var cur=(stat_data.背包&&stat_data.背包['手机']&&stat_data.背包['手机'].图标)?String(stat_data.背包['手机'].图标).trim():'';
-    var grid='<div class="phone-cell'+(cur?'':' on')+'" data-phone-pick=""><img src="'+esc(itemImgOf('手机')||pkmRepoFirst(PKM_DATA_BASE+'phone-cases/手机.webp'))+'" onerror="itemImgErr(this)"><span class="phone-cell-name">默认</span></div>';
+    var isDefault=(cur===''||cur==='默认手机壳');
+    var grid='<div class="phone-cell'+(isDefault?' on':'')+'" data-phone-pick=""><img src="'+esc(itemImgOf('手机')||pkmRepoFirst(PKM_DATA_BASE+'phone-cases/手机.webp'))+'" onerror="itemImgErr(this)"><span class="phone-cell-name">默认</span></div>';
     grid+=cases.map(function(n){
       var on=(cur===n)?' on':'';
       return '<div class="phone-cell'+on+'" data-phone-pick="'+esc(n)+'"><img src="'+esc(phoneCaseIconURL(n))+'" onerror="itemImgErr(this)"><span class="phone-cell-name">'+esc(n)+'</span></div>';
@@ -6612,7 +6616,7 @@ function pickPhoneCase(name){
   name=String(name==null?'':name);
   var bag=stat_data.背包=stat_data.背包||{};
   var it=bag['手机']=bag['手机']||{类型:'重要物品',数量:1,图标:''};
-  if(name===''){delete it.图标;}
+  if(name===''){it.图标='默认手机壳';}
   else{it.图标=name;}
   var done=function(){
     overlay.classList.remove('open');
