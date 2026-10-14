@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.1.6';
+var PK_VER='5.1.7';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -3754,7 +3754,7 @@ var ITEM_CAT_MAP={};
 var itemCatPromise=null;
 function ensureItemCategories(){if(itemCatPromise)return itemCatPromise;itemCatPromise=hudFetch(PKM_DATA_BASE+'item-categories.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var m=(j&&j.data&&typeof j.data==='object'&&!Array.isArray(j.data))?j.data:((j&&typeof j==='object'&&!Array.isArray(j))?j:{});ITEM_CAT_MAP={};for(var k in m){if(m[k])ITEM_CAT_MAP[k]=String(m[k]);}try{refreshBagLists();}catch(e){}return ITEM_CAT_MAP;}).catch(function(){return ITEM_CAT_MAP;});return itemCatPromise;}
 function bagCatIconURL(c){return pkmRepoFirst(PKM_DATA_BASE+'UI/背包分类/'+c.icon);}
-function bagCatIcon(c){return '<img class="bag-cat-icon" src="'+esc(bagCatIconURL(c))+'" alt="'+esc(c.key)+'" title="'+esc(c.key)+'" style="width:20px;height:20px;object-fit:contain">';}
+function bagCatIcon(c){return '<img class="bag-cat-icon" src="'+esc(bagCatIconURL(c))+'" alt="'+esc(c.key)+'" title="'+esc(c.key)+'" style="width:20px;height:20px;object-fit:contain;display:block">';}
 function itemCategoryOf(name,aiType){var n=String(name||'').trim();if(!n)return '道具';if(/技能机|招式学习器|招式记录|秘传学习器/.test(n))return '招式学习器';var hw=normItemName(n);if(ITEM_CAT_MAP[hw])return ITEM_CAT_MAP[hw];if(ITEM_CAT_MAP[n])return ITEM_CAT_MAP[n];var t=String(aiType||'').trim();if(BAG_CAT_KEYS.indexOf(t)>=0)return t;return '道具';}
 function refreshBagLists(){var lists=document.querySelectorAll('#bag-list');for(var i=0;i<lists.length;i++){lists[i].innerHTML=bagItemsHTML();}if(pageOverlay){try{resolveItemImgs(pageOverlay);}catch(e){}}var app=document.getElementById(winMode==='0'?'pkm-hud-inline':'pkm-hud-slot');if(app){try{resolveItemImgs(app);}catch(e){}}}
 function bagCategories(){var cats=BAG_CATS.map(function(c){return {key:c.key,label:c.key,icon:c.icon,color:c.color,items:[]};});var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var cat=itemCategoryOf(name,it.类型);var c=cats.find(function(x){return x.key===cat;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
