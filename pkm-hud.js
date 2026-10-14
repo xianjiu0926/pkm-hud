@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.2.5';
+var PK_VER='5.2.6';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -525,7 +525,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.item-icon.placeholder{display:flex;align-items:center;justify-content:center;color:var(--dim);background:rgba(170,204,255,.12);border-radius:4px;width:28px;height:28px}'+
 '.item-name{flex:1;font-size:.85rem;color:var(--text)}'+
 '.item-count{font-size:.85rem;color:var(--dim)}'+
-'.bag-list>.item-entry{display:grid;grid-template-columns:28px minmax(0,1fr) 36px 58px;column-gap:8px;align-items:center;padding-right:clamp(8px,2vw,12px)}'+
+'.bag-list>.item-entry{display:grid;grid-template-columns:28px minmax(0,1fr) 36px auto 58px;column-gap:8px;align-items:center;padding-right:clamp(8px,2vw,12px)}'+
 '.bag-list>.item-entry .item-icon-wrap{width:28px;min-width:28px}'+
 '.bag-list>.item-entry .item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
 '.bag-list>.item-entry .item-count{width:36px;min-width:36px;text-align:right;justify-self:end}'+
@@ -3765,8 +3765,9 @@ function itemCategoryOf(name,aiType){var n=String(name||'').trim();if(!n)return 
 function refreshBagLists(){var lists=document.querySelectorAll('#bag-list');for(var i=0;i<lists.length;i++){lists[i].innerHTML=bagItemsHTML();}if(pageOverlay){try{resolveItemImgs(pageOverlay);}catch(e){}}var app=document.getElementById(winMode==='0'?'pkm-hud-inline':'pkm-hud-slot');if(app){try{resolveItemImgs(app);}catch(e){}}}
 function bagCategories(){var cats=BAG_CATS.map(function(c){return {key:c.key,label:c.key,icon:c.icon,color:c.color,items:[]};});var bag=stat_data.背包||{};Object.keys(bag).forEach(function(name){var it=bag[name];if(!it||typeof it!=='object'||!(('类型')in it))return;var cat=itemCategoryOf(name,it.类型);var c=cats.find(function(x){return x.key===cat;});if(c)c.items.push({name:name,count:Number(it.数量)||0,icon:String(it.图标||'')});});return cats;}
 var activeBag='道具';
-function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0||it.name.indexOf('招式学习器')>=0||it.name.indexOf('招式记录')>=0||it.name.indexOf('秘传学习器')>=0);var tmMove=isTM?tmMoveName(it.name):'';var icon;if(tmMove){var iconSlug=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');icon=iconSlug?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconSlug,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder tm-wiki" data-tm="'+esc(tmMove)+'">?</span></span>';}else if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else if(pkmItemSource==='serebii'){var ov2=bagPhoneIcon(it.name)||itemImgOf(it.name);if(ov2!==undefined){icon=ov2?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov2)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-item-en="'+esc(it.icon||'')+'" data-cls="item-icon">?</span></span>';}}else{var ov=bagPhoneIcon(it.name)||itemImgOf(it.name);if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=tmMove?' data-tm="'+esc(tmMove)+'" style="cursor:pointer"':((!isTM&&itemClickEnabled)?' data-bag-item="'+esc(it.name)+'" data-bag-icon="'+esc(it.icon||'')+'"':'');return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span><button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
-function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'" title="'+esc(c.key)+'">'+bagCatIcon(c)+'</button>';}).join('');return frame('背包','<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
+var bagCatEdit=false;
+function bagItemsHTML(){var cats=bagCategories();var cur=cats.find(function(c){return c.key===activeBag;})||cats[0];if(!cur.items.length)return '<div class="empty">这里什么都没有...</div>';return cur.items.map(function(it){var isTM=(it.name.indexOf('技能机')>=0||it.name.indexOf('招式学习器')>=0||it.name.indexOf('招式记录')>=0||it.name.indexOf('秘传学习器')>=0);var tmMove=isTM?tmMoveName(it.name):'';var icon;if(tmMove){var iconSlug=String(it.icon||'').toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'');icon=iconSlug?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconSlug,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder tm-wiki" data-tm="'+esc(tmMove)+'">?</span></span>';}else if(isTM){var iconName=(itemIconName(it.name)||String(it.icon||'')).toLowerCase();if(iconName.slice(-4)==='.png'){iconName=iconName.slice(0,-4);}icon=iconName?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(psItemUrl(iconName,'bag'))+'" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else if(pkmItemSource==='serebii'){var ov2=bagPhoneIcon(it.name)||itemImgOf(it.name);if(ov2!==undefined){icon=ov2?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov2)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-item-en="'+esc(it.icon||'')+'" data-cls="item-icon">?</span></span>';}}else{var ov=bagPhoneIcon(it.name)||itemImgOf(it.name);if(ov!==undefined){icon=ov?'<span class="item-icon-wrap"><img class="item-icon" src="'+esc(ov)+'" referrerpolicy="origin" onerror="itemImgErr(this)"></span>':'<span class="item-icon-wrap"><span class="item-icon placeholder">?</span></span>';}else{icon='<span class="item-icon-wrap"><span class="item-icon placeholder item-wiki" data-item="'+esc(it.name)+'" data-cls="item-icon">?</span></span>';}}var click=tmMove?' data-tm="'+esc(tmMove)+'" style="cursor:pointer"':((!isTM&&itemClickEnabled)?' data-bag-item="'+esc(it.name)+'" data-bag-icon="'+esc(it.icon||'')+'"':'');return '<div class="item-entry"'+click+'>'+icon+'<span class="item-name">'+esc(it.name)+'</span><span class="item-count">×'+it.count+'</span>'+(bagCatEdit?'<button class="btn-small" data-bag-recat="'+esc(it.name)+'">改类</button>':'')+'<button class="btn-small" data-bag-discard="'+esc(it.name)+'">丢弃</button></div>';}).join('');}
+function bagHTML(){var tabs=bagCategories().map(function(c){return '<button class="bag-tab'+(c.key===activeBag?' active':'')+'" data-bag="'+c.key+'" title="'+esc(c.key)+'">'+bagCatIcon(c)+'</button>';}).join('');var editBtn='<button class="btn-small" data-bag-cat-edit style="margin-left:6px;padding:2px 8px;font-size:.7rem;line-height:1.3">'+(bagCatEdit?'完成':'改分类')+'</button>';return frame('背包'+editBtn,'<div class="bag-tabs">'+tabs+'</div><div class="bag-list" id="bag-list">'+bagItemsHTML()+'</div>');}
 
 var MAPS_DATA=[];
 var MAPS=[];
@@ -5935,6 +5936,35 @@ function openPhoneCasePicker(){
     overlay.classList.add('open');
   });
 }
+function openBagRecatPicker(name){
+  name=String(name==null?'':name);
+  if(!name)return;
+  var cur=itemCategoryOf(name,(stat_data.背包&&stat_data.背包[name]&&stat_data.背包[name].类型)||'');
+  var grid=BAG_CATS.map(function(c){
+    var on=(c.key===cur)?' on':'';
+    return '<div class="phone-cell'+on+'" data-bag-recat-pick="'+esc(c.key)+'" data-bag-recat-name="'+esc(name)+'"><img src="'+esc(bagCatIconURL(c))+'" onerror="itemImgErr(this)"><span class="phone-cell-name">'+esc(c.key)+'</span></div>';
+  }).join('');
+  clearBack();
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">改分类：'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="phone-grid">'+grid+'</div></div></div>';
+  overlay.classList.add('open');
+}
+function pickBagCat(name,cat){
+  name=String(name==null?'':name);
+  var bag=stat_data.背包=stat_data.背包||{};
+  var it=bag[name];
+  if(!it||typeof it!=='object'){hudMsg('找不到该道具');return;}
+  it.类型=String(cat||'');
+  var done=function(){
+    overlay.classList.remove('open');
+    clearBack();
+    if(pageOverlay&&pageOverlay.classList.contains('open')){
+      var list=pageOverlay.querySelector('#bag-list');
+      if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}
+    }
+    pkmHudRenderCurrent();
+  };
+  pkmHudPersistStatData().then(done,done);
+}
 function pickPhoneCase(name){
   name=String(name==null?'':name);
   var bag=stat_data.背包=stat_data.背包||{};
@@ -7451,6 +7481,9 @@ pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){e
   pageOverlay.querySelectorAll('.bag-tab[data-bag]').forEach(function(btn){btn.addEventListener('click',function(){activeBag=btn.getAttribute('data-bag');pageOverlay.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===btn);});var list=pageOverlay.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}});});
   pageOverlay.querySelectorAll('.badge-tab[data-bregion]').forEach(function(b){b.addEventListener('click',function(){badgeSel=b.getAttribute('data-bregion');try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:badgeSel}));}catch(e){}var pg=pageOverlay.querySelector('.page');var oldTabs=pageOverlay.querySelector('.badge-tabs');var pageTop=pg?pg.scrollTop:0;var tabsLeft=oldTabs?oldTabs.scrollLeft:0;pageOverlay.querySelector('.page-body').innerHTML=badgePageHTML();bindPageInteractions();if(pg){pg.scrollTop=pageTop;}var newTabs=pageOverlay.querySelector('.badge-tabs');if(newTabs){newTabs.scrollLeft=tabsLeft;}});});
   pageOverlay.querySelectorAll('[data-bag-discard]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();discardBagItemAsk(btn.getAttribute('data-bag-discard'));});});
+  var bce=pageOverlay.querySelector('[data-bag-cat-edit]');
+  if(bce){bce.addEventListener('click',function(e){e.stopPropagation();bagCatEdit=!bagCatEdit;pageOverlay.querySelector('.page-body').innerHTML=bagHTML();bindPageInteractions();resolveItemImgs(pageOverlay);});}
+  pageOverlay.querySelectorAll('[data-bag-recat]').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();openBagRecatPicker(btn.getAttribute('data-bag-recat'));});});
 var bn=pageOverlay.querySelector('[data-box-new]');
 if(bn){bn.addEventListener('click',function(e){e.stopPropagation();openNewBoxModal();});}
 var bd=pageOverlay.querySelector('[data-box-del]');
@@ -8073,6 +8106,7 @@ function hudBindRootDelegation(app){
     var rel=x('[data-rel]');if(rel){e.stopPropagation();showRelPortrait(rel.getAttribute('data-rel'));return;}
     var bag=x('#home-fold .bag-tab[data-bag]');if(bag){activeBag=bag.getAttribute('data-bag');var home2=app.querySelector('#home-fold');if(home2){home2.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===bag);});var list=home2.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(home2);}}resizeFrame();return;}
     var bd=x('#home-fold [data-bag-discard]');if(bd){e.stopPropagation();discardBagItemAsk(bd.getAttribute('data-bag-discard'));return;}
+    var br=x('#home-fold [data-bag-recat]');if(br){e.stopPropagation();openBagRecatPicker(br.getAttribute('data-bag-recat'));return;}
     var tmv=x('#home-fold .item-entry[data-tm]');if(tmv){e.stopPropagation();showMoveInfo(tmv.getAttribute('data-tm'));return;}
     var item=x('#home-fold .item-entry[data-item]');if(item){e.stopPropagation();if(itemClickEnabled)showItemInfo(item.getAttribute('data-item'),false,item.getAttribute('data-item-en')||'');return;}
     var bc=x('#badge-cycle');if(bc){badgeClick(e);return;}
@@ -8170,6 +8204,7 @@ var rcl=e.target.closest('[data-relset-clear]');if(rcl){e.stopPropagation();var 
 var rdl=e.target.closest('[data-reldel]');if(rdl){e.stopPropagation();deleteRelAsk(rdl.getAttribute('data-reldel'));return;}
 var pcb=e.target.closest('[data-phone-case-btn]');if(pcb){e.stopPropagation();openPhoneCasePicker();return;}
 var pcp=e.target.closest('[data-phone-pick]');if(pcp){e.stopPropagation();pickPhoneCase(pcp.getAttribute('data-phone-pick')||'');return;}
+var brp=e.target.closest('[data-bag-recat-pick]');if(brp){e.stopPropagation();pickBagCat(brp.getAttribute('data-bag-recat-name'),brp.getAttribute('data-bag-recat-pick'));return;}
 var itm=e.target.closest('[data-item]');if(itm){e.stopPropagation();if(itemClickEnabled)showItemInfo(itm.getAttribute('data-item'),true,itm.getAttribute('data-item-en')||'');return;}
     if(e.target===overlay){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();var _pb2=popBack();if(_pb2){overlay.innerHTML=_pb2;}else{overlay.classList.remove('open');}return;}
         if(e.target.closest('[data-close]')){if(e.cancelable)e.preventDefault();hudArmGestureShield(overlay,750);diyVisionCancel();overlay.classList.remove('open');clearBack();return;}
