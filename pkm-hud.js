@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.2.4';
+var PK_VER='5.2.5';
 /*PK_NOTICE_BEGIN
 v5.1.2 更新：
 · 背包图标字段支持「默认手机壳」：填「默认手机壳」显示默认手机图，切换手机壳写回中文图标名
@@ -510,7 +510,10 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.rel-fill{height:100%;background:#f08888;border-radius:4px}'+
 '.rel-val{width:30px;text-align:right;flex-shrink:0;color:var(--dim)}'+
 '.empty{text-align:center;padding:10px 0;color:var(--dim);letter-spacing:2px;font-size:.82rem}'+
-'.bag-tabs{display:flex;gap:4px;margin-bottom:5px;justify-content:center}'+
+'.bag-tabs{display:flex;gap:4px;margin-bottom:5px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}'+
+'.bag-tabs .bag-tab:first-child{margin-left:auto}'+
+'.bag-tabs .bag-tab:last-child{margin-right:auto}'+
+'.bag-tabs::-webkit-scrollbar{display:none}'+
 '.bag-tab{flex:0 0 auto;padding:3px 7px;font-family:inherit;font-size:.72rem;text-align:center;border:1px solid var(--frame);background:rgba(170,204,255,.12);color:var(--text);border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}'+
 '.bag-tab.active{background:rgba(43,74,111,.8);color:#fff}'+
 '.bag-list{display:flex;flex-direction:column;gap:6px;max-height:min(280px,46vh);overflow-y:auto;padding-right:4px}'+
@@ -3749,7 +3752,8 @@ var BAG_CATS=[
 {key:'树果',icon:'树果.png',color:'#86c270'},
 {key:'道具',icon:'道具.png',color:'#94c8ff'},
 {key:'招式学习器',icon:'招式学习器.png',color:'#c49dff'},
-{key:'重要物品',icon:'重要物品.png',color:'#ffdf94'}
+{key:'重要物品',icon:'重要物品.png',color:'#ffdf94'},
+{key:'食材',icon:'食材.png',color:'#7fd4c0'}
 ];
 var BAG_CAT_KEYS=BAG_CATS.map(function(c){return c.key;});
 var ITEM_CAT_MAP={};
@@ -4492,7 +4496,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930al';
+var PKM_DATA_REV='r20260930am';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
