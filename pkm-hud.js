@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.5.6';
+var PK_VER='5.5.7';
 /*PK_NOTICE_BEGIN
+v5.5.7 更新：
+· 修正 11 条招式 PP（自我再生/睡觉/羽栖等回复招式 10→5，冰山风/毒千针/勇气填充/归无之光等）
 v5.5.6 更新：
 · 道具详细效果统一为简体（149 条 effect 繁转简，共修正 393 字）
 v5.5.5 更新：
@@ -4496,7 +4498,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930as';
+var PKM_DATA_REV='r20260930at';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
