@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.3.6';
+var PK_VER='5.3.7';
 /*PK_NOTICE_BEGIN
+v5.3.7 更新：
+· 技能机支持「招式名+技能机」写法（如「挖洞技能机」「魔法闪耀技能机」「光墙技能机」），点击可查看招式详情
 v5.3.6 更新：
 · 修复图鉴列表 Gen10 御三家（叶眉鸟/博姆耿/妙澪儿）缩略图不显示的问题；图鉴英文名映射改为自动从图鉴数据补全
 v5.1.2 更新：
@@ -5514,9 +5516,10 @@ var MOVE_ALIAS={};
 var moveAliasPromise=null;function ensureMoveAlias(){if(moveAliasPromise)return moveAliasPromise;moveAliasPromise=hudFetch(PKM_DATA_BASE+'move-alias.json').then(function(r){return r.ok?r.json():null;}).then(function(j){var m=(j&&j.data&&typeof j.data==='object'&&!Array.isArray(j.data))?j.data:((j&&typeof j==='object'&&!Array.isArray(j))?j:{});for(var k in m){if(m[k])MOVE_ALIAS[k]=String(m[k]);}return MOVE_ALIAS;}).catch(function(){return MOVE_ALIAS;});return moveAliasPromise;}function moveKey(name){ensureMoveAlias();var n=t2s(String(name||'').trim());return MOVE_ALIAS[n]||n;}
 function tmMoveName(name){
   var n=String(name||'').trim();
-  var m=n.match(/^(?:技能机|招式学习器|TM)\s*[·:：]?\s*(.+)$/i);
+  var m=n.match(/^(?:技能机|招式学习器|招式记录|秘传学习器|TM|TR|HM)\s*[·:：]?\s*(.+)$/i);
+  if(!m){m=n.match(/^(.+?)\s*(?:技能机|招式学习器|招式记录|秘传学习器)$/);}
   if(!m)return '';
-  var v=m[1].trim();
+  var v=String(m[1]||'').trim();
   if(!v||/^\d+$/.test(v))return '';
   return v;
 }
