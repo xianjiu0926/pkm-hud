@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.5.8';
+var PK_VER='5.5.9';
 /*PK_NOTICE_BEGIN
+v5.5.9 更新：
+· 特性效果文字统一简体（蓄电的 effect/change 里「屬性」→「属性」）
 v5.5.8 更新：
 · 修正 12 条招式数值：极落钳/角钻/绝对零度命中率「变化」→30；9 条 Let's Go 搭档招式威力/命中/PP 按 PokeAPI 校正
 v5.5.7 更新：
@@ -4500,7 +4502,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930au';
+var PKM_DATA_REV='r20260930av';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
