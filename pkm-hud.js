@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.5.0';
+var PK_VER='5.5.1';
 /*PK_NOTICE_BEGIN
+v5.5.1 更新：
+· 附近宝可梦属性行改回不换行，卡片加宽到 54%，两个属性始终并排一行
 v5.5.0 更新：
 · 附近宝可梦卡片内边距改为固定 6px（原来是百分比，窄屏占用太多宽度），属性标签微缩，手机端两个属性稳定保持一行
 v5.4.9 更新：
@@ -480,7 +482,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.nearby-scroll{display:flex;gap:clamp(6px,2vw,10px);overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}'+
 '.nearby-scroll::-webkit-scrollbar{height:4px}'+
 '.nearby-scroll::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+
-'.nearby-card{position:relative;flex:0 0 50%;background:transparent;filter:drop-shadow(0 0 6px rgba(125,149,181,.15));cursor:pointer;scroll-snap-align:start;transition:transform .12s ease,filter .12s ease}'+
+'.nearby-card{position:relative;flex:0 0 54%;background:transparent;filter:drop-shadow(0 0 6px rgba(125,149,181,.15));cursor:pointer;scroll-snap-align:start;transition:transform .12s ease,filter .12s ease}'+
 '.nearby-card:hover{transform:translateY(-2px);filter:drop-shadow(0 0 10px rgba(125,149,181,.3))}'+
 '.nearby-card-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;min-height:64px}'+
 '.nearby-card .pk-img{width:32px;height:32px}'+
@@ -782,7 +784,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.nb-mark.mega>span{transform:rotate(-45deg)}'+
 '.nb-mark.dynamax{min-width:26px;border-radius:999px;background:linear-gradient(135deg,#ff5cac,#be123c);font-size:.42rem;letter-spacing:-.3px}'+
 '.nb-mark.shiny{border-radius:50%;min-width:16px;width:16px;padding:0;background:linear-gradient(135deg,#fff4a8,#d8a800);color:#5a4800}'+
-'.nb-pillbar{position:relative;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-height:18px;width:100%}'+'.nb-typebar{position:relative;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:2px;min-height:16px;width:100%}'+
+'.nb-pillbar{position:relative;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-height:18px;width:100%}'+'.nb-typebar{position:relative;z-index:4;display:flex;flex-wrap:nowrap;justify-content:center;gap:2px;min-height:16px;width:100%}'+
 '.nb-typebar .type-chip{padding:1px 3px 1px 13px;font-size:.62rem}'+
 '.nb-typebar .type-chip .type-ic{width:9px;height:9px;left:3px}'+
 '.nb-pill{display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:2px 6px;border-radius:999px;font-size:.56rem;font-weight:850;line-height:1.3;color:#eef6ff;background:rgba(125,149,181,.15);border:1px solid rgba(170,204,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}'+
