@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.3.8';
+var PK_VER='5.3.9';
 /*PK_NOTICE_BEGIN
+v5.3.9 更新：
+· 属性图标固定在颜色块最左侧，不再随属性名长短左右偏移
 v5.3.8 更新：
 · 属性标签全面加图标：图鉴属性、可学招式、战斗技能格、附近宝可梦、克制弹窗、招式详情统一显示属性图标
 · 地图会记住上次勾选的「城镇/道路/特殊地点」，再次打开地图保持原状态
@@ -581,7 +583,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.mv-c2{color:var(--text);text-align:center}'+
 '.mv-c3{text-align:center;display:flex;align-items:center;gap:4px;justify-content:center}'+
 '.mv-c3 .move-cat-ic{width:17px;height:17px}'+
-'.mv-c3 .type-chip{display:inline-block;min-width:54px;text-align:center;box-sizing:border-box}'+
+'.mv-c3 .type-chip{min-width:54px;box-sizing:border-box}'+
 '.mv-name{cursor:pointer}'+
 '.mv-name:hover{color:#7cc4f8}'+
 '.evo-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed rgba(170,204,255,.12);font-size:.8rem}'+
@@ -604,10 +606,12 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.move-meta{display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--dim)}'+
 '.move-type{display:inline-block;color:#fff;padding:0 5px;border-radius:8px;font-size:.66rem;line-height:1.4}'+
 '.type-ic{width:12px;height:12px;object-fit:contain;vertical-align:-2px;margin-right:3px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45));pointer-events:none}'+
+'.type-chip{display:inline-flex;align-items:center;justify-content:center;position:relative;padding-left:19px;padding-right:7px}'+
+'.type-chip .type-ic{position:absolute;left:5px;top:50%;transform:translateY(-50%);margin:0}'+
 '.move-type .type-ic{width:11px;height:11px;margin-right:2px}'+
 '.dt-hex .type-ic{display:none}'+
-'.dt-move-cell .move-type{width:auto;min-width:3.4em;padding:0 4px}'+
-'.dt-move-cell .move-type .type-ic{width:10px;height:10px;margin-right:1px}'+
+'.dt-move-cell .move-type{width:auto;min-width:3.4em;padding:0 4px;justify-content:flex-start}'+
+'.dt-move-cell .move-type .type-ic{width:10px;height:10px;margin-right:1px;flex:0 0 auto}'+
 '.move-cat{color:var(--dim)}'+'.move-cat-ic{width:13px;height:13px;object-fit:contain;vertical-align:-2px}'+
 '.ivs{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}'+
 '.iv{background:rgba(50,205,50,.14);border:1px solid rgba(50,205,50,.4);border-radius:6px;padding:1px 6px;font-size:.72rem}'+
