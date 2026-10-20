@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.4.5';
+var PK_VER='5.4.6';
 /*PK_NOTICE_BEGIN
+v5.4.6 更新：
+· 属性色块宽度收窄到刚好「图标 + 三个字」的大小（战斗卡 4.6em / 招式详情 4.7em / 可学招式 4.5em）
 v5.4.5 更新：
 · 属性色块文字改为在「图标右侧剩余空间」里居中（整体略偏右），不再按整个色块居中
 v5.4.4 更新：
@@ -595,7 +597,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.mv-c2{color:var(--text);text-align:center}'+
 '.mv-c3{text-align:center;display:flex;align-items:center;gap:4px;justify-content:center}'+
 '.mv-c3 .move-cat-ic{width:17px;height:17px}'+
-'.mv-c3 .type-chip{width:5em;min-width:5em;justify-content:center;padding:1px 3px 1px 13px;box-sizing:border-box}'+
+'.mv-c3 .type-chip{width:4.5em;min-width:4.5em;justify-content:center;padding:1px 3px 1px 13px;box-sizing:border-box}'+
 '.mv-name{cursor:pointer}'+
 '.mv-name:hover{color:#7cc4f8}'+
 '.evo-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed rgba(170,204,255,.12);font-size:.8rem}'+
@@ -622,7 +624,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.type-chip .type-ic{position:absolute;left:5px;top:50%;transform:translateY(-50%);margin:0}'+
 '.mv-c3 .type-chip .type-ic{left:1px;width:10px;height:10px}'+
 '.move-type .type-ic{width:11px;height:11px;margin-right:2px}'+
-'.move-cell .move-type{width:5em;min-width:5em;display:inline-flex;align-items:center;justify-content:center;padding:0 3px 0 12px;position:relative;box-sizing:border-box}'+
+'.move-cell .move-type{width:4.6em;min-width:4.6em;display:inline-flex;align-items:center;justify-content:center;padding:0 3px 0 12px;position:relative;box-sizing:border-box}'+
 '.move-cell .move-type .type-ic{position:absolute;left:0;top:50%;transform:translateY(-50%);margin:0;width:9px;height:9px}'+
 '.dt-hex .type-ic{display:none}'+
 '.dt-move-cell .move-type .type-ic{position:absolute;left:0;top:50%;transform:translateY(-50%);margin:0;width:9px;height:9px}'+
@@ -809,7 +811,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.dt-move-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}'+
 '.dt-move-cell{display:flex;align-items:center;gap:6px;min-width:0;padding:7px 8px;border:1px solid var(--frame);border-radius:6px;background:rgba(43,74,111,.4);cursor:pointer;transition:filter .12s}'+
 '.dt-move-cell:hover{filter:brightness(1.15)}'+
-'.dt-move-cell .move-type{width:5em;min-width:5em;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 3px 0 12px;position:relative;border-radius:4px;font-size:.6rem;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3);box-sizing:border-box;flex-shrink:0;white-space:nowrap}'+
+'.dt-move-cell .move-type{width:4.7em;min-width:4.7em;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 3px 0 12px;position:relative;border-radius:4px;font-size:.6rem;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3);box-sizing:border-box;flex-shrink:0;white-space:nowrap}'+
 '.dt-move-cell .move-name{flex:1;min-width:0;text-align:left;font-weight:800;font-size:.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
 '.dt-more-list{margin-top:4px}'+'.bt-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);letter-spacing:3px;font-size:.86rem;text-align:center}'+'.tab-panel .bt-empty{height:auto;min-height:140px}'+'.bt-rule{font-size:.78rem;line-height:1.5;color:#ffe9a8;padding:6px 10px;margin-bottom:6px;border-left:3px solid #d8b830;background:rgba(120,95,20,.28);border-radius:0 6px 6px 0;word-break:break-word}'+'.fold-inner{min-width:0;overflow-x:hidden}'+'.fold-inner .bag-list{max-height:none}'+'.fold-body{max-height:200px;overflow-y:auto}'+'.fold-body::-webkit-scrollbar{width:5px}'+'.fold-body::-webkit-scrollbar-thumb{background:rgba(170,204,255,.4);border-radius:3px}'+'.quick-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:0 3% clamp(10px,2.5vw,14px) 3%}'+'.quick-chip{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 2px;font-size:clamp(.58rem,2.3vw,.7rem);font-weight:800;border-radius:4px;text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden}'+'.quick-emoji{font-size:.95rem;line-height:1}'+'.pk-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;font-size:clamp(.74rem,2.8vw,.88rem)}'+'.mega-ic{height:1em;width:auto;flex:0 0 auto;image-rendering:pixelated}'+
 '#pkm-hud-btn{position:fixed;z-index:2147483647;width:54px;height:54px;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 30% 30%,#5a7db0,#2b4a6f);border:2px solid #7d95b5;box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 12px rgba(124,196,248,.35);display:flex;align-items:center;justify-content:center;transition:box-shadow .15s;font-size:26px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}'+
