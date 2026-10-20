@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.5.4';
+var PK_VER='5.5.5';
 /*PK_NOTICE_BEGIN
+v5.5.5 更新：
+· 修正 32 条道具说明文案（狩猎球/计时球/先机球等捕获球按最新游戏补正，Mega 石、花蜜、化石、粘糕说明等）
 v5.5.4 更新：
 · 修正 35 条特性简介文案（冰雹→下雪、变幻自如/自由者补「每次出场战斗仅生效一次」、迟钝/我行我素/精神力/胆量补「对威吓也毫不动摇」等）
 v5.5.3 更新：
@@ -4492,7 +4494,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930aq';
+var PKM_DATA_REV='r20260930ar';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
