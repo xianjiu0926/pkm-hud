@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.4.7';
+var PK_VER='5.4.8';
 /*PK_NOTICE_BEGIN
+v5.4.8 更新：
+· 附近宝可梦属性标签自适应：卡片内属性块改用紧凑尺寸，放不下时自动换行，不再超出卡片
 v5.4.7 更新：
 · 属性图标放大一档（技能格 9→11px、可学招式 10→12px），色块宽度与图标位同步微调
 v5.4.6 更新：
@@ -776,7 +778,9 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.nb-mark.mega>span{transform:rotate(-45deg)}'+
 '.nb-mark.dynamax{min-width:26px;border-radius:999px;background:linear-gradient(135deg,#ff5cac,#be123c);font-size:.42rem;letter-spacing:-.3px}'+
 '.nb-mark.shiny{border-radius:50%;min-width:16px;width:16px;padding:0;background:linear-gradient(135deg,#fff4a8,#d8a800);color:#5a4800}'+
-'.nb-pillbar{position:relative;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-height:18px;width:100%}'+'.nb-typebar{position:relative;z-index:4;display:flex;flex-wrap:nowrap;justify-content:center;gap:4px;min-height:16px;width:100%}'+
+'.nb-pillbar{position:relative;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-height:18px;width:100%}'+'.nb-typebar{position:relative;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:3px;min-height:16px;width:100%}'+
+'.nb-typebar .type-chip{padding:1px 5px 1px 15px;font-size:.66rem}'+
+'.nb-typebar .type-chip .type-ic{width:10px;height:10px;left:3px}'+
 '.nb-pill{display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:2px 6px;border-radius:999px;font-size:.56rem;font-weight:850;line-height:1.3;color:#eef6ff;background:rgba(125,149,181,.15);border:1px solid rgba(170,204,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}'+
 '.nb-pill-ic{font-size:.57rem;font-weight:950}'+
 '.nb-pill.legendary{background:linear-gradient(90deg,rgba(255,255,255,.055),var(--nb-pill-soft,rgba(255,213,79,.22)));border-color:var(--nb-pill1,#ffd54f);box-shadow:inset -8px 0 16px rgba(255,255,255,.025)}'+
