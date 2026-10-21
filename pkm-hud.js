@@ -3,8 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.6.0';
+var PK_VER='5.6.1';
 /*PK_NOTICE_BEGIN
+v5.6.1 更新：
+· 补齐道具图标：关都 8 枚道馆徽章、4 种第三世代树果（热椒果/苦凉果/葵秋果/铃薯果）、研究所的钥匙卡Ｍ/Ｘ
+· 道具缺图监控不再重复提示源站（52poke/Serebii）本身就没有图标的老道具
 v5.6.0 更新：
 · 天气名称按最新世代更正：特性/招式/道具说明里的当前机制「冰雹」→「下雪」（历代变更记录与招式「冰雹」本身保留）
 v5.5.9 更新：
@@ -4504,7 +4507,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930aw';
+var PKM_DATA_REV='r20260930ax';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
