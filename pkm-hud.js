@@ -3,8 +3,12 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.6.0';
+var PK_VER='5.6.1';
 /*PK_NOTICE_BEGIN
+v5.6.1 更新：
+· 地图页右上角新增「📷」按钮：把当前所在地区的地图静默附加给 AI（图片 / 文字说明两种模式；只加在发给模型的请求里，聊天记录不会多出图片）
+· 图片模式：主模型是多模态就直接看图；文字模式：用「AI 识图」配置生成一次地图说明，之后每轮只带几百字，省 token
+· 可选发送时机：换地区时发一次（默认）/ 每轮都发；也支持「立即发送一次」
 v5.6.0 更新：
 · 天气名称按最新世代更正：特性/招式/道具说明里的当前机制「冰雹」→「下雪」（历代变更记录与招式「冰雹」本身保留）
 v5.5.9 更新：
@@ -3929,6 +3933,207 @@ function regionOfLocation(loc){
   }
   return '';
 }
+/* ===== AI 地图：把当前地区地图静默附加到发给模型的请求里 ===== */
+var AI_MAP_MAXSIDE=1200;
+var aiMapOn=false,aiMapMode='img',aiMapTiming='change',aiMapForce=false;
+var aiMapBound=false,aiMapEvName='',aiMapLastKey='',aiMapLastErr='';
+var aiMapCache={},aiMapBusy={},aiMapTextCache={};
+try{aiMapOn=localStorage.getItem('pk_aimap_on')==='1';}catch(e){}
+try{var _am=localStorage.getItem('pk_aimap_mode');if(_am==='txt'||_am==='img')aiMapMode=_am;}catch(e){}
+try{var _at=localStorage.getItem('pk_aimap_timing');if(_at==='always'||_at==='change')aiMapTiming=_at;}catch(e){}
+function aiMapSaveCfg(){try{localStorage.setItem('pk_aimap_on',aiMapOn?'1':'0');localStorage.setItem('pk_aimap_mode',aiMapMode);localStorage.setItem('pk_aimap_timing',aiMapTiming);}catch(e){}}
+function aiMapRegion(){try{var loc=(stat_data&&stat_data.环境&&stat_data.环境.当前地点)||'';var r=regionOfLocation(loc);if(!r){try{ensureMapLocations();}catch(e){}}return r||'';}catch(e){return '';}}
+function aiMapImgUrl(region){try{for(var i=0;i<MAPS.length;i++){if(MAPS[i].name===region)return MAPS[i].img||'';}}catch(e){}return '';}
+function aiMapMsg(t,color){try{var el=document.getElementById('aimap-msg');if(el){el.textContent=t||'';el.style.color=color||'#ffe9a8';}}catch(e){}}
+function aiMapPrepText(region){return '这是一张《宝可梦》'+region+'地区的地图。请只依据图上能看到的信息，用简体中文分点描述：\n1. 主要城镇/城市的名称，以及彼此相对方位（东南西北、远近）；\n2. 道路、水道、桥梁等连接关系；\n3. 山脉、森林、湖泊、岛屿、沙漠等地貌分布；\n4. 图上若有图例或特殊区域也一并说明。\n不要编造图上没有的内容，直接输出描述正文。';}
+function aiMapPrepare(region,cb){
+  if(!region){cb&&cb('');return;}
+  if(aiMapCache[region]){cb&&cb(aiMapCache[region]);return;}
+  if(aiMapBusy[region]){if(cb)aiMapBusy[region].push(cb);return;}
+  var url=aiMapImgUrl(region);
+  if(!url){aiMapLastErr='没有找到该地区的地图图片';cb&&cb('');return;}
+  aiMapBusy[region]=cb?[cb]:[];
+  function done(u){
+    var list=aiMapBusy[region]||[];delete aiMapBusy[region];
+    if(u)aiMapCache[region]=u;else aiMapLastErr=aiMapLastErr||'地图图片加载或压缩失败';
+    for(var i=0;i<list.length;i++){try{list[i]&&list[i](u||'');}catch(e){}}
+  }
+  try{
+    fetch(url,{cache:'force-cache'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.blob();}).then(function(b){
+      var iu=URL.createObjectURL(b);
+      var im=new Image();
+      im.onload=function(){
+        try{
+          var w=im.naturalWidth||1,h=im.naturalHeight||1,sc=Math.min(1,AI_MAP_MAXSIDE/Math.max(w,h));
+          var c=document.createElement('canvas');
+          c.width=Math.max(1,Math.round(w*sc));c.height=Math.max(1,Math.round(h*sc));
+          var g=c.getContext('2d');g.fillStyle='#ffffff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);
+          var du=c.toDataURL('image/jpeg',0.70);
+          try{URL.revokeObjectURL(iu);}catch(e){}
+          done(du);
+        }catch(e){try{URL.revokeObjectURL(iu);}catch(e2){}aiMapLastErr=String(e&&e.message||e);done('');}
+      };
+      im.onerror=function(){try{URL.revokeObjectURL(iu);}catch(e){}aiMapLastErr='图片解码失败';done('');};
+      im.src=iu;
+    }).catch(function(e){aiMapLastErr=String(e&&e.message||e);done('');});
+  }catch(e){aiMapLastErr=String(e&&e.message||e);done('');}
+}
+function aiMapPrepareText(region,cb){
+  if(!region){cb&&cb('');return;}
+  if(aiMapTextCache[region]){cb&&cb(aiMapTextCache[region]);return;}
+  try{var s=localStorage.getItem('pk_aimap_txt_'+region);if(s){aiMapTextCache[region]=s;cb&&cb(s);return;}}catch(e){}
+  var lock='txt:'+region;
+  if(aiMapBusy[lock]){if(cb)aiMapBusy[lock].push(cb);return;}
+  aiMapBusy[lock]=cb?[cb]:[];
+  function done(t){var list=aiMapBusy[lock]||[];delete aiMapBusy[lock];for(var i=0;i<list.length;i++){try{list[i]&&list[i](t||'');}catch(e){}}}
+  var cfg=(typeof diyVisionCfg==='function')?diyVisionCfg():null;
+  if(!cfg||!cfg.apiKey||!cfg.model){aiMapLastErr='还没配置「AI 识图」API（DIY 页 → AI 识图设置）';aiMapMsg('✘ '+aiMapLastErr,'#f87171');done('');return;}
+  aiMapPrepare(region,function(u){
+    if(!u){done('');return;}
+    try{
+      diyVisionRecognize(u,aiMapPrepText(region),function(txt){
+        txt=String(txt||'').trim();
+        if(txt){aiMapTextCache[region]=txt;try{localStorage.setItem('pk_aimap_txt_'+region,txt);}catch(e){}}
+        else aiMapLastErr='识图返回为空';
+        done(txt);
+      },function(err){aiMapLastErr=String(err||'识图失败');done('');});
+    }catch(e){aiMapLastErr=String(e&&e.message||e);done('');}
+  });
+}
+function aiMapAddText(msg,note){
+  var c=msg.content;
+  if(typeof c==='string'){msg.content=note+'\n\n'+c;return;}
+  if(Array.isArray(c)){
+    for(var i=0;i<c.length;i++){if(c[i]&&c[i].type==='text'){c[i].text=(c[i].text||'')+'\n\n'+note;return;}}
+    c.unshift({type:'text',text:note});msg.content=c;return;
+  }
+  msg.content=note;
+}
+function aiMapAddImage(msg,url,region){
+  var note='（附图是当前所在地区「'+region+'」的地图，可据此判断城镇、道路、水路的方位关系。）';
+  var c=msg.content,arr;
+  if(Array.isArray(c)){arr=c.slice();}
+  else{arr=[{type:'text',text:(typeof c==='string'?c:'')}];}
+  var hit=false;
+  for(var i=0;i<arr.length;i++){if(arr[i]&&arr[i].type==='text'){arr[i]={type:'text',text:(arr[i].text||'')+'\n\n'+note};hit=true;break;}}
+  if(!hit)arr.unshift({type:'text',text:note});
+  arr.push({type:'image_url',image_url:{url:url}});
+  msg.content=arr;
+}
+function aiMapInject(data){
+  try{
+    if(!aiMapOn&&!aiMapForce)return;
+    var chat=(data&&Array.isArray(data.chat))?data.chat:(Array.isArray(data)?data:null);
+    if(!chat||!chat.length)return;
+    var region=aiMapRegion();
+    if(!region)return;
+    var key=region+'|'+aiMapMode+'|'+aiMapTiming+'|'+chatKey();
+    if(aiMapTiming!=='always'&&!aiMapForce&&key===aiMapLastKey)return;
+    var idx=-1;
+    for(var i=chat.length-1;i>=0;i--){if(chat[i]&&chat[i].role==='user'){idx=i;break;}}
+    if(idx<0)return;
+    if(aiMapMode==='txt'){
+      var t=aiMapTextCache[region];
+      if(!t){aiMapPrepareText(region,null);return;}
+      aiMapAddText(chat[idx],'【当前地区地图·文字说明】'+region+'\n'+t);
+      aiMapLastKey=key;aiMapForce=false;
+      return;
+    }
+    var u=aiMapCache[region];
+    if(!u){aiMapPrepare(region,null);return;}
+    aiMapAddImage(chat[idx],u,region);
+    aiMapLastKey=key;aiMapForce=false;
+  }catch(e){aiMapLastErr=String(e&&e.message||e);}
+}
+function aiMapWarm(){
+  var r=aiMapRegion();
+  if(!r)return;
+  if(aiMapMode==='txt')aiMapPrepareText(r,null);else aiMapPrepare(r,null);
+}
+function aiMapBind(){
+  if(aiMapBound)return true;
+  try{
+    var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;
+    if(!(ctx&&ctx.eventSource&&typeof ctx.eventSource.on==='function'))return false;
+    var ev=(ctx.eventTypes&&ctx.eventTypes.CHAT_COMPLETION_PROMPT_READY)||'chat_completion_prompt_ready';
+    aiMapEvName=ev;
+    hudScope.emitter(ctx.eventSource,ev,function(d){aiMapInject(d);});
+    aiMapBound=true;
+    if(aiMapOn)aiMapWarm();
+    return true;
+  }catch(e){aiMapLastErr=String(e&&e.message||e);return false;}
+}
+function aiMapSendNow(){
+  var region=aiMapRegion();
+  if(!region){aiMapMsg('✘ 当前地点没匹配到地区（stat_data.环境.当前地点）','#f87171');return;}
+  aiMapBind();
+  aiMapForce=true;
+  if(aiMapMode==='txt'){
+    aiMapMsg('⏳ 正在用 AI 识图生成地图说明…');
+    aiMapPrepareText(region,function(t){
+      if(t)aiMapMsg('✔ 已准备，下一条消息会带上地图文字说明');
+      else aiMapMsg('✘ 生成失败：'+(aiMapLastErr||'检查 AI 识图设置'),'#f87171');
+    });
+  }else{
+    aiMapMsg('⏳ 正在准备地图图片…');
+    aiMapPrepare(region,function(u){
+      if(u)aiMapMsg('✔ 已准备，下一条消息会带上地图图片');
+      else aiMapMsg('✘ 地图加载失败：'+(aiMapLastErr||'未知错误'),'#f87171');
+    });
+  }
+}
+function aiMapPanel(){
+  if(!overlay)return;
+  var region=aiMapRegion();
+  var hasTxt='';
+  if(region){hasTxt=aiMapTextCache[region]||'';if(!hasTxt){try{hasTxt=localStorage.getItem('pk_aimap_txt_'+region)||'';}catch(e){}}}
+  var cfgReady=false;
+  try{var c0=(typeof diyVisionCfg==='function')?diyVisionCfg():null;cfgReady=!!(c0&&c0.apiKey&&c0.model);}catch(e){}
+  var html='<div class="modal" style="max-width:520px"><div class="modal-head"><div class="modal-name">📷 AI 地图</div><button class="close" data-close>✕</button></div><div class="modal-body">'
+    +'<div class="row"><span class="k">当前地区</span><span class="v">'+esc(region||'未识别（环境.当前地点 没匹配到地区）')+'</span></div>'
+    +'<div class="row"><span class="k">开关</span><span class="v">'+(aiMapOn?'<span style="color:#4ade80;font-weight:700">已开启</span>':'已关闭')+'</span></div>'
+    +'<div class="row"><span class="k">发送方式</span><span class="v">'+(aiMapMode==='img'?'图片（主模型直接看图）':'文字（AI 识图转说明）')+'</span></div>'
+    +'<div class="row"><span class="k">发送时机</span><span class="v">'+(aiMapTiming==='change'?'换地区时发一次':'每轮都发')+'</span></div>'
+    +'<div class="action-btns" style="margin-top:8px;flex-wrap:wrap">'
+    +'<button class="act-btn" data-aimap-toggle>'+(aiMapOn?'关闭':'开启')+'</button>'
+    +'<button class="act-btn" data-aimap-mode>'+(aiMapMode==='img'?'改用文字说明':'改用图片')+'</button>'
+    +'<button class="act-btn" data-aimap-timing>'+(aiMapTiming==='change'?'改成每轮都发':'改成换地区发一次')+'</button>'
+    +'<button class="act-btn" data-aimap-send>立即发送一次</button>'
+    +'</div>'
+    +'<div id="aimap-msg" class="dim" style="font-size:.76rem;margin-top:8px;min-height:1em;color:#ffe9a8"></div>'
+    +'<div class="set-title" style="margin-left:0;margin-top:10px">地图文字说明（'+(aiMapMode==='txt'?'当前使用中':'备用')+'）</div>'
+    +'<div class="dim" style="font-size:.74rem;line-height:1.55;white-space:pre-wrap;max-height:170px;overflow:auto;background:rgba(43,74,111,.28);border:1px solid var(--frame);border-radius:6px;padding:8px">'+esc(hasTxt||'（还没生成）')+'</div>'
+    +'<div class="action-btns" style="margin-top:6px;flex-wrap:wrap"><button class="act-btn" data-aimap-gen>用 AI 识图生成/更新地图说明</button></div>'
+    +'<div class="dim" style="font-size:.72rem;line-height:1.65;margin-top:10px">'
+    +'· 图片模式：每次多花约 800~1500 tokens；首次会先下载并压缩地图（约 1~3 秒）。'
+    +'<br>· 文字模式：先用「AI 识图」配置生成一次说明（几百字），之后每轮只带这段文字，便宜很多。'
+    +'<br>· 静默：只加在发给模型的请求里，聊天记录不会多出图片。'
+    +'<br>· 事件通道：'+esc(aiMapBound?('已绑定 '+aiMapEvName):'未绑定（连接类型可能不是 Chat Completion，或酒馆版本较旧）')
+    +'<br>· 识图 API：'+(cfgReady?'已配置':'未配置（DIY 页 → AI 识图设置）')
+    +'</div></div></div>';
+  overlay.innerHTML=html;
+  overlay.classList.add('open');
+  function bind(sel,fn){var b=document.querySelector(sel);if(b)b.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();fn();});}
+  bind('[data-aimap-toggle]',function(){
+    aiMapOn=!aiMapOn;aiMapSaveCfg();
+    if(aiMapOn){aiMapBind();aiMapWarm();}
+    aiMapPanel();
+  });
+  bind('[data-aimap-mode]',function(){aiMapMode=(aiMapMode==='img')?'txt':'img';aiMapSaveCfg();if(aiMapOn)aiMapWarm();aiMapPanel();});
+  bind('[data-aimap-timing]',function(){aiMapTiming=(aiMapTiming==='change')?'always':'change';aiMapSaveCfg();aiMapPanel();});
+  bind('[data-aimap-send]',aiMapSendNow);
+  bind('[data-aimap-gen]',function(){
+    var r=aiMapRegion();
+    if(!r){aiMapMsg('✘ 当前地点没匹配到地区','#f87171');return;}
+    delete aiMapTextCache[r];
+    try{localStorage.removeItem('pk_aimap_txt_'+r);}catch(e){}
+    aiMapMsg('⏳ 正在识图生成说明，可能要十几秒…');
+    aiMapPrepareText(r,function(t){
+      if(t){aiMapMsg('✔ 已生成 '+r+' 地图说明（'+t.length+' 字）','#4ade80');aiMapPanel();}
+      else aiMapMsg('✘ 失败：'+(aiMapLastErr||'未知错误'),'#f87171');
+    });
+  });
+}
 function mapSpotLabelsHTML(all,curName){
   return all.map(function(sp){
     if(curName&&normLoc(sp.name)===curName)return '';
@@ -3996,6 +4201,7 @@ function mapHTML(){
   var tabs=MAPS.map(function(x){return '<button class="map-tab'+(x.name===m.name?' active':'')+'" data-map="'+esc(x.name)+'">'+esc(x.name)+'</button>';}).join('');
   var hint='<div class="map-zoom-hint">👁 开启地点显示 · 城镇/道路/特殊地点可组合点选 · 点击「字号」弹出滑条 · 单指/鼠标拖动 · 双指/滚轮缩放 · 右上角「🎮」可展开方向/缩放按键 · 双击复位</div>';
   var eye='<button class="map-eye'+(mapSpotOn?' on':'')+'" data-map-eye title="点击显示/隐藏地点">👁</button>';
+  var aiBtn='<button class="map-eye'+(aiMapOn?' on':'')+'" data-aimap title="AI 地图：把当前地区地图静默发给 AI">📷</button>';
 
   if(m.islands){
     if(alolaIsland<0||!m.islands[alolaIsland]||!m.islands[alolaIsland].img){
@@ -4022,7 +4228,7 @@ function mapHTML(){
       if(spot&&m.islands[spot.island])status='<div class="map-no-loc">📍 当前位置：'+esc(spot.name)+'（'+esc(m.islands[spot.island].name)+'）</div>';
       else if(pinNote)status='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+pinNote+'</div>';
       else status='<div class="map-no-loc">📍 当前位置：'+esc(loc||'未知')+'（大图未匹配到坐标）</div>';
-      return '<div class="map-page">'+mapToolbarHTML(tabs,'')+inner2+status+'<div class="map-zoom-hint">👆 点击岛屿进入该岛地图 · 发光的岛屿是当前所在 · 单指/鼠标拖动 · 双指/滚轮缩放 · 右上角「🎮」可展开方向/缩放按键 · 双击复位</div></div>';
+      return '<div class="map-page">'+mapToolbarHTML(tabs,aiBtn)+inner2+status+'<div class="map-zoom-hint">👆 点击岛屿进入该岛地图 · 发光的岛屿是当前所在 · 单指/鼠标拖动 · 双指/滚轮缩放 · 右上角「🎮」可展开方向/缩放按键 · 双击复位</div></div>';
     }
     var is=m.islands[alolaIsland];
     var v={name:is.name,img:is.img,towns:is.towns||[],roads:is.roads||[],specials:is.specials||[]};
@@ -4032,7 +4238,7 @@ function mapHTML(){
       else pinNote2='（当前位置在'+esc(locRegion)+'，不在此图）';
     }else{spot2=findSpot(v,loc);}
     var backBtn='<button class="map-back-btn" data-map-back>← 返回阿罗拉大图</button>';
-    return '<div class="map-page">'+mapToolbarHTML(tabs,backBtn+eye)+mapControlsHTML()+mapWrapHTML(v,spot2,loc,pinNote2)+hint+'</div>';
+    return '<div class="map-page">'+mapToolbarHTML(tabs,backBtn+eye+aiBtn)+mapControlsHTML()+mapWrapHTML(v,spot2,loc,pinNote2)+hint+'</div>';
   }
 
   var spot3=null,pinNote3='';
@@ -4040,7 +4246,7 @@ function mapHTML(){
     if(m.name===locRegion)spot3=findSpot(m,loc);
     else pinNote3='（当前位置在'+esc(locRegion)+'，不在此图）';
   }else{spot3=findSpot(m,loc);}
-  return '<div class="map-page">'+mapToolbarHTML(tabs,eye)+mapControlsHTML()+mapWrapHTML(m,spot3,loc,pinNote3)+hint+'</div>';
+  return '<div class="map-page">'+mapToolbarHTML(tabs,eye+aiBtn)+mapControlsHTML()+mapWrapHTML(m,spot3,loc,pinNote3)+hint+'</div>';
 }
 function bindMapViewer(wrap){
   if(!wrap||wrap._mapViewerBound)return;
@@ -7637,6 +7843,8 @@ if(eye){
     if(fb)fb.classList.toggle('show',mapSpotOn);
   });
 }
+var amb=pageOverlay.querySelector('[data-aimap]');
+if(amb){amb.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();aiMapPanel();});}
 var szb=pageOverlay.querySelector('[data-map-size-btn]');
 var szp=pageOverlay.querySelector('[data-map-size-pop]');
 if(szb&&szp){
@@ -8861,6 +9069,7 @@ function pkmAutoCheck(){
     var d=loadStatDataLight();if(!d)return;
     var snap=pkmStateSnapshot(d);if(snap===pkmAutoSnap)return;
     pkmAutoSnap=snap;stat_data=d;hudExternalStateChanged();hudRebuildLocationIndex();
+    try{if(aiMapOn)aiMapWarm();}catch(e){}
     try{recordSeen();}catch(e){}
     try{renderStatusBar();}catch(e){}
     try{var hw=document.getElementById('pkm-hud-win');if(hw&&hw.classList.contains('open')){render();resizeFrame();}}catch(e){}
@@ -8907,6 +9116,7 @@ function safeRender(){
   try{pkAutoCheckUpdate();}catch(e){}
   try{pkBindAutoRefresh();}catch(e){}
   try{pkmStartAutoUpdate();}catch(e){}
+  try{aiMapBind();}catch(e){}
   try{recordSeen();}catch(e){}
   try{var _udc=WIN['updateDexContext'];if(typeof _udc==='function')_udc();}catch(e){}
   try{renderStatusBar();}catch(e){}
