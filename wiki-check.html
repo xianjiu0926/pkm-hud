@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>52poke 数据同步检查</title>
+<style>
+  :root{
+    --bg:#12161c; --card:#1b212a; --card2:#222a35; --line:#2e3846;
+    --txt:#e6edf5; --dim:#8fa0b5; --ok:#3fb950; --upd:#f0a02c; --err:#f0616d; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;padding:14px 12px 40px;background:var(--bg);color:var(--txt);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:19px;margin:0 0 4px;font-weight:700}
+  .sub{margin:0 0 14px;color:var(--dim);font-size:12.5px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  button{
+    appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--txt);
+    border-radius:9px;padding:8px 13px;font-size:13.5px;font-family:inherit;cursor:pointer;
+  }
+  button:active{transform:scale(.97)}
+  button.primary{background:#1f6feb;border-color:#2f81f7;color:#fff;font-weight:600}
+  button:disabled{opacity:.5;cursor:default}
+  .status{font-size:13px;color:var(--dim);margin:0 0 12px;min-height:20px}
+  .status.err{color:var(--err)}
+  .status.busy{color:var(--blue)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .chead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cname{font-weight:700;font-size:15.5px}
+  .badge{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .badge.ok{color:var(--ok);border-color:#2a4a33;background:#16281c}
+  .badge.upd{color:#1a1206;background:var(--upd);font-weight:700}
+  .badge.err{color:var(--err);border-color:#4a2a2e;background:#2a181b}
+  .badge.new{color:var(--blue);border-color:#243a4f;background:#152534}
+  .meta{color:var(--dim);font-size:12px;margin-top:5px;word-break:break-all}
+  .meta b{color:#c7d3e2;font-weight:600}
+  .cbtns{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .cbtns button{padding:6px 11px;font-size:12.5px;border-radius:8px}
+  .panel{margin-top:10px}
+  .panel:empty{display:none}
+  .hint{color:var(--dim);font-size:12.5px}
+  .err{color:var(--err);font-size:12.5px}
+  .sect{font-size:12.5px;color:var(--dim);margin:10px 0 6px;font-weight:600}
+  .editrow{display:flex;gap:8px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed #26303c}
+  .editrow:last-child{border-bottom:0}
+  .editrow .t{color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .editrow .u{color:var(--blue);white-space:nowrap}
+  .editrow .c{color:#c7d3e2;word-break:break-word}
+  .diff{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Noto Sans Mono CJK SC",monospace;
+    font-size:11.5px;line-height:1.45;background:#0f1319;border:1px solid var(--line);
+    border-radius:9px;padding:8px;max-height:60vh;overflow:auto;
+  }
+  .dl{white-space:pre-wrap;word-break:break-all;padding:0 4px;border-radius:3px}
+  .dl.add{background:#12301c;color:#8be9a4}
+  .dl.del{background:#33161a;color:#ff9aa3}
+  .dl.same{color:#7c8ba0}
+  .sep{color:#4c5a6d;text-align:center;padding:2px 0;background:#0f1319}
+  textarea{
+    width:100%;height:140px;background:#0f1319;color:#c7d3e2;border:1px solid var(--line);
+    border-radius:9px;padding:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
+    margin-top:8px;
+  }
+  .foot{color:#5d6b7e;font-size:11.5px;margin-top:16px;line-height:1.7}
+  .cnt{font-size:12.5px;color:#c7d3e2;margin:4px 0}
+  .cnt b{color:#fff}
+  .tag{padding:0 5px;border-radius:4px;background:#2a3441;font-size:11.5px;margin-right:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>52poke 数据同步检查</h1>
+  <p class="sub">对比 52poke 列表页的最新版本 vs 你保存的基线 · 只读请求，不改任何数据</p>
+
+  <div class="btns">
+    <button id="btn-check" class="primary">检查更新</button>
+    <button id="btn-save">存为新基线</button>
+    <button id="btn-export">导出基线</button>
+    <button id="btn-import">导入基线</button>
+    <button id="btn-reset">恢复内置基线</button>
+    <button id="btn-summary">复制检查结果</button>
+  </div>
+
+  <div id="status" class="status">准备中…</div>
+  <div id="cards"></div>
+  <div id="io"></div>
+
+  <div class="foot">
+    基线存在本机浏览器的 localStorage（换浏览器/清缓存会丢，用「导出基线」留一份）。<br>
+    标「★ 有更新」只代表页面被编辑过，不代表本地数据一定要改——点「正文对比」看实际改了哪几行。<br>
+    52poke 的 API 走 JSONP（脚本标签），不受跨域限制，但仍需能正常打开 wiki.52poke.com。
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var API = 'https://wiki.52poke.com/api.php';
+var LS_KEY = 'pkwiki_baseline_v1';
+
+var PAGES = [
+  {title:'道具列表',                      kind:'items',     local:'items.json'},
+  {title:'特性列表',                      kind:'abilities', local:'abilities.json'},
+  {title:'招式列表',                      kind:'moves',     local:'moves.json'},
+  {title:'宝可梦列表（按全国图鉴编号）',   kind:'dex',       local:'dex-list.json'}
+];
+
+/* 内置基线：2026-10-23 核对后的状态 */
+var BUILTIN = {
+  '道具列表':                     {revid:2619434, timestamp:'2026-09-11T01:56:11Z'},
+  '特性列表':                     {revid:2633434, timestamp:'2026-10-23T09:07:00Z'},
+  '招式列表':                     {revid:2598579, timestamp:'2026-06-27T03:30:46Z'},
+  '宝可梦列表（按全国图鉴编号）': {revid:2566644, timestamp:'2026-04-15T06:19:06Z'}
+};
+
+var baseline = loadBaseline();
+var latest = {};      /* title -> {revid,timestamp,size} | null */
+var busy = false;
+
+/* ------------------------------------------------------------------ 基线 */
+function loadBaseline(){
+  try{
+    var raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      var o = JSON.parse(raw);
+      if(o && o.pages) return o;
+    }
+  }catch(e){}
+  return {savedAt:'内置基线（2026-10-23 核对）', pages:JSON.parse(JSON.stringify(BUILTIN))};
+}
+function persist(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(baseline)); return true; }
+  catch(e){ return false; }
+}
+
+/* ------------------------------------------------------------------ JSONP */
+var seq = 0;
+function api(params, timeout){
+  return new Promise(function(resolve, reject){
+    var cb = 'pkwikicb' + (++seq) + 'x' + (Date.now() % 100000);
+    var q = new URLSearchParams();
+    Object.keys(params).forEach(function(k){ q.set(k, params[k]); });
+    q.set('format','json');
+    q.set('callback', cb);
+
+    var s = document.createElement('script');
+    var done = false;
+    var timer = setTimeout(function(){
+      if(done) return; done = true; cleanup();
+      reject(new Error('请求超时（30 秒）：网络不通 / 需要梯子 / wiki 卡住了'));
+    }, timeout || 30000);
+
+    function cleanup(){
+      clearTimeout(timer);
+      try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+      if(s.parentNode) s.parentNode.removeChild(s);
+    }
+    window[cb] = function(data){
+      if(done) return; done = true; cleanup();
+      if(data && data.error) reject(new Error('wiki 返回错误：' + (data.error.info || data.error.code)));
+      else resolve(data);
+    };
+    s.onerror = function(){
+      if(done) return; done = true; cleanup();
+      reject(new Error('脚本加载失败：wiki.52poke.com 不可达（也可能被网络环境拦了）'));
+    };
+    s.src = API + '?' + q.toString();
+    document.head.appendChild(s);
+  });
+}
+
+/* ------------------------------------------------------------- wiki 请求 */
+/* wiki 会把标题做规范化（如全角括号），返回的 title 可能和请求的不完全一样，
+   这里把它映射回请求时用的标题，免得对不上号。 */
+function titleMap(data){
+  var map = {};
+  ((data.query && data.query.normalized) || []).forEach(function(n){ map[n.to] = n.from; });
+  ((data.query && data.query.redirects) || []).forEach(function(r){ if(!map[r.to]) map[r.to] = r.from; });
+  return map;
+}
+
+function fetchLatest(){
+  return api({
+    action:'query', prop:'revisions',
+    titles: PAGES.map(function(p){ return p.title; }).join('|'),
+    rvprop:'ids|timestamp|size'
+  }).then(function(data){
+    var pages = (data.query && data.query.pages) || {};
+    var back = titleMap(data);
+    var out = {};
+    Object.keys(pages).forEach(function(k){
+      var p = pages[k];
+      var name = back[p.title] || p.title;
+      if(p.missing !== undefined){ out[name] = null; return; }
+      var r = (p.revisions || [{}])[0];
+      out[name] = {revid:r.revid, timestamp:r.timestamp, size:r.size};
+    });
+    return out;
+  });
+}
+
+function fetchContent(revid){
+  return api({
+    action:'query', prop:'revisions',
+    revids:String(revid),
+    rvprop:'content', rvslots:'main'
+  }).then(function(data){
+    var pages = (data.query && data.query.pages) || {};
+    var k = Object.keys(pages)[0];
+    if(!k) return null;
+    var r = (pages[k].revisions || [])[0];
+    if(!r) return null;
+    var slot = (r.slots && r.slots.main) || {};
+    if(slot['*'] != null) return slot['*'];
+    if(r['*'] != null) return r['*'];
+    return null;
+  });
+}
+
+function fetchEdits(title){
+  return api({
+    action:'query', prop:'revisions',
+    titles:title, rvlimit:'12',
+    rvprop:'ids|timestamp|user|comment|size'
+  }).then(function(data){
+    var pages = (data.query && data.query.pages) || {};
+    var k = Object.keys(pages)[0];
+    return (k && pages[k].revisions) || [];
+  });
+}
+
+/* ------------------------------------------------------------ wikitext 解析 */
+function cleanTT(s){
+  var prev = null, out = s;
+  while(prev !== out){
+    prev = out;
+    out = out.replace(/\{\{tt\*?\|([^{}|]*)\|[^{}]*\}\}/g, '$1');
+  }
+  return out;
+}
+function parseItems(wt){
+  var out = [], re = /^\|\s*\{\{I\|([^}|]+)/gm, m;
+  while((m = re.exec(wt))) out.push(m[1].trim());
+  return out;
+}
+function parseAbilities(wt){
+  var out = [];
+  wt.split('\n').forEach(function(line){
+    var s = cleanTT(line.trim());
+    var m = /^\{\{特性列表\|(.*?)\}\}$/.exec(s);
+    if(!m) return;
+    var p = m[1].split('|');
+    var head = p[0] || '';
+    var rest = head.replace(/^\d+/, '').replace(/\*/g, '').trim();
+    var name = rest || String(p[1] || '').trim();
+    if(name) out.push(name);
+  });
+  return out;
+}
+function parseMoves(wt){
+  var out = [], re = /\{\{Movelist\/gen\/ex\|([^}]*?)\}\}/g, m;
+  while((m = re.exec(wt))){
+    var p = m[1].split('|');
+    if(p.length < 2) continue;
+    var name = String(p[1] || '').trim();
+    if(name) out.push(name);
+  }
+  return out;
+}
+function parseDex(wt){
+  var out = [], re = /\{\{Rdexn\|([^{}]*?)\}\}/g, m;
+  while((m = re.exec(wt))){
+    var p = m[1].split('|').map(function(x){ return x.trim(); })
+                 .filter(function(x){ return !/^[a-z_]+=/.test(x); });
+    if(p.length < 2) continue;
+    if(p[1]) out.push(p[1]);
+  }
+  return out;
+}
+var PARSERS = {items:parseItems, abilities:parseAbilities, moves:parseMoves, dex:parseDex};
+
+/* --------------------------------------------------------------- 行级 diff */
+/* 先裁公共前后缀，再给中间小段做 LCS：wiki 列表页动辄两三千行，
+   直接全量 DP 会吃几十 MB 内存把手机卡死，裁完通常只剩几十行。 */
+function lcsOps(a, b){
+  var n = a.length, m = b.length, out = [], i, j;
+  if(n * m > 4000000){                        /* 中间段仍然过大：整块标记，不逐行比 */
+    for(i = 0; i < n; i++) out.push({t:'-', s:a[i]});
+    for(j = 0; j < m; j++) out.push({t:'+', s:b[j]});
+    return out;
+  }
+  var w = m + 1;
+  var dp = new Uint32Array((n + 1) * w);
+  for(i = n - 1; i >= 0; i--){
+    for(j = m - 1; j >= 0; j--){
+      dp[i * w + j] = (a[i] === b[j])
+        ? dp[(i + 1) * w + j + 1] + 1
+        : Math.max(dp[(i + 1) * w + j], dp[i * w + j + 1]);
+    }
+  }
+  i = 0; j = 0;
+  while(i < n && j < m){
+    if(a[i] === b[j]){ out.push({t:' ', s:a[i]}); i++; j++; }
+    else if(dp[(i + 1) * w + j] >= dp[i * w + j + 1]){ out.push({t:'-', s:a[i]}); i++; }
+    else { out.push({t:'+', s:b[j]}); j++; }
+  }
+  while(i < n) out.push({t:'-', s:a[i++]});
+  while(j < m) out.push({t:'+', s:b[j++]});
+  return out;
+}
+
+function lineDiff(aStr, bStr){
+  var a = aStr.split('\n'), b = bStr.split('\n');
+  var out = [], i;
+  var pre = 0;
+  while(pre < a.length && pre < b.length && a[pre] === b[pre]) pre++;
+  var suf = 0;
+  while(suf < a.length - pre && suf < b.length - pre &&
+        a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++;
+
+  for(i = 0; i < pre; i++) out.push({t:' ', s:a[i]});
+  var mid = lcsOps(a.slice(pre, a.length - suf), b.slice(pre, b.length - suf));
+  for(i = 0; i < mid.length; i++) out.push(mid[i]);
+  for(i = a.length - suf; i < a.length; i++) out.push({t:' ', s:a[i]});
+  return out;
+}
+
+/* ------------------------------------------------------------------ 小工具 */
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function d10(ts){ return ts ? String(ts).slice(0,10) : '-'; }
+function dt16(ts){
+  if(!ts) return '-';
+  var d = new Date(ts);
+  if(isNaN(d.getTime())) return d10(ts);
+  function p(x){ return (x < 10 ? '0' : '') + x; }
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
+         p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function setStatus(msg, cls){
+  var el = document.getElementById('status');
+  el.className = 'status' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+}
+function pageUrl(title){
+  return 'https://wiki.52poke.com/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
+}
+
+/* ------------------------------------------------------------------ 渲染 */
+function render(){
+  var box = document.getElementById('cards');
+  box.innerHTML = '';
+  var changed = 0, checked = 0;
+
+  PAGES.forEach(function(pg){
+    var now = latest[pg.title] || null;
+    var base = (baseline.pages || {})[pg.title] || {};
+    var state = 'new', label = '新页面';
+
+    if(now === null){ state = 'err'; label = '⚠ 查不到页面'; }
+    else if(base.revid){
+      checked++;
+      if(String(now.revid) === String(base.revid)){ state = 'ok'; label = '无变化'; }
+      else { state = 'upd'; label = '★ 有更新'; changed++; }
+    }
+
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('data-title', pg.title);
+
+    var meta = '';
+    if(now){
+      meta += 'revid <b>' + now.revid + '</b> · 最后编辑 <b>' + d10(now.timestamp) + '</b>';
+      meta += ' · 本地 <b>' + esc(pg.local) + '</b>';
+      if(state === 'upd'){
+        meta += '<br>基线：revid ' + base.revid + ' · ' + d10(base.timestamp);
+      }
+    }else{
+      meta = '页面拉不到，检查一下标题是否被改名';
+    }
+
+    card.innerHTML =
+      '<div class="chead"><span class="cname">' + esc(pg.title) + '</span>' +
+      '<span class="badge ' + state + '">' + esc(label) + '</span></div>' +
+      '<div class="meta">' + meta + '</div>' +
+      '<div class="cbtns">' +
+        '<button data-act="edits">最近编辑</button>' +
+        '<button data-act="diff">正文对比</button>' +
+        '<button data-act="open">打开页面</button>' +
+      '</div>' +
+      '<div class="panel"></div>';
+
+    box.appendChild(card);
+  });
+
+  if(!checked){ setStatus('已查询，但没有可比对的基线（点「存为新基线」建立）。'); }
+  else if(changed){ setStatus('检查完成：' + changed + ' 个页面有改动，点「正文对比」看具体改了什么。'); }
+  else { setStatus('检查完成：4 个页面都没有变化 ✅（检查时间 ' + dt16(new Date().toISOString()) + '）'); }
+}
+
+/* --------------------------------------------------------------- 各操作 */
+function panelOf(card){
+  var el = card.querySelector('.panel');
+  el.innerHTML = '';
+  return el;
+}
+
+function showEdits(card, pg){
+  var panel = panelOf(card);
+  panel.innerHTML = '<div class="hint">拉取最近编辑…</div>';
+  fetchEdits(pg.title).then(function(revs){
+    if(!revs.length){ panel.innerHTML = '<div class="hint">没有拿到编辑记录</div>'; return; }
+    var html = '<div class="sect">最近 ' + revs.length + ' 次编辑</div>';
+    revs.forEach(function(r, i){
+      var prevSize = revs[i + 1] ? revs[i + 1].size : null;
+      var delta = (prevSize != null && r.size != null) ? (r.size - prevSize) : null;
+      html += '<div class="editrow">' +
+        '<span class="t">' + dt16(r.timestamp) + '</span>' +
+        '<span class="u">' + esc(r.user || '?') + '</span>' +
+        '<span class="c">' + esc(r.comment || '（无编辑摘要）') +
+          (delta === null ? '' : ' <span class="tag">' + (delta > 0 ? '+' : '') + delta + 'B</span>') +
+        '</span></div>';
+    });
+    panel.innerHTML = html;
+  }).catch(function(e){
+    panel.innerHTML = '<div class="err">' + esc(e.message) + '</div>';
+  });
+}
+
+function showDiff(card, pg){
+  var panel = panelOf(card);
+  var now = latest[pg.title];
+  var base = (baseline.pages || {})[pg.title] || {};
+
+  if(!now){ panel.innerHTML = '<div class="err">页面拉不到，无法对比</div>'; return; }
+  if(!base.revid){
+    panel.innerHTML = '<div class="hint">还没有基线版本可比对，先点「存为新基线」。</div>';
+    return;
+  }
+  if(String(base.revid) === String(now.revid)){
+    panel.innerHTML = '<div class="hint">当前 revid ' + now.revid + ' 与基线相同，正文没有变化。</div>';
+    return;
+  }
+
+  panel.innerHTML = '<div class="hint">拉取两个版本的正文（约 30~60 秒）…</div>';
+  var oldWt = null, newWt = null, err = null;
+
+  fetchContent(base.revid).then(function(t){ oldWt = t; return fetchContent(now.revid); })
+    .then(function(t){ newWt = t; })
+    .catch(function(e){ err = e; })
+    .then(function(){
+      if(err || oldWt == null || newWt == null){
+        panel.innerHTML = '<div class="err">' + esc(err ? err.message : '正文为空，拉取失败') + '</div>';
+        return;
+      }
+      var parse = PARSERS[pg.kind];
+      var oldNames = base.names && base.names.length ? base.names : parse(oldWt);
+      var newNames = parse(newWt);
+      var oldSet = {}, newSet = {};
+      oldNames.forEach(function(n){ oldSet[n] = 1; });
+      newNames.forEach(function(n){ newSet[n] = 1; });
+      var added = newNames.filter(function(n){ return !oldSet[n]; });
+      var removed = oldNames.filter(function(n){ return !newSet[n]; });
+
+      var html = '<div class="sect">条目数</div>' +
+        '<div class="cnt"><b>' + oldNames.length + '</b> → <b>' + newNames.length + '</b>' +
+        (added.length ? ' · 新增 ' + added.length + '：' + esc(added.slice(0, 30).join('、')) + (added.length > 30 ? '…' : '') : '') +
+        (removed.length ? ' · 删除 ' + removed.length + '：' + esc(removed.slice(0, 30).join('、')) + (removed.length > 30 ? '…' : '') : '') +
+        (!added.length && !removed.length ? ' · 条目没有增删，应该是文案/数值调整' : '') +
+        '</div>';
+
+      var ops = lineDiff(oldWt, newWt);
+      var changes = 0;
+      ops.forEach(function(o){ if(o.t !== ' ') changes++; });
+      html += '<div class="sect">正文差异（基线 → 当前，共 ' + changes + ' 行改动）</div>';
+
+      if(!changes){
+        html += '<div class="hint">逐行对比没有差异（可能只是模板参数/空白变化）。</div>';
+      }else{
+        var ctx = 2, keep = [], i, k;
+        for(i = 0; i < ops.length; i++) keep[i] = false;
+        for(i = 0; i < ops.length; i++){
+          if(ops[i].t !== ' '){
+            for(k = Math.max(0, i - ctx); k <= Math.min(ops.length - 1, i + ctx); k++) keep[k] = true;
+          }
+        }
+        var body = '', shown = 0, last = -1, truncated = false;
+        for(i = 0; i < ops.length; i++){
+          if(!keep[i]) continue;
+          if(shown >= 400){ truncated = true; break; }
+          if(last >= 0 && i !== last + 1 && shown > 0) body += '<div class="sep">⋯</div>';
+          last = i; shown++;
+          var o = ops[i];
+          var cls = o.t === '+' ? 'add' : (o.t === '-' ? 'del' : 'same');
+          body += '<div class="dl ' + cls + '">' + esc((o.t === ' ' ? '' : o.t) + (o.s || '')) + '</div>';
+        }
+        html += '<div class="diff">' + body + '</div>';
+        if(truncated) html += '<div class="hint" style="margin-top:6px">差异太长，只显示前 400 行。完整内容请直接看 wiki 历史页。</div>';
+        html += '<div class="hint" style="margin-top:6px">绿 = 新增行，红 = 删除行（相对基线版本 ' + base.revid + '）</div>';
+      }
+      panel.innerHTML = html;
+    });
+}
+
+/* --------------------------------------------------------------- 按钮动作 */
+function withBusy(fn){
+  return function(){
+    if(busy) return;
+    busy = true;
+    var btns = document.querySelectorAll('button');
+    Array.prototype.forEach.call(btns, function(b){ b.disabled = true; });
+    Promise.resolve().then(fn).catch(function(e){
+      setStatus('出错了：' + (e && e.message ? e.message : e), 'err');
+    }).then(function(){
+      busy = false;
+      Array.prototype.forEach.call(btns, function(b){ b.disabled = false; });
+    });
+  };
+}
+
+function doCheck(){
+  setStatus('正在查询 4 个页面的最新版本…', 'busy');
+  return fetchLatest().then(function(res){
+    latest = res;
+    render();
+  }).catch(function(e){
+    setStatus('查询失败：' + e.message, 'err');
+    throw e;
+  });
+}
+
+function doSaveBaseline(){
+  var keys = Object.keys(latest);
+  if(!keys.length) throw new Error('请先点「检查更新」');
+  setStatus('正在抓正文、统计条目数，写入新基线…', 'busy');
+  var out = {};
+  var chain = Promise.resolve();
+  PAGES.forEach(function(pg){
+    chain = chain.then(function(){
+      var now = latest[pg.title];
+      if(!now) return;
+      return fetchContent(now.revid).then(function(wt){
+        var names = wt != null ? PARSERS[pg.kind](wt) : [];
+        out[pg.title] = {revid:now.revid, timestamp:now.timestamp, count:names.length, names:names};
+      }).catch(function(){
+        out[pg.title] = {revid:now.revid, timestamp:now.timestamp};
+      });
+    });
+  });
+  return chain.then(function(){
+    baseline = {savedAt:new Date().toISOString(), pages:out};
+    var ok = persist();
+    render();
+    setStatus(ok ? '基线已更新（存在本机 localStorage）✅' : '基线已更新，但浏览器不允许本地存储，请用「导出基线」保存', ok ? '' : 'err');
+  });
+}
+
+function showExport(){
+  var box = document.getElementById('io');
+  var txt = JSON.stringify(baseline, null, 1);
+  box.innerHTML =
+    '<div class="sect">导出基线（复制保存，换设备时用「导入基线」粘贴回来）</div>' +
+    '<textarea id="io-text" spellcheck="false"></textarea>' +
+    '<div class="cbtns"><button id="io-copy">全选</button></div>';
+  document.getElementById('io-text').value = txt;
+  document.getElementById('io-copy').onclick = function(){
+    var ta = document.getElementById('io-text');
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); setStatus('已复制到剪贴板'); }
+    catch(e){ setStatus('复制失败，请手动全选复制'); }
+  };
+}
+
+function showImport(){
+  var box = document.getElementById('io');
+  box.innerHTML =
+    '<div class="sect">导入基线（粘贴之前导出的 JSON）</div>' +
+    '<textarea id="io-text" spellcheck="false" placeholder=\'{"pages":{"道具列表":{"revid":2619434,...}}}\'></textarea>' +
+    '<div class="cbtns"><button id="io-apply" class="primary">导入</button></div>';
+  document.getElementById('io-apply').onclick = function(){
+    try{
+      var o = JSON.parse(document.getElementById('io-text').value);
+      if(!o || !o.pages) throw new Error('JSON 里没有 pages 字段');
+      baseline = o;
+      persist();
+      document.getElementById('io').innerHTML = '';
+      render();
+      setStatus('基线已导入 ✅');
+    }catch(e){
+      setStatus('导入失败：' + e.message, 'err');
+    }
+  };
+}
+
+function doReset(){
+  if(!confirm('恢复成内置基线（2026-10-23 核对）？本机保存的基线会被覆盖。')) return;
+  baseline = {savedAt:'内置基线（2026-10-23 核对）', pages:JSON.parse(JSON.stringify(BUILTIN))};
+  var ok = persist();
+  render();
+  setStatus(ok ? '已恢复内置基线' : '已恢复内置基线（未能写入本地存储）');
+}
+
+/* 复制一份纯文本结果，方便贴给助手看 */
+function showSummary(){
+  if(!Object.keys(latest).length){ setStatus('请先点「检查更新」', 'err'); return; }
+  var lines = ['52poke 检查 ' + dt16(new Date().toISOString())];
+  PAGES.forEach(function(pg){
+    var now = latest[pg.title];
+    var base = (baseline.pages || {})[pg.title] || {};
+    var st = !now ? '查不到页面'
+           : (!base.revid ? '新页面（无基线）'
+           : (String(now.revid) === String(base.revid) ? '无变化' : '★ 有更新'));
+    lines.push('· ' + pg.title + '：' + st +
+      '｜当前 revid ' + (now ? now.revid : '-') +
+      '｜基线 ' + (base.revid || '-') +
+      '｜最后编辑 ' + d10(now && now.timestamp));
+  });
+  var box = document.getElementById('io');
+  box.innerHTML =
+    '<div class="sect">检查结果（复制发给我即可）</div>' +
+    '<textarea id="io-text" spellcheck="false"></textarea>' +
+    '<div class="cbtns"><button id="io-copy">全选复制</button></div>';
+  document.getElementById('io-text').value = lines.join('\n');
+  document.getElementById('io-copy').onclick = function(){
+    var ta = document.getElementById('io-text');
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); setStatus('已复制到剪贴板'); }
+    catch(e){ setStatus('复制失败，请长按手动复制'); }
+  };
+}
+
+/* --------------------------------------------------------------- 事件绑定 */
+document.getElementById('btn-check').onclick = withBusy(doCheck);
+document.getElementById('btn-save').onclick  = withBusy(doSaveBaseline);
+document.getElementById('btn-export').onclick = showExport;
+document.getElementById('btn-import').onclick = showImport;
+document.getElementById('btn-reset').onclick  = doReset;
+document.getElementById('btn-summary').onclick = showSummary;
+
+document.getElementById('cards').addEventListener('click', function(e){
+  var btn = e.target.closest ? e.target.closest('button[data-act]') : null;
+  if(!btn) return;
+  var card = btn.closest('.card');
+  var title = card.getAttribute('data-title');
+  var pg = null;
+  PAGES.forEach(function(p){ if(p.title === title) pg = p; });
+  if(!pg) return;
+  var act = btn.getAttribute('data-act');
+  if(act === 'edits') showEdits(card, pg);
+  else if(act === 'diff') showDiff(card, pg);
+  else if(act === 'open') window.open(pageUrl(pg.title), '_blank');
+});
+
+/* 打开就自动检查一次 */
+withBusy(doCheck)();
+})();
+</script>
+</body>
+</html>
