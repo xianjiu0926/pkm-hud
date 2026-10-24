@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.7.6';
+var PK_VER='5.7.7';
 /*PK_NOTICE_BEGIN
-v5.7.6 更新：
-· 招式（27 条）和道具（150 条）的效果也按 52poke 列表结构加了缩进圆点；道具原来用空格缩进的说明统一成全角缩进圆点（特性的 27 条已在上一版处理）
+v5.7.7 更新：
+· 徽章盒新增「阿罗拉地区」：12 个通过考验／大考验获得的Ｚ纯晶作为徽章，图标直接用Ｚ纯晶（一般／格斗／水／火／草／岩石／电／幽灵／恶／龙／妖精／地面）
+· 徽章名字匹配支持半角写法（「一般Z」和「一般Ｚ」都认）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3398,7 +3399,7 @@ var badgeSel=null;
 var badgeMinHCache=0;
 function badgeMinH(){if(badgeMinHCache)return badgeMinHCache;var d=document.createElement('div');d.className='badge-grid';d.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;width:100%;';var tab=BADGE_MAP['合众']||[];var rec={region:'合众',list:[],cnt:0};d.innerHTML=tab.map(function(e,i){return badgeImg('合众',e,badgeGot(rec,e,i),true);}).join('');document.body.appendChild(d);badgeMinHCache=d.offsetHeight||0;if(d.parentNode)d.parentNode.removeChild(d);return badgeMinHCache;}
 function cityKey(s){var t=String(s||'').trim();if(t.length>1&&'市镇岛村町山'.indexOf(t.charAt(t.length-1))>=0)t=t.slice(0,-1);var A=TYPE_ALIAS;if(A[t])t=A[t];return t;}
-function badgeCands(e){var out=[];String(e[1]).split('/').forEach(function(t){out.push(cityKey(t));});out.push(cityKey(e[2]));out.push(cityKey(String(e[2]).replace('徽章','')));out.push(cityKey(e[3]));return out;}
+function badgeCands(e){var out=[];String(e[1]).split('/').forEach(function(t){out.push(cityKey(t));});var nm=String(e[2]);out.push(cityKey(nm));out.push(cityKey(nm.replace('徽章','')));out.push(cityKey(nm.replace(/Ｚ/g,'Z')));out.push(cityKey(nm.replace(/Z/g,'Ｚ')));out.push(cityKey(e[3]));return out;}
 function badgeUrl(region,no){var d=BADGE_DIR[region];return d?pkmRepoFirst(PKM_REPO_RAW+'badges/'+d+'/'+no+'.png'):'';}
 function badgeImgErr(el){
   var src=String(el.getAttribute('src')||'');
@@ -4471,7 +4472,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930bk';
+var PKM_DATA_REV='r20260930bl';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
