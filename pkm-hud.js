@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.7.5';
+var PK_VER='5.7.6';
 /*PK_NOTICE_BEGIN
-v5.7.5 更新：
-· 26 个特性的效果按 52poke 列表结构加了缩进圆点（顺手牵羊、亲子爱、画皮、绝对睡眠、接球手、化学变化气体等），并列项一眼能分清层级
+v5.7.6 更新：
+· 招式（27 条）和道具（150 条）的效果也按 52poke 列表结构加了缩进圆点；道具原来用空格缩进的说明统一成全角缩进圆点（特性的 27 条已在上一版处理）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4471,7 +4471,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930bj';
+var PKM_DATA_REV='r20260930bk';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
