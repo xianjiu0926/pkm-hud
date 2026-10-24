@@ -3,8 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.6.7';
+var PK_VER='5.6.8';
 /*PK_NOTICE_BEGIN
+v5.6.8 更新：
+· 移除道具图标硬编码映射表（道具/精灵球/Z纯晶/树果 共195条），统一走 items.json 的英文名；Z纯晶图标顺带升级为 80×80 高清
+· 特性/道具相关：NAME_EN 只保留「蛋」特例（图鉴数据里没有蛋）
 v5.6.7 更新：
 · 道具图标映射表（道具/精灵球/Z纯晶/树果 共 195 条）移入仓库 item-icon-slug.json，以后补条目只改仓库、不用动脚本
 v5.6.6 更新：
@@ -3000,22 +3003,6 @@ function diyClearConfirm(){
 var TYPE_COLORS={一般:'#A8A878',格斗:'#C03028',飞行:'#A890F0',毒:'#A040A0',地面:'#E0C068',岩石:'#B8A038',虫:'#A8B820',幽灵:'#705898',钢:'#B8B8D0',火:'#F08030',水:'#6890F0',草:'#78C850',电:'#F8D030',超能力:'#F85888',冰:'#98D8D8',龙:'#7038F8',恶:'#705848',妖精:'#EE99AC','normal':'#A8A878','fighting':'#C03028','flying':'#A890F0','poison':'#A040A0','ground':'#E0C068','rock':'#B8A038','bug':'#A8B820','ghost':'#705898','steel':'#B8B8D0','fire':'#F08030','water':'#6890F0','grass':'#78C850','electric':'#F8D030','psychic':'#F85888','ice':'#98D8D8','dragon':'#7038F8','dark':'#705848','fairy':'#EE99AC'};
 var TYPE_CN={'normal':'一般','fighting':'格斗','flying':'飞行','poison':'毒','ground':'地面','rock':'岩石','bug':'虫','ghost':'幽灵','steel':'钢','fire':'火','water':'水','grass':'草','electric':'电','psychic':'超能力','ice':'冰','dragon':'龙','dark':'恶','fairy':'妖精'};
 var MOVE_TYPE={};
-var ITEM_CN={},BALL_EN={},ITEM_ICON={},BERRY_CN={},BERRY_BASE={};
-var itemIconTablesPromise=null;
-function ensureItemIconTables(){
-  if(itemIconTablesPromise)return itemIconTablesPromise;
-  itemIconTablesPromise=hudFetch(PKM_DATA_BASE+'item-icon-slug.json').then(function(r){return r.ok?r.json():null;}).then(function(j){
-    var d=(j&&j.data&&typeof j.data==='object')?j.data:{};
-    function fill(t,src){if(!src||typeof src!=='object')return;for(var k in src){if(src[k])t[k]=String(src[k]);}}
-    fill(ITEM_CN,d.item);fill(BALL_EN,d.ball);fill(ITEM_ICON,d.icon);fill(BERRY_CN,d.berry);
-    BERRY_BASE={};
-    for(var b in BERRY_CN){BERRY_BASE[BERRY_CN[b].replace(/-berry$/,'')]=1;}
-    try{pkmHudRenderCurrent();}catch(e){}
-    return j;
-  }).catch(function(){return null;});
-  return itemIconTablesPromise;
-}
-function ballEnName(c){var b=BALL_EN[c.ball]||c.ballEn||'';return String(b).toLowerCase().replace(/\.png$/,'');}
 var PKM_ITEM_SEREBII_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon/main/item-sprites/';
 var pkmItemSource='serebii';
 function toHalfWidth(s){return String(s==null?'':s).replace(/[！-～]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-65248);});}
@@ -3030,19 +3017,8 @@ function itemSlugOf(name,iconField){
   return serebiiItemSlug(s);
 }
 function itemIconName(name){
-  var n=String(name||'');
-  if(ITEM_ICON[n])return ITEM_ICON[n];
-  if(BALL_EN[n])return BALL_EN[n];
-  if(BERRY_CN[n])return BERRY_CN[n];
-  if(ITEM_CN[n])return ITEM_CN[n];
-  for(var k in ITEM_ICON){if(n.indexOf(k)>=0)return ITEM_ICON[k];}
-  for(var k2 in BALL_EN){if(n.indexOf(k2)>=0)return BALL_EN[k2];}
-  for(var k3 in BERRY_CN){if(n.indexOf(k3)>=0)return BERRY_CN[k3];}
-  for(var k4 in ITEM_CN){if(n.indexOf(k4)>=0)return ITEM_CN[k4];}
-  var slug=normSlug(n);
-  if(/berry$/.test(slug))return slug;
-  if(BERRY_BASE[slug])return slug+'-berry';
-  return '';
+  var slug=normSlug(String(name||''));
+  return /berry$/.test(slug)?slug:'';
 }
 var ITEM_IMG={
   'Mega手镯':pkmRepoFirst(PKM_DATA_BASE+'UI/ui/Mega手镯.png'),
@@ -3086,8 +3062,8 @@ function itemImgErr(el){
   el.outerHTML='<span class="item-icon placeholder">?</span>';
 }
 
-var NAME_EN={'蛋':'egg','皮卡丘':'pikachu','伊布':'eevee','喷火龙':'charizard','路卡利欧':'lucario','烈咬陆鲨':'garchomp','巨金怪':'metagross','班基拉斯':'tyranitar','快龙':'dragonite'};
-var NAME_EN_DEX={'蛋':0,'皮卡丘':25,'伊布':133,'喷火龙':6,'路卡利欧':448,'烈咬陆鲨':445,'巨金怪':376,'班基拉斯':248,'快龙':149};
+var NAME_EN={'蛋':'egg'};
+var NAME_EN_DEX={'蛋':0};
 function pkmEnName(n){if(!n)return '';var b=baseName(String(n).trim());return NAME_EN[b]||'';}
 var pkmSlugCache={};
 var pkmDexCache={};
@@ -4530,7 +4506,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930bc';
+var PKM_DATA_REV='r20260930bd';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
@@ -8230,7 +8206,6 @@ hudBindRefreshProgrammaticGuard(app);
 ensureT2S();
 ensureItemAlias();
 ensureAbilityAlias();
-ensureItemIconTables();
 ensureMoveAlias();
 ensurePortraits();
 ensureItemCategories();
