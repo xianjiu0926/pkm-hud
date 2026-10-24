@@ -6159,7 +6159,7 @@ function ensureTypeData(){
   typeDataPromise=hudFetch(PKM_DATA_BASE+'types.json').then(function(r){return r.ok?r.json():null;}).then(function(j){
     if(!j)return null;
     if(Array.isArray(j.types)&&j.types.length)TYPE_LIST=j.types;
-    if(j.en&&typeof j.en==='object')TYPE_CN=j.en;
+    if(j.en&&typeof j.en==='object'){TYPE_CN={};for(var c in j.en){if(j.en[c])TYPE_CN[String(j.en[c])]=c;}}
     if(j.colors&&typeof j.colors==='object'){
       for(var k in j.colors){if(j.colors[k])TYPE_COLORS[k]=String(j.colors[k]);}
       for(var en in TYPE_CN){if(j.colors[TYPE_CN[en]])TYPE_COLORS[en]=j.colors[TYPE_CN[en]];}
