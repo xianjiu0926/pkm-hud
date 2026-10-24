@@ -3,8 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.6.2';
+var PK_VER='5.6.3';
 /*PK_NOTICE_BEGIN
+v5.6.3 更新：
+· 特性别名表扩充到 122 条：补官方繁体旧译、台译、港译、大陆旧译与非官方常用译名（如 坚硬→结实、威胁→威吓、千变万化→变幻自如、诱爆→引爆）
 v5.6.2 更新：
 · 特性别名表改走仓库 ability-alias.json（不再硬编码在脚本里），补「诅咒之躯 → 咒术之躯」等新旧译名映射
 v5.6.1 更新：
@@ -4509,7 +4511,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930ay';
+var PKM_DATA_REV='r20260930az';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
