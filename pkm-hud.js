@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.7.2';
+var PK_VER='5.7.3';
 /*PK_NOTICE_BEGIN
-v5.7.2 更新：
-· 「破格」特性效果精简为 52poke 原页面结构，句号统一为中文句号
+v5.7.3 更新：
+· 全库文案标点统一：特性、招式、道具、图鉴介绍里的半角句号「.」改为中文「。」（小数点、No.、英文原文保留），并清掉句号后多余空格
+· 「破格」效果里的补充说明改为缩进的圆点行
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4471,7 +4472,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930bg';
+var PKM_DATA_REV='r20260930bh';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
