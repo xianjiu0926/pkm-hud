@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.7.7';
+var PK_VER='5.7.8';
 /*PK_NOTICE_BEGIN
-v5.7.7 更新：
-· 徽章盒新增「阿罗拉地区」：12 个通过考验／大考验获得的Ｚ纯晶作为徽章，图标直接用Ｚ纯晶（一般／格斗／水／火／草／岩石／电／幽灵／恶／龙／妖精／地面）
-· 徽章名字匹配支持半角写法（「一般Z」和「一般Ｚ」都认）
+v5.7.8 更新：
+· 诊断里把浏览器跨域脱敏的「Script error.」单独归到「外部脚本」，不再算进 HUD 错误（这类报错来自其他插件/扩展，浏览器不给细节，本来就无法定位）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -153,10 +152,12 @@ function createHudScope(){
     get destroyed(){return dead;},get timerCount(){return timers.size;},get intervalCount(){return intervals.size;},get observerCount(){return observers.size;},get controllerCount(){return controllers.size;}
   };
 }
-var hudDiag={startedAt:Date.now(),errors:[],events:[],counters:Object.create(null),activeRequests:0,maxActiveRequests:0};
+var hudDiag={startedAt:Date.now(),errors:[],external:[],events:[],counters:Object.create(null),activeRequests:0,maxActiveRequests:0};
 function hudDiagInc(k,n){hudDiag.counters[k]=(Number(hudDiag.counters[k])||0)+(n==null?1:Number(n)||0);return hudDiag.counters[k];}
 function hudDiagEvent(type,detail){hudDiag.events.push({at:Date.now(),type:String(type||'event'),detail:String(detail||'').slice(0,600)});if(hudDiag.events.length>60)hudDiag.events.splice(0,hudDiag.events.length-60);}
 function hudDiagError(area,e){var row={at:Date.now(),area:String(area||'unknown'),name:String(e&&e.name||'Error'),message:String(e&&e.message||e||'').slice(0,900)};hudDiag.errors.push(row);if(hudDiag.errors.length>60)hudDiag.errors.splice(0,hudDiag.errors.length-60);hudDiagInc('errors');return row;}
+function hudDiagExternal(area,msg){var row={at:Date.now(),area:String(area||'external'),name:'外部脚本',message:String(msg||'').slice(0,300)};hudDiag.external.push(row);if(hudDiag.external.length>20)hudDiag.external.splice(0,hudDiag.external.length-20);hudDiagInc('externalErrors');return row;}
+function hudIsOpaqueError(m,ev){var t=String(m||'').trim();if(/^script error\.?$/i.test(t))return true;return !!(ev&&!ev.filename&&!Number(ev.lineno)&&/^script error/i.test(t));}
 var hudScope=createHudScope();
 try{WIN[HUD_SCOPE_KEY]=hudScope;}catch(e){}
 hudScope.cleanup(function(){try{if(WIN[HUD_SCOPE_KEY]===hudScope)delete WIN[HUD_SCOPE_KEY];}catch(e){}});
@@ -6752,7 +6753,9 @@ function hudDiagSnapshot(){
     diyIndex:(hudDiyNameIndex&&hudDiyNameIndex.size)||0,
     stateRevision:hudStateRevision(),
     counters:pkmHudClone(hudDiag.counters||{}),
-    errors:lastErrors
+    errors:lastErrors,
+    externalCount:Number((hudDiag.counters||{}).externalErrors||0),
+    externalErrors:(hudDiag.external||[]).slice(-3).map(function(x){return {at:x.at,area:x.area,message:x.message};})
   };
 }
 try{WIN.__pkmHudDiagnostics=function(){return pkmHudClone(hudDiagSnapshot());};}catch(e){}
@@ -6772,6 +6775,8 @@ function diagHTML(){
   h+='<div class="info-row"><span class="k">网络请求</span><span class="v">当前 '+r.activeRequests+' · 峰值 '+r.maxActiveRequests+'</span></div>';
   h+='<div class="info-row"><span class="k">索引</span><span class="v">精灵 '+r.locationIndex+' · DIY '+r.diyIndex+' · Rev '+esc(r.stateRevision||'-')+'</span></div>';
   h+='<div class="info-row"><span class="k">局部刷新</span><span class="v">'+Number((r.counters||{}).partialRenders||0)+' 次</span></div>';
+  var ext=Number((r.counters||{}).externalErrors||0);
+  h+='<div class="info-row"><span class="k">外部脚本</span><span class="v" style="color:'+(ext?'#94a3b8':'#4ade80')+'">'+(ext?ext+' 次（跨域报错，浏览器已隐藏细节，与 HUD 无关）':'无')+'</span></div>';
   h+='<div class="info-row"><span class="k">最近错误</span><span class="v" style="color:'+(last?'#fbbf24':'#4ade80')+'">'+(last?esc(last.area+': '+last.message):'无')+'</span></div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-small" data-diag-refresh>🔍 重新检测</button><button class="btn-small" data-diag-copy>📋 复制诊断</button><button class="btn-small" data-diag-clear>🧹 清错误日志</button></div>';
   return h;
@@ -8945,8 +8950,8 @@ function showErr(msg){
     a.appendChild(d2);
   }catch(e2){}
 }
-hudScope.listen(WIN,'error',function(e){var m=String(e.message||'未知错误');if(m.indexOf('ResizeObserver')>=0||m.indexOf('EmbeddedRuntimeManager')>=0||m.indexOf('slot not found')>=0)return;hudDiagError('window.error',new Error(m));showErr(m);});
-hudScope.listen(WIN,'unhandledrejection',function(e){var m=String((e.reason&&e.reason.message)||e.reason||'未处理的Promise错误');hudDiagError('unhandledrejection',new Error(m));showErr(m);});
+hudScope.listen(WIN,'error',function(e){var m=String(e.message||'未知错误');if(m.indexOf('ResizeObserver')>=0||m.indexOf('EmbeddedRuntimeManager')>=0||m.indexOf('slot not found')>=0)return;if(hudIsOpaqueError(m,e)){hudDiagExternal('window.error 跨域','外部脚本报错（浏览器跨域脱敏，无法定位；来源可能是 SillyTavern 本体、其他插件或浏览器扩展）');return;}hudDiagError('window.error',new Error(m));showErr(m);});
+hudScope.listen(WIN,'unhandledrejection',function(e){var m=String((e.reason&&e.reason.message)||e.reason||'未处理的Promise错误');if(hudIsOpaqueError(m,null)){hudDiagExternal('unhandledrejection 跨域','外部脚本的 Promise 报错（浏览器跨域脱敏，无法定位）');return;}hudDiagError('unhandledrejection',new Error(m));showErr(m);});
 try{pkReadUpdateCache();}catch(e){}
 try{ensureHud();}catch(e){}
 try{if(boot&&typeof boot.coreReady==='function')boot.coreReady();}catch(e){}
