@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.6.9';
+var PK_VER='5.7.0';
 /*PK_NOTICE_BEGIN
-v5.6.9 更新：
-· 硬编码再瘦身：图鉴英文名映射（1029 条）、属性克制表/配色/属性别名（6 张表）、地区图鉴名单全部改为从仓库 types.json / dex-list.json / regional-dex.json 加载，脚本减小约 16KB
-· types.json 新增 colors（属性配色）与 alias（超能→超能力 等属性别名归一）字段
+v5.7.0 更新：
+· 修复 5.6.9 的图鉴缩略图回归：英文名映射改为「每编号优先取无连字符的基础形态」，覆盖魔墙人偶/凤王/尼多兰这类名字自带连字符的宝可梦
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4488,18 +4487,26 @@ function pkmDbBuildIndex(data,fields){
   return idx;
 }
 function pkmDexEnFill(data){
-  // 图鉴英文名映射自动补全：以后新增宝可梦不用再改 HUD（只补基础形态，避免形态覆盖同编号）
+  // 图鉴英文名映射：每个编号优先取不含连字符的基础形态，否则取该编号第一个 en（与原硬编码表逻辑一致）
   if(!data||!data.length||!PKM_EN_DEX)return;
-  var ch=false;
+  var byNo={};
   for(var i=0;i<data.length;i++){
     var d=data[i];if(!d)continue;
     var en=String(d.en||'').toLowerCase().trim();
     var no=parseInt(d.no,10)||0;
-    if(!en||!no||PKM_EN_DEX[en])continue;
-    if(en.indexOf('-')>=0)continue;
-    PKM_EN_DEX[en]=no;ch=true;
+    if(!en||!no)continue;
+    if(!byNo[no])byNo[no]=[];
+    byNo[no].push(en);
   }
-  if(ch){var r={};for(var k in PKM_EN_DEX){r[PKM_EN_DEX[k]]=k;}PKM_DEX_EN=r;}
+  var ch=false;
+  for(var k in byNo){
+    var ens=byNo[k],pick='';
+    for(var j=0;j<ens.length;j++){if(ens[j].indexOf('-')<0){pick=ens[j];break;}}
+    if(!pick)pick=ens[0];
+    var n2=parseInt(k,10);
+    if(pick&&PKM_EN_DEX[pick]!==n2){PKM_EN_DEX[pick]=n2;ch=true;}
+  }
+  if(ch){var r={};for(var e in PKM_EN_DEX){r[PKM_EN_DEX[e]]=e;}PKM_DEX_EN=r;}
 }
 function pkmDbLoad(kind,file,fields,cb){
   var store=PKM_DB[kind];
