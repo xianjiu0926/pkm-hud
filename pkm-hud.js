@@ -3,8 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.6.4';
+var PK_VER='5.6.5';
 /*PK_NOTICE_BEGIN
+v5.6.5 更新：
+· 道具别名表扩充到 380 条：从 52poke 道具页补官方译名、玩家俗称/简称与大陆旧译（如 剩饭→吃剩的东西、专围→讲究围巾、坚硬头盔→凸凸头盔、掌门球→大师球）
+· 修正 5 条旧映射指向不存在道具的问题（超级药水/苏醒药/麻痹治愈/剩菜/逃脱按钮）
 v5.6.4 更新：
 · 特性「引爆」按官方新译名改为「诱爆」（自《晶灿钻石／明亮珍珠》起），旧名「引爆」进别名表兜底
 v5.6.3 更新：
@@ -4513,7 +4516,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930ba';
+var PKM_DATA_REV='r20260930bb';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
