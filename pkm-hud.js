@@ -3,7 +3,7 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.7.9';
+var PK_VER='5.8.0';
 /*PK_NOTICE_BEGIN
 v5.7.8 更新：
 · 诊断里把浏览器跨域脱敏的「Script error.」单独归到「外部脚本」，不再算进 HUD 错误（这类报错来自其他插件/扩展，浏览器不给细节，本来就无法定位）
@@ -3543,10 +3543,7 @@ function frame(title,content){return '<div class="info-frame plain-frame"><div c
 function infoRow(k,v){return '<div class="info-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
 
 function teamHTML(){var cards=buildCards();var left=cards.slice(0,3).map(cardHTML).join('');var right=cards.slice(3,6).map(cardHTML).join('');return '<div class="grid"><div class="col col-left">'+left+'</div><div class="col col-right">'+right+'</div></div>';}
-/* 显示层改名（私货）：只影响界面上显示的名字，stat_data 里的真名不变 */
-var PKM_NAME_ALIAS={'莱拉':'菜狗'};
-function dispName(n){var s=String(n==null?'':n);return PKM_NAME_ALIAS[s]||s;}
-function trainerHTML(){var tr=stat_data.训练家||{};var hearts='';for(var i=0;i<num(tr.活力上限,3);i++){hearts+='<span class="heart'+(i<num(tr.活力,3)?'':' empty')+'">♥</span>';}var content=infoRow('名字',esc(dispName(tr.名字)||'???')+' '+hearts)+infoRow('金钱','¥'+num(tr.金钱,0).toLocaleString())+badgeRowHTML()+infoRow('身份',esc(tr.身份||'-'))+infoRow('声望',esc(tr.声望||'-'))+auraRowHTML()+'<div class="info-row cmd"><span class="k">可命令等级</span><span class="v">Lv.'+num(tr.可命令等级,0)+'</span></div>';var ev=stat_data.环境||{},en='';if(ev.当前地点)en+='<span>📍 '+esc(ev.当前地点)+'</span>';if(ev.日期||ev.时间)en+='<span>🕐 '+esc(ev.日期||'')+(ev.日期&&ev.时间?' ':'')+esc(ev.时间||'')+'</span>';return '<div class="info-frame trainer-frame"><div class="info-inner"><div class="info-title"><span>个人信息</span>'+refreshBtnHTML()+'<span class="tr-right">'+(en?'<span class="tr-env">'+en+'</span>':'')+'</span></div>'+content+'</div></div>';}
+function trainerHTML(){var tr=stat_data.训练家||{};var hearts='';for(var i=0;i<num(tr.活力上限,3);i++){hearts+='<span class="heart'+(i<num(tr.活力,3)?'':' empty')+'">♥</span>';}var content=infoRow('名字',esc(tr.名字||'???')+' '+hearts)+infoRow('金钱','¥'+num(tr.金钱,0).toLocaleString())+badgeRowHTML()+infoRow('身份',esc(tr.身份||'-'))+infoRow('声望',esc(tr.声望||'-'))+auraRowHTML()+'<div class="info-row cmd"><span class="k">可命令等级</span><span class="v">Lv.'+num(tr.可命令等级,0)+'</span></div>';var ev=stat_data.环境||{},en='';if(ev.当前地点)en+='<span>📍 '+esc(ev.当前地点)+'</span>';if(ev.日期||ev.时间)en+='<span>🕐 '+esc(ev.日期||'')+(ev.日期&&ev.时间?' ':'')+esc(ev.时间||'')+'</span>';return '<div class="info-frame trainer-frame"><div class="info-inner"><div class="info-title"><span>个人信息</span>'+refreshBtnHTML()+'<span class="tr-right">'+(en?'<span class="tr-env">'+en+'</span>':'')+'</span></div>'+content+'</div></div>';}
 function envStripHTML(){var e=stat_data.环境||{};if(!e.赛程)return '';return '<div class="env-strip"><div class="env-line"><span class="env-item">🏁 '+esc(e.赛程)+'</span></div></div>';}
 
 function nearbyLookup(str){var o={};String(str||'').split('|').forEach(function(x){x=String(x||'').trim();if(x)o[x]=1;});return o;}
