@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.8.3';
+var PK_VER='5.8.4';
 /*PK_NOTICE_BEGIN
-v5.8.3 更新：
-· 宝可梦名字开头的「霸主／搭档／闪光」前缀不再显示（附近宝可梦、队伍、盒子、详情页、战场均生效），头目（霸主）图标与闪光图标照常保留
+v5.8.4 更新：
+· 宝可梦名字开头的「霸主／头目／搭档／闪光」前缀不再显示（附近宝可梦、队伍、盒子、详情页、战场均生效），头目（霸主）图标与闪光图标照常保留
 · 闪光判定兜底加强：名字或状态里带「闪光」但没填「是否闪光」时，也照常显示闪光图标与闪光精灵图
 · 队伍卡片补上头目（霸主）图标，隐藏前缀后仍能看出是霸主
 PK_NOTICE_END*/
@@ -3430,7 +3430,7 @@ function auraPickerHTML(){var ap=parseAura((stat_data.训练家||{}).气场||'')
 function openAuraPicker(){if(inBattle()){hudMsg('战斗中无法切换气场');return;}clearBack();overlay.innerHTML=auraPickerHTML();overlay.classList.add('open');}
 function setActiveAura(n){if(inBattle()){hudMsg('战斗中无法切换气场');return;}n=parseInt(n,10);if(!n||n<1||n>3)return;var tr=stat_data.训练家||{};var ap=parseAura(tr.气场||'');if(ap.active===n){overlay.classList.remove('open');clearBack();return;}tr.气场=auraRebuild(ap,n);overlay.classList.remove('open');clearBack();pkmHudPersistStatData().then(function(){pkmHudRenderCurrent();},function(){pkmHudRenderCurrent();});}
 function badgePageHTML(){var rs=parseBadges(),regions=Object.keys(BADGE_MAP);var cur=badgeSel||pickRegion(rs)||regions[0];if(regions.indexOf(cur)<0)cur=regions[0];var tabs=regions.map(function(r){return '<button class="badge-tab'+(r===cur?' active':'')+'" data-bregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('');var rec=null;rs.forEach(function(r){if(r.region===cur)rec=r;});if(!rec)rec={region:cur,list:[],cnt:0};var tab=BADGE_MAP[cur]||[],cells=tab.map(function(e,i){return badgeImg(cur,e,badgeGot(rec,e,i),true);}).join('');var mh=badgeMinH();return frame('徽章盒 '+esc(cur)+' '+badgeCount(rec)+'/'+tab.length,'<div class="badge-tabs">'+tabs+'</div><div class="badge-grid" style="min-height:'+mh+'px">'+cells+'</div>');}
-function pkmHideNamePrefix(s){var t=String(s==null?'':s).trim(),pre=['霸主','搭檔','搭档','閃光','闪光'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){var p=pre[k];if(t.indexOf(p)===0&&t.length>p.length){var rest=t.slice(p.length).replace(/^[\s·・:：、,，\-—_]+/,'').trim();if(rest){t=rest;go=true;break;}}}}return t;}
+function pkmHideNamePrefix(s){var t=String(s==null?'':s).trim(),pre=['霸主','頭目','头目','搭檔','搭档','閃光','闪光'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){var p=pre[k];if(t.indexOf(p)===0&&t.length>p.length){var rest=t.slice(p.length).replace(/^[\s·・:：、,，\-—_]+/,'').trim();if(rest){t=rest;go=true;break;}}}}return t;}
 function baseName(s){var t=String(s||'').trim(),i=t.indexOf('-');if(i>0)t=t.slice(0,i);var pre=['搭档','头目','霸主','闪光','原始回归','原始','超极巨化','超极巨','极巨化','极巨','太晶化','太晶','阿罗拉','伽勒尔','洗翠','帕底亚','Mega','mega'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){if(t.indexOf(pre[k])===0&&t.length>pre[k].length){t=t.slice(pre[k].length).trim();go=true;}}}return t;}
 function addSpecies(o,n){n=baseName(n);if(n)o[n]=1;}
 function ownedSpecies(){var o={},t=stat_data.队伍||{},k;for(k in t){if(t[k]&&t[k].名字&&t[k].名字!=='空')addSpecies(o,t[k].名字);}var b=stat_data.盒子||{};for(var bx in b){var sl=b[bx]||{};for(var p in sl){if(sl[p]&&sl[p].名字&&sl[p].名字!=='空')addSpecies(o,sl[p].名字);}}return o;}
