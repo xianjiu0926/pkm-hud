@@ -3,13 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.8.5';
+var PK_VER='5.8.6';
 /*PK_NOTICE_BEGIN
-v5.8.5 更新：
-· 宝可梦名字开头的「霸主／头目／搭档／闪光」前缀不再显示（附近宝可梦、队伍、盒子、详情页、战场均生效），头目（霸主）图标与闪光图标照常保留
-· 闪光判定兜底加强：名字或状态里带「闪光」但没填「是否闪光」时，也照常显示闪光图标与闪光精灵图
-· 队伍卡片补上头目（霸主）图标，隐藏前缀后仍能看出是霸主
-· 搭档倾向配图：攻速／双刀／坦克／均衡 四个图标（详情页「搭档倾向」行 + 队伍卡片名字后），其他取值只显示文字
+v5.8.6 更新：
+· 背包分类修正：「特性膏药」从「战斗道具」调整到「道具」，和「特性胶囊」放一起
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4479,7 +4476,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20260930bl';
+var PKM_DATA_REV='r20260930bm';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
