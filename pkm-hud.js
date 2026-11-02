@@ -6447,7 +6447,7 @@ function pkmPartnerDraw(box,stats){
   }
   box.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;width:100%;font-size:.85rem;flex-wrap:wrap"><span class="k">搭档加点</span><span class="v">档位 '+tier+'｜种族值 '+base+'｜已用 <b data-pt-used>'+used+'</b>｜剩 <b data-pt-left>'+Math.max(0,cap-used)+'</b></span></div>'
     +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:7px;width:100%">'+rows+'</div>'
-    +'<div class="dim" style="font-size:.7rem;margin-top:6px">可加 '+cap+' 点（档位 '+tier+' − 种族值 '+base+'，按可命令等级 Lv.'+cmd+'）</div>';
+    +'<div class="dim" style="font-size:.7rem;margin-top:6px">可加 '+cap+' 点（档位 '+tier+' − 种族值 '+base+'，按可命令等级 Lv.'+cmd+'）'+(used>cap?'<span style="color:#ff8a8a">，已超 '+(used-cap)+' 点，减回去</span>':'')+'</div>';
 }
 function pkmPartnerMount(root){
   var box=(root&&root.querySelector)?root.querySelector('[data-ptbox]'):null;
