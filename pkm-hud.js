@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.8.7';
+var PK_VER='5.8.8';
 /*PK_NOTICE_BEGIN
-v5.8.7 更新：
-· 附近宝可梦 →「选择行动」里新增「📖 图鉴」按钮：点开直接是这只宝可梦的图鉴详情，关掉回到原来的选择行动面板
+v5.8.8 更新：
+· 修复：附近宝可梦的属性标签有时整片不显示——类型表还没加载完就去查属性，查回来的属性被当成空值丢掉，之后整局都空着
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3553,6 +3553,7 @@ function nearbyLookup(str){var o={};String(str||'').split('|').forEach(function(
 
 
 var nearbyTypeCache={},nearbyTypePending={};
+function typeTableReady(){for(var _tk in TYPE_COLORS){if(TYPE_COLORS[_tk])return true;}return false;}
 function nearbyCleanType(v){
   var s=String(v==null?'':v).trim();
   if(!s)return '';
@@ -3560,6 +3561,7 @@ function nearbyCleanType(v){
   if(TYPE_COLORS[s])return s;
   s=s.replace(/\[|\]|\{|\}/g,'').replace(/\|.*$/,'').replace(/\s+/g,'').trim();
   if(TYPE_COLORS[s])return s;
+  if(!typeTableReady())return s;
   var ks=Object.keys(TYPE_COLORS).sort(function(a,b){return b.length-a.length;});
   for(var i=0;i<ks.length;i++){if(s.indexOf(ks[i])>=0)return ks[i];}
   return '';
@@ -3641,7 +3643,7 @@ function nearbyFetchTypes(name,en,cn,cb){
   nearbyTypePending[cacheKey]=cb?[cb]:[];
   function fin(t1,t2){
     var o={type1:t1||'',type2:t2||''};
-    nearbyTypeCache[cacheKey]=o;
+    if(t1||t2||typeTableReady())nearbyTypeCache[cacheKey]=o;
     if(t1||t2){try{lsSet(key,JSON.stringify(o));}catch(e){}}
     var q=nearbyTypePending[cacheKey]||[];nearbyTypePending[cacheKey]=null;
     for(var i=0;i<q.length;i++){try{q[i]&&q[i](o.type1,o.type2);}catch(e){}}
