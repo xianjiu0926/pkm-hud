@@ -3,12 +3,13 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.2';
+var PK_VER='5.9.3';
 /*PK_NOTICE_BEGIN
-v5.9.2 更新：
+v5.9.3 更新：
 · 搭档加点按钮 + 弹窗，六项调完点「确定」才写进变量
 · 还能加点的搭档，队伍名字后面和「搭档加点」按钮上会有闪烁小红点
 · 种族值已经够档位的搭档，AI 多写的加点会被自动清成 0
+· 加点输超过剩余时会自动收到上限，框里直接显示能加的数，不会出现负数
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6438,6 +6439,28 @@ function pkmPartnerAutoZero(obj,info){
   hudScope.setTimeout(function(){if(!__pkmPtZeroDirty)return;__pkmPtZeroDirty=false;try{pkmHudPersistStatData();}catch(e){}},0);
   return true;
 }
+function pkmPartnerFitStr(o){return 'HP+'+o.hp+',攻+'+o.atk+',防+'+o.def+',特攻+'+o.spa+',特防+'+o.spd+',速+'+o.spe;}
+function pkmPartnerFit(pts,cap){
+  var order=['spe','spd','spa','def','atk','hp'],total=pkmStatSum(pts);
+  for(var i=0;i<order.length&&total>cap;i++){
+    var k=order[i],take=Math.min(pts[k],total-cap);
+    if(take>0){pts[k]-=take;total-=take;}
+  }
+  return pts;
+}
+function pkmPartnerInputClamp(el){
+  if(!el)return;
+  var box=typeof el.closest==='function'?el.closest('[data-ptbox]'):null;
+  if(!box)return;
+  if(String(el.value)===''){pkmPartnerRecalc(box);return;}
+  var cap=num(box.getAttribute('data-pt-cap'),0),ins=box.querySelectorAll('[data-pt]'),others=0,i;
+  for(i=0;i<ins.length;i++)if(ins[i]!==el)others+=Math.max(0,Math.floor(num(ins[i].value,0)));
+  var room=Math.max(0,cap-others);
+  var v=Math.max(0,Math.floor(num(el.value,0)));
+  if(v>room)v=room;
+  if(String(el.value)!==String(v))el.value=v;
+  pkmPartnerRecalc(box);
+}
 function pkmPartnerInfo(partnerStr,stats){
   var cmd=num((stat_data.训练家||{}).可命令等级,10);
   var tier=pkmPartnerTier(cmd);
@@ -6484,6 +6507,11 @@ function pkmPartnerOpen(card){
 function pkmPartnerDraw(box,stats,card){
   if(!box)return;
   var info=pkmPartnerInfo(card&&card.partner,stats);
+  if(info.cap>0&&info.used>info.cap){
+    var fp=pkmPartnerFit(info.pts,info.cap),fobj=pkmPartnerObjOf(box);
+    if(fobj){fobj.搭档倾向=pkmPartnerFitStr(fp);if(card)card.partner=fobj.搭档倾向;try{pkmHudPersistStatData();}catch(e){}}
+    info.pts=fp;info.used=pkmStatSum(fp);info.left=info.cap-info.used;
+  }
   box.setAttribute('data-pt-cap',String(info.cap));
   if(!info.base){box.innerHTML='<div class="row"><span class="k">搭档加点</span><span class="v dim">读不到这只的种族值，先算不了可加点</span></div>';return;}
   var st='width:4.4em;padding:2px 5px;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);font-family:inherit;font-size:.82rem;text-align:right;outline:none';
@@ -6496,7 +6524,7 @@ function pkmPartnerDraw(box,stats,card){
     +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin-top:10px">'+rows+'</div>'
     +'<div class="action-btns" style="margin-top:14px"><button class="act-btn" data-pt-save>确定</button><button class="act-btn" data-pt-cancel>取消</button></div>';
   var ins=box.querySelectorAll('[data-pt]');
-  for(var n=0;n<ins.length;n++)ins[n].addEventListener('input',function(){pkmPartnerRecalc(box);});
+  for(var n=0;n<ins.length;n++)ins[n].addEventListener('input',function(){pkmPartnerInputClamp(this);});
   var ok=box.querySelector('[data-pt-save]');
   if(ok)ok.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();pkmPartnerSave(box,card);});
   var cc=box.querySelector('[data-pt-cancel]');
