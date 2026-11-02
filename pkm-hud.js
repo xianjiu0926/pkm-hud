@@ -3,13 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.3';
+var PK_VER='5.9.4';
 /*PK_NOTICE_BEGIN
-v5.9.3 更新：
-· 搭档加点按钮 + 弹窗，六项调完点「确定」才写进变量
-· 还能加点的搭档，队伍名字后面和「搭档加点」按钮上会有闪烁小红点
-· 种族值已经够档位的搭档，AI 多写的加点会被自动清成 0
-· 加点输超过剩余时会自动收到上限，框里直接显示能加的数，不会出现负数
+v5.9.4 更新：
+· 搭档加点弹窗改成居中排布，六项对齐更好看
+· 确定键放到下面正中间，去掉了取消键，直接点右上角 ✕ 关
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6518,17 +6516,15 @@ function pkmPartnerDraw(box,stats,card){
   var rows='';
   for(var i=0;i<PKM_PT_KEYS.length;i++){
     var k=PKM_PT_KEYS[i][0];
-    rows+='<label style="display:flex;align-items:center;gap:6px;font-size:.8rem"><span style="min-width:2.6em;opacity:.72">'+PKM_PT_KEYS[i][1]+'</span><input type="number" min="0" step="1" inputmode="numeric" data-pt="'+k+'" value="'+num(info.pts[k],0)+'" style="'+st+'"></label>';
+    rows+='<label style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:.82rem;min-width:116px"><span style="min-width:2.6em;text-align:right;opacity:.72">'+PKM_PT_KEYS[i][1]+'</span><input type="number" min="0" step="1" inputmode="numeric" data-pt="'+k+'" value="'+num(info.pts[k],0)+'" style="'+st+'"></label>';
   }
-  box.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem">档位 '+info.tier+'｜种族值 '+info.base+'｜可加 '+info.cap+'｜已用 <b data-pt-used>'+info.used+'</b>｜剩 <b data-pt-left style="'+(info.left<0?'color:#ff8a8a':'')+'">'+info.left+'</b></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin-top:10px">'+rows+'</div>'
-    +'<div class="action-btns" style="margin-top:14px"><button class="act-btn" data-pt-save>确定</button><button class="act-btn" data-pt-cancel>取消</button></div>';
+  box.innerHTML='<div style="text-align:center;font-size:.86rem;line-height:1.9">档位 '+info.tier+'｜种族值 '+info.base+'｜可加 '+info.cap+'<br>已用 <b data-pt-used>'+info.used+'</b>｜剩 <b data-pt-left style="'+(info.left<0?'color:#ff8a8a':'')+'">'+info.left+'</b></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,auto);gap:10px 26px;justify-content:center;margin-top:12px">'+rows+'</div>'
+    +'<div style="display:flex;justify-content:center;margin-top:18px"><button class="act-btn" data-pt-save style="min-width:62%;padding:11px 0;font-size:1rem">确定</button></div>';
   var ins=box.querySelectorAll('[data-pt]');
   for(var n=0;n<ins.length;n++)ins[n].addEventListener('input',function(){pkmPartnerInputClamp(this);});
   var ok=box.querySelector('[data-pt-save]');
   if(ok)ok.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();pkmPartnerSave(box,card);});
-  var cc=box.querySelector('[data-pt-cancel]');
-  if(cc)cc.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();pkmPartnerBackDetail();});
 }
 function pkmPartnerRecalc(box){
   if(!box)return 0;
