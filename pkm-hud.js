@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.8.9';
+var PK_VER='5.9.0';
 /*PK_NOTICE_BEGIN
-v5.8.9 更新：
-· 宝可梦详情里也加了「📖 图鉴」按钮，点开是这只宝可梦的图鉴，关掉回到原来的详情
-· 「📖 图鉴」按钮改成和上面几个按钮一样的样式
+v5.9.0 更新：
+· 搭档觉醒后，宝可梦详情里多一块「搭档加点」：按可命令等级定档位，减去这只的种族值合计算出可加点数，六项直接输数字，改完自动写回变量
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6404,8 +6403,94 @@ function showNatureInfo(name){
   render();
   ensureNatures().then(render);
 }
+/* ── 搭档加点：可加点 = 档位(按可命令等级) − 种族值合计 ── */
+var PKM_PT_KEYS=[['hp','HP'],['atk','攻'],['def','防'],['spa','特攻'],['spd','特防'],['spe','速']];
+function pkmPartnerTier(lv){var v=num(lv,0);if(v>=70)return 600;if(v>=55)return 570;if(v>=44)return 540;if(v>=29)return 510;return 460;}
+function pkmPartnerEligible(c){return !!(c&&(/^(搭档|搭檔)/.test(String(c.species||''))||String(c.partner||'').trim()));}
+function pkmStatSum(s){s=s||{};return num(s.hp,0)+num(s.atk,0)+num(s.def,0)+num(s.spa,0)+num(s.spd,0)+num(s.spe,0);}
+function pkmPartnerParse(str){
+  var out={hp:0,atk:0,def:0,spa:0,spd:0,spe:0},s=String(str||''),m;
+  var re=/(?:^|[,\s，;；｜|])(HP|特攻|特防|速度|防御|攻击|速|攻|防)\s*([+\-]?)\s*(\d+)/g;
+  while((m=re.exec(s))){
+    var k=m[1]==='HP'?'hp':m[1]==='特攻'?'spa':m[1]==='特防'?'spd':(m[1]==='速'||m[1]==='速度')?'spe':(m[1]==='攻'||m[1]==='攻击')?'atk':'def';
+    out[k]=(m[2]==='-'?-1:1)*num(m[3],0);
+  }
+  return out;
+}
+function pkmPartnerObjOf(box){
+  if(!box)return null;
+  var slot=String(box.getAttribute('data-pt-slot')||''),where=String(box.getAttribute('data-pt-where')||'team'),bn=String(box.getAttribute('data-pt-box')||'');
+  if(where==='box'&&bn){var bx=(stat_data.盒子||{})[bn];return (bx&&bx[slot])||null;}
+  return ((stat_data.队伍||{})[slot])||null;
+}
+function pkmPartnerBlockHTML(c){
+  return '<div class="row block" data-ptbox data-pt-slot="'+esc(c.slot||'')+'" data-pt-where="'+esc(c.where||'team')+'" data-pt-box="'+esc(c.boxName||'')+'" data-pt-name="'+esc(pkmHideNamePrefix(c.species||c.name||''))+'"><span class="k">搭档加点</span><span class="v dim">读取种族值…</span></div>';
+}
+function pkmPartnerDraw(box,stats){
+  if(!box)return;
+  var cmd=num((stat_data.训练家||{}).可命令等级,10);
+  var tier=pkmPartnerTier(cmd);
+  var base=stats?pkmStatSum(stats):0;
+  var cap=Math.max(0,tier-base);
+  box.setAttribute('data-pt-tier',String(tier));
+  box.setAttribute('data-pt-base',String(base));
+  box.setAttribute('data-pt-cap',String(cap));
+  if(!base){box.innerHTML='<div style="display:flex;gap:8px;width:100%;font-size:.85rem"><span class="k">搭档加点</span><span class="v dim">读不到这只的种族值，先算不了可加点</span></div>';return;}
+  var obj=pkmPartnerObjOf(box);
+  var pts=pkmPartnerParse(obj&&obj.搭档倾向);
+  var used=pkmStatSum(pts);
+  var st='width:4.4em;padding:2px 5px;background:rgba(43,74,111,.5);border:1px solid var(--frame);border-radius:4px;color:var(--text);font-family:inherit;font-size:.82rem;text-align:right;outline:none';
+  var rows='';
+  for(var i=0;i<PKM_PT_KEYS.length;i++){
+    var k=PKM_PT_KEYS[i][0];
+    rows+='<label style="display:flex;align-items:center;gap:6px;font-size:.76rem"><span style="min-width:2.6em;opacity:.72">'+PKM_PT_KEYS[i][1]+'</span><input type="number" min="0" step="1" inputmode="numeric" data-pt="'+k+'" value="'+num(pts[k],0)+'" style="'+st+'"></label>';
+  }
+  box.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;width:100%;font-size:.85rem;flex-wrap:wrap"><span class="k">搭档加点</span><span class="v">档位 '+tier+'｜种族值 '+base+'｜已用 <b data-pt-used>'+used+'</b>｜剩 <b data-pt-left>'+Math.max(0,cap-used)+'</b></span></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:7px;width:100%">'+rows+'</div>'
+    +'<div class="dim" style="font-size:.7rem;margin-top:6px">可加 '+cap+' 点（档位 '+tier+' − 种族值 '+base+'，按可命令等级 Lv.'+cmd+'）</div>';
+}
+function pkmPartnerMount(root){
+  var box=(root&&root.querySelector)?root.querySelector('[data-ptbox]'):null;
+  if(!box||box.getAttribute('data-pt-ready'))return;
+  box.setAttribute('data-pt-ready','1');
+  var name=String(box.getAttribute('data-pt-name')||'').trim();
+  if(!name)return;
+  pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+    var hit=(store&&pkmDbLookup('dex',name))||(store&&pkmDbLookupPrefix('dex',name));
+    var no=hit?(parseInt(hit.no,10)||0):0;
+    fetchPokemon(name,no,function(d){
+      var stats=null;
+      if(d&&d.forms){
+        for(var i=0;i<d.forms.length;i++){if(d.forms[i]&&d.forms[i].base&&d.forms[i].stats){stats=d.forms[i].stats;break;}}
+        if(!stats&&d.forms[0])stats=d.forms[0].stats;
+      }
+      pkmPartnerDraw(box,stats);
+    });
+  });
+}
+function pkmPartnerRecalc(box){
+  if(!box)return 0;
+  var cap=num(box.getAttribute('data-pt-cap'),0),ins=box.querySelectorAll('[data-pt]'),used=0,i;
+  for(i=0;i<ins.length;i++)used+=Math.max(0,Math.floor(num(ins[i].value,0)));
+  var lv=box.querySelector('[data-pt-left]');if(lv)lv.textContent=Math.max(0,cap-used);
+  var ud=box.querySelector('[data-pt-used]');if(ud)ud.textContent=used;
+  return Math.max(0,cap-used);
+}
+function pkmPartnerCommit(box){
+  var obj=pkmPartnerObjOf(box);if(!obj)return false;
+  var o={hp:0,atk:0,def:0,spa:0,spd:0,spe:0},ins=box.querySelectorAll('[data-pt]'),i;
+  for(i=0;i<ins.length;i++){var k=ins[i].getAttribute('data-pt');if(o.hasOwnProperty(k))o[k]=Math.max(0,Math.floor(num(ins[i].value,0)));}
+  var v='HP+'+o.hp+',攻+'+o.atk+',防+'+o.def+',特攻+'+o.spa+',特防+'+o.spd+',速+'+o.spe;
+  if(String(obj.搭档倾向||'')===v)return false;
+  obj.搭档倾向=v;
+  if(currentDetailCard&&String(currentDetailCard.slot)===String(box.getAttribute('data-pt-slot'))&&String(currentDetailCard.where||'team')===String(box.getAttribute('data-pt-where')||'team'))currentDetailCard.partner=v;
+  try{if(typeof pkmHudPersistStatData==='function')pkmHudPersistStatData();}catch(e){}
+  return true;
+}
+var __pkmPtCommitTimer=0;
+function pkmPartnerScheduleCommit(box){if(__pkmPtCommitTimer)hudScope.clearTimeout(__pkmPtCommitTimer);__pkmPtCommitTimer=hudScope.setTimeout(function(){__pkmPtCommitTimer=0;pkmPartnerCommit(box);},450);}
 function detailHTML(c){var gi=genderOf(c.gender);var isTotem=/霸主|头目|頭目/i.test(c.name+' '+c.species);var sprite=pkImgHTML(c.species,c.icon,c.shiny,'dt-big');var ballIcon=c.ball?'<span class="item-icon placeholder item-wiki" data-item="'+esc(c.ball)+'" data-item-en="'+esc(c.ballEn||'')+'" data-cls="ball-icon dt-ball">?</span>':'';var itName=(c.item&&c.item!=='无')?c.item:'';
-var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(pkmHideNamePrefix(c.name))+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/闪光.png')+'" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+detailTypesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+partnerTrendIcon(c.partner)+esc(c.partner)+'</span></div>':'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
+var hold=itName?('持有物：<span class="abi-link" data-item="'+esc(itName)+'" data-item-en="'+esc(c.itemEn||'')+'">'+esc(itName)+'</span>'):'持有物：无';var p1='<div class="dt-top">'+ballIcon+'<span class="dt-name">'+esc(pkmHideNamePrefix(c.name))+(isTotem?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/头目.png')+'" alt="头目/霸主" onerror="this.remove()">':'')+(c.shiny?' <img class="mega-ic" style="font-size:clamp(.74rem,2.8vw,.88rem)" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/闪光.png')+'" alt="闪光" onerror="this.remove()">':'')+'&nbsp;<span class="gender-sym '+gi.cls+'">'+gi.sym+'</span></span></div><div class="dt-sprite">'+sprite+'</div><div class="dt-lv">Lv.'+c.level+'</div><div class="dt-hold">'+hold+'</div>'+moveGridHTML(c.skills);var p2='<div class="row"><span class="k">属性</span>'+detailTypesHTML(c.attr1,c.attr2)+'</div><div class="row"><span class="k">性格</span><span class="v">'+(c.nature?'<span class="abi-link" data-nature="'+esc(c.nature)+'">'+esc(c.nature)+'</span>':'-')+'</span></div><div class="row"><span class="k">特性</span><span class="v">'+(c.ability?'<span class="abi-link" data-ability="'+esc(c.ability)+'">'+esc(c.ability)+'</span>':'-')+'</span></div>'+(c.status?'<div class="row"><span class="k">异常状态</span><span class="v">'+statusTag(c.status)+'</span></div>':'')+'<div class="row"><span class="k">HP</span><span class="v">'+c.hpCur+'/'+c.hpMax+'</span></div>'+(c.intimacy!==''?'<div class="row"><span class="k">亲密度</span><span class="v">'+esc(c.intimacy)+'/255</span></div>':'')+(c.hatch?'<div class="row"><span class="k">孵化剩余</span><span class="v">'+esc(c.hatch)+'</span></div>':'')+(c.partner?'<div class="row"><span class="k">搭档倾向</span><span class="v">'+esc(c.partner)+'</span></div>':'')+(pkmPartnerEligible(c)?pkmPartnerBlockHTML(c):'')+'<div class="row"><span class="k">经验</span><span class="v">'+esc(c.exp||'-')+'</span></div><div class="row"><span class="k">个体值</span>'+ivsHTML(c.iv)+'</div>';var hudActions='';
 if(c.where==='team') hudActions+='<button class="act-btn" data-pkm-store>存入盒子</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-withdraw>取出到队伍</button>';
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-movebox>切换盒子</button>';
@@ -7557,7 +7642,7 @@ function bindHudCmdBar(){}
 function bindPageInteractions(){
   var rdo=pageOverlay.querySelector('[data-rel-del-open]');if(rdo){rdo.addEventListener('click',function(e){e.stopPropagation();openRelDelete();});}
   pageOverlay.querySelectorAll('.rel-name[data-rel]').forEach(function(el){el.addEventListener('click',function(e){e.stopPropagation();showRelPortrait(el.getAttribute('data-rel'));});});
-  pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);clearBack();overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);}});});
+  pageOverlay.querySelectorAll('.box-cell[data-slot]').forEach(function(el){el.addEventListener('click',function(){var boxNum=el.getAttribute('data-box');var slot=el.getAttribute('data-slot');var p=stat_data.盒子[boxNum]&&stat_data.盒子[boxNum][slot];if(p){preloadMoves(p.技能);currentDetailCard=cardFromPkm(p,slot,'box',boxNum);clearBack();overlay.innerHTML=detailHTML(currentDetailCard);overlay.classList.add('open');resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);pkmPartnerMount(overlay);}});});
 pageOverlay.querySelectorAll('.nearby-cell[data-nearby]').forEach(function(el){el.addEventListener('click',function(){var key=el.getAttribute('data-nearby');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p){clearBack();overlay.innerHTML=actionHTML(p,key);overlay.classList.add('open');resolvePkmImgs(overlay);resolveNearbyTypes(overlay);}});});
   pageOverlay.querySelectorAll('.bag-tab[data-bag]').forEach(function(btn){btn.addEventListener('click',function(){activeBag=btn.getAttribute('data-bag');pageOverlay.querySelectorAll('.bag-tab').forEach(function(b){b.classList.toggle('active',b===btn);});var list=pageOverlay.querySelector('#bag-list');if(list){list.innerHTML=bagItemsHTML();resolveItemImgs(pageOverlay);}});});
   pageOverlay.querySelectorAll('.badge-tab[data-bregion]').forEach(function(b){b.addEventListener('click',function(){badgeSel=b.getAttribute('data-bregion');try{localStorage.setItem('pk_badge_sel',JSON.stringify({region:badgeSel}));}catch(e){}var pg=pageOverlay.querySelector('.page');var oldTabs=pageOverlay.querySelector('.badge-tabs');var pageTop=pg?pg.scrollTop:0;var tabsLeft=oldTabs?oldTabs.scrollLeft:0;pageOverlay.querySelector('.page-body').innerHTML=badgePageHTML();bindPageInteractions();if(pg){pg.scrollTop=pageTop;}var newTabs=pageOverlay.querySelector('.badge-tabs');if(newTabs){newTabs.scrollLeft=tabsLeft;}});});
@@ -8198,7 +8283,7 @@ function hudBindRootDelegation(app){
     var ac=x('#aura-cycle');if(ac){e.stopPropagation();openAuraPicker();return;}
     var ab=x('#aura-busy');if(ab){e.stopPropagation();hudMsg('战斗中无法切换气场');return;}
     var bo=x('[data-badge-open]');if(bo){e.stopPropagation();openPage('badge');return;}
-    var card=x('.card-frame[data-slot]');if(card){var sl=parseInt(card.getAttribute('data-slot'),10),c=null;for(var i=0;i<cards.length;i++)if(cards[i].slot===sl){c=cards[i];break;}if(c){currentDetailCard=c;clearBack();overlay.innerHTML=detailHTML(c);overlay.classList.add('open');resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);hudResolvePkidbImages(overlay);}return;}
+    var card=x('.card-frame[data-slot]');if(card){var sl=parseInt(card.getAttribute('data-slot'),10),c=null;for(var i=0;i<cards.length;i++)if(cards[i].slot===sl){c=cards[i];break;}if(c){currentDetailCard=c;clearBack();overlay.innerHTML=detailHTML(c);overlay.classList.add('open');resolvePkmImgs(overlay);resolveMoveTypes(overlay);resolveItemImgs(overlay);hudResolvePkidbImages(overlay);pkmPartnerMount(overlay);}return;}
     var nb=x('[data-nearby-open]');if(nb){e.stopPropagation();var key=nb.getAttribute('data-nearby-open'),pk=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(pk){clearBack();overlay.innerHTML=actionHTML(pk,key);overlay.classList.add('open');resolvePkmImgs(overlay);resolveNearbyTypes(overlay);hudResolvePkidbImages(overlay);}return;}
     var nt=x('[data-nearby-toggle]');if(nt){e.stopPropagation();nearbyOpen=!nearbyOpen;var nf=app.querySelector('.nearby-frame');if(nf){nf.outerHTML=nearbyHTML();resolvePkmImgs(app);resolveNearbyTypes(app);hudResolvePkidbImages(app);}resizeFrame();return;}
     var bmv=x('[data-move]');if(bmv){e.stopPropagation();showMoveInfo(bmv.getAttribute('data-move'),bmv.getAttribute('data-mvtype'),bmv.getAttribute('data-mvcat'));return;}    var bab=x('[data-ability]');if(bab){e.stopPropagation();showAbilityInfo(bab.getAttribute('data-ability'));return;}    var bit=x('.abi-link[data-item]');if(bit){e.stopPropagation();showItemInfo(bit.getAttribute('data-item'),true,bit.getAttribute('data-item-en')||'');return;}    var bnt=x('[data-nature]');if(bnt){e.stopPropagation();showNatureInfo(bnt.getAttribute('data-nature'));return;}    var btw=x('[data-type-weak]');if(btw){e.stopPropagation();showTypeWeakness(btw.getAttribute('data-type-weak'));return;}    var sum=x('.cmd-panel>summary');if(sum){var det=sum.parentElement;hudScope.setTimeout(function(){if(det)cmdOpen=!!det.open;},0);}
@@ -8633,6 +8718,26 @@ mapFab.addEventListener('click',function(e){
     if(!win.classList.contains('open')){open();}
     openPage('map');
   }catch(err){}
+});
+hudScope.listen(document,'input',function(e){
+  var t=e.target;
+  if(!t||typeof t.getAttribute!=='function'||!t.getAttribute('data-pt'))return;
+  var box=typeof t.closest==='function'?t.closest('[data-ptbox]'):null;
+  if(!box)return;
+  var cap=num(box.getAttribute('data-pt-cap'),0);
+  var v=Math.max(0,Math.floor(num(t.value,0)));
+  if(String(t.value)!==String(v))t.value=v;
+  var ins=box.querySelectorAll('[data-pt]'),used=0,i;
+  for(i=0;i<ins.length;i++)if(ins[i]!==t)used+=Math.max(0,Math.floor(num(ins[i].value,0)));
+  if(used+v>cap){v=Math.max(0,cap-used);t.value=v;}
+  pkmPartnerRecalc(box);
+  pkmPartnerScheduleCommit(box);
+});
+hudScope.listen(document,'change',function(e){
+  var t=e.target;
+  if(!t||typeof t.getAttribute!=='function'||!t.getAttribute('data-pt'))return;
+  var box=typeof t.closest==='function'?t.closest('[data-ptbox]'):null;
+  if(box)pkmPartnerCommit(box);
 });
 hudScope.listen(document,'click',function(e){
   var t=e.target&&e.target.closest?e.target:null;
