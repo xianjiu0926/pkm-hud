@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.7';
+var PK_VER='5.9.8';
 /*PK_NOTICE_BEGIN
-v5.9.7 更新：
-· 搭档缎带挪到性别符号左边，和超进化、头目那几个图标排一起
+v5.9.8 更新：
+· 「图鉴」「搭档加点」两个按钮去掉前面的小图标，文字居中
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6485,7 +6485,7 @@ function pkmPartnerStats(name,cb){
   });
 }
 function pkmPartnerBlockHTML(c){
-  return '<button class="act-btn" data-pt-open>'+partnerIcon('1.1rem')+' 搭档加点<span class="pt-dot" data-pt-dot-btn style="display:none"></span></button>';
+  return '<button class="act-btn" data-pt-open>搭档加点<span class="pt-dot" data-pt-dot-btn style="display:none"></span></button>';
 }
 function pkmPartnerOpen(card){
   if(!card||!overlay)return;
@@ -6591,7 +6591,7 @@ if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-w
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-movebox>切换盒子</button>';
 if(c.item && c.item!=='无') hudActions+='<button class="act-btn" data-pkm-unequip>卸下道具</button>';
 hudActions+='<button class="act-btn" data-pkm-equip>携带道具</button>';
-hudActions+='<button class="act-btn" data-pkm-dex-info>📖 图鉴</button>';
+hudActions+='<button class="act-btn" data-pkm-dex-info>图鉴</button>';
 if(pkmPartnerEligible(c)) hudActions+=pkmPartnerBlockHTML(c);
 if(hudActions) hudActions='<div class="action-btns" style="margin-top:10px">'+hudActions+'</div>';
 return '<div class="modal detail-modal one"><div class="modal-head"><div class="modal-name">宝可梦详情</div><button class="close" data-close>✕</button></div><div class="modal-body">'+p1+'<div class="dt-sep"></div>'+p2+hudActions+'</div></div>';}
