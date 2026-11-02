@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.4';
+var PK_VER='5.9.5';
 /*PK_NOTICE_BEGIN
-v5.9.4 更新：
-· 搭档加点弹窗改成居中排布，六项对齐更好看
-· 确定键放到下面正中间，去掉了取消键，直接点右上角 ✕ 关
+v5.9.5 更新：
+· 搭档加点弹窗在手机竖屏、横屏和电脑上都居中
+· 确定键居中放大，不再挤在左边
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6518,9 +6518,9 @@ function pkmPartnerDraw(box,stats,card){
     var k=PKM_PT_KEYS[i][0];
     rows+='<label style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:.82rem;min-width:116px"><span style="min-width:2.6em;text-align:right;opacity:.72">'+PKM_PT_KEYS[i][1]+'</span><input type="number" min="0" step="1" inputmode="numeric" data-pt="'+k+'" value="'+num(info.pts[k],0)+'" style="'+st+'"></label>';
   }
-  box.innerHTML='<div style="text-align:center;font-size:.86rem;line-height:1.9">档位 '+info.tier+'｜种族值 '+info.base+'｜可加 '+info.cap+'<br>已用 <b data-pt-used>'+info.used+'</b>｜剩 <b data-pt-left style="'+(info.left<0?'color:#ff8a8a':'')+'">'+info.left+'</b></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(2,auto);gap:10px 26px;justify-content:center;margin-top:12px">'+rows+'</div>'
-    +'<div style="display:flex;justify-content:center;margin-top:18px"><button class="act-btn" data-pt-save style="min-width:62%;padding:11px 0;font-size:1rem">确定</button></div>';
+  box.innerHTML='<div style="width:100%;text-align:center;font-size:.86rem;line-height:1.9">档位 '+info.tier+'｜种族值 '+info.base+'｜可加 '+info.cap+'<br>已用 <b data-pt-used>'+info.used+'</b>｜剩 <b data-pt-left style="'+(info.left<0?'color:#ff8a8a':'')+'">'+info.left+'</b></div>'
+    +'<div style="width:100%;display:grid;grid-template-columns:repeat(2,auto);gap:10px 26px;justify-content:center;margin-top:12px">'+rows+'</div>'
+    +'<div style="width:100%;display:flex;justify-content:center;margin-top:18px"><button class="act-btn" data-pt-save style="width:62%;max-width:240px;padding:11px 0;font-size:1rem">确定</button></div>';
   var ins=box.querySelectorAll('[data-pt]');
   for(var n=0;n<ins.length;n++)ins[n].addEventListener('input',function(){pkmPartnerInputClamp(this);});
   var ok=box.querySelector('[data-pt-save]');
