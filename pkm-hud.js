@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.8.6';
+var PK_VER='5.8.7';
 /*PK_NOTICE_BEGIN
-v5.8.6 更新：
-· 背包分类修正：「特性膏药」从「战斗道具」调整到「道具」，和「特性胶囊」放一起
+v5.8.7 更新：
+· 附近宝可梦 →「选择行动」里新增「📖 图鉴」按钮：点开直接是这只宝可梦的图鉴详情，关掉回到原来的选择行动面板
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5336,11 +5336,12 @@ function mvTabSwitch(tab){
   var panels=wrap.querySelectorAll('.mv-panel');
   for(var j=0;j<panels.length;j++){panels[j].style.display=(panels[j].getAttribute('data-mvpanel')===tab)?'':'none';}
 }
-function showPokemonInfo(name,ndex){
+function showPokemonInfo(name,ndex,back){
   curPkmNdex=parseInt(ndex,10)||0;
   ensureFormCryMap();
-  clearBack();
-  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" data-close>✕</button></div><div class="modal-body"><div id="pkm-formbar"></div><div class="pkm-big" id="pkm-big" data-shiny-toggle title="点击切换普通/闪光"><div class="empty">加载中...</div></div><div id="pkm-body"></div></div></div>';
+  var _pbk=!!back;
+  if(_pbk){pushBack();}else{clearBack();}
+  overlay.innerHTML='<div class="modal"><div class="modal-head"><div class="modal-name">'+esc(name)+'</div><button class="close" '+(_pbk?'data-move-back':'data-close')+'>✕</button></div><div class="modal-body"><div id="pkm-formbar"></div><div class="pkm-big" id="pkm-big" data-shiny-toggle title="点击切换普通/闪光"><div class="empty">加载中...</div></div><div id="pkm-body"></div></div></div>';
   overlay.classList.add('open');
   curPkm=null;curPkmForm=0;curPkmForms=[];curPkmShiny=false;
 fetchPokemon(name,curPkmNdex,function(d){
@@ -6410,7 +6411,7 @@ hudActions+='<button class="act-btn" data-pkm-equip>携带道具</button>';
 if(hudActions) hudActions='<div class="action-btns" style="margin-top:10px">'+hudActions+'</div>';
 return '<div class="modal detail-modal one"><div class="modal-head"><div class="modal-name">宝可梦详情</div><button class="close" data-close>✕</button></div><div class="modal-body">'+p1+'<div class="dt-sep"></div>'+p2+hudActions+'</div></div>';}
 
-function actionHTML(raw,key){var m=nearbyCategoryMeta(raw),p=m.pokemon,img=pkImgHTML(p.名字,p.图标,m.shiny,'action-img'),badges=nearbyPillsHTML(m)+nearbyTypeBarHTML(m),marks=nearbyNameIconsHTML(m);return '<div class="modal"><div class="modal-head"><div class="modal-name">选择行动</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="action-pkm nearby-action-head '+nearbyCellClasses(m)+'" style="'+nearbyCellStyle(m)+'"><div class="nb-edge"></div><div class="nearby-action-img">'+img+'</div><div class="action-info"><div class="nearby-name nearby-action-name">'+esc(pkmHideNamePrefix(p.名字))+' <span class="nb-name-icons">'+marks+'</span></div><div class="nb-pillbar nearby-action-pills">'+badges+'</div><div class="nearby-sub">数量 ×'+num(p.数量,1)+'</div></div></div><div class="action-btns"><button class="act-btn" data-action="对战" data-key="'+esc(key)+'">⚔️ 对战</button><button class="act-btn" data-action="捕捉" data-key="'+esc(key)+'">🔴 捕捉</button><button class="act-btn" data-action="观察" data-key="'+esc(key)+'">👀 观察</button></div></div></div>';}
+function actionHTML(raw,key){var m=nearbyCategoryMeta(raw),p=m.pokemon,img=pkImgHTML(p.名字,p.图标,m.shiny,'action-img'),badges=nearbyPillsHTML(m)+nearbyTypeBarHTML(m),marks=nearbyNameIconsHTML(m);return '<div class="modal"><div class="modal-head"><div class="modal-name">选择行动</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="action-pkm nearby-action-head '+nearbyCellClasses(m)+'" style="'+nearbyCellStyle(m)+'"><div class="nb-edge"></div><div class="nearby-action-img">'+img+'</div><div class="action-info"><div class="nearby-name nearby-action-name">'+esc(pkmHideNamePrefix(p.名字))+' <span class="nb-name-icons">'+marks+'</span></div><div class="nb-pillbar nearby-action-pills">'+badges+'</div><div class="nearby-sub">数量 ×'+num(p.数量,1)+'</div></div></div><div class="action-btns"><button class="act-btn" data-action="对战" data-key="'+esc(key)+'">⚔️ 对战</button><button class="act-btn" data-action="捕捉" data-key="'+esc(key)+'">🔴 捕捉</button><button class="act-btn" data-action="观察" data-key="'+esc(key)+'">👀 观察</button><button class="act-btn act-dex-btn" data-pkm-dex="1" data-key="'+esc(key)+'" style="border-style:dashed;opacity:.92">📖 图鉴</button></div></div></div>';}
 
 function sendMessage(text){
   try{
@@ -8343,6 +8344,7 @@ var cur=e.target.closest('[data-cache-usage-refresh]');if(cur){e.stopPropagation
 var pdu=e.target.closest('[data-notice-update]');if(pdu){e.stopPropagation();overlay.classList.remove('open');pkDoUpdate();return;}
 var pkc=e.target.closest('[data-pk-copy-content]');if(pkc){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc.textContent=ok?'✔ 已复制':'复制失败';});}else{pkc.textContent='无内容';}return;}
 var pkc2=e.target.closest('[data-pk-copy-content-close]');if(pkc2){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc2.textContent=ok?'✔ 已复制':'复制失败';hudScope.setTimeout(function(){overlay.classList.remove('open');clearBack();},400);});}else{pkc2.textContent='无内容';}return;}
+    var dxb=e.target.closest('[data-pkm-dex]');if(dxb){e.stopPropagation();var _dk=dxb.getAttribute('data-key');var _dp=stat_data.附近宝可梦&&stat_data.附近宝可梦[_dk];if(_dp){var _dn=pkmFormParse(_dp.名字||'').base||String(_dp.名字||'');if(_dn)showPokemonInfo(_dn,0,1);}return;}
     var btn=e.target.closest('[data-action]');if(btn){var action=btn.getAttribute('data-action');var key=btn.getAttribute('data-key');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p)sendAction(p,action);}
   });
   subOverlay.addEventListener('click',function(e){
