@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.14';
+var PK_VER='5.9.15';
 /*PK_NOTICE_BEGIN
-v5.9.14 更新：
-· 「搭档加点」六项名称改成 HP／物攻／物防／特攻／特防／速度
+v5.9.15 更新：
+· 「搭档加点」写回变量的格式跟着改：HP+0,物攻+0,物防+0,特攻+0,特防+0,速度+0（旧的「攻／防／速」写法照样能读）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6439,17 +6439,17 @@ function pkmPartnerObjOf(box){
   return ((stat_data.队伍||{})[slot])||null;
 }
 var __pkmPtZeroDirty=false;
-var PKM_PT_ZERO='HP+0,攻+0,防+0,特攻+0,特防+0,速+0';
+var PKM_PT_ZERO=pkmPartnerFitStr({});
 function pkmPartnerAutoZero(obj,info){
   if(!obj||!info)return false;
   if(info.cap>0||info.used<=0)return false;
-  if(String(obj.搭档倾向||'')===PKM_PT_ZERO)return false;
+  if(pkmStatSum(pkmPartnerParse(obj.搭档倾向))<=0)return false;
   obj.搭档倾向=PKM_PT_ZERO;
   __pkmPtZeroDirty=true;
   hudScope.setTimeout(function(){if(!__pkmPtZeroDirty)return;__pkmPtZeroDirty=false;try{pkmHudPersistStatData();}catch(e){}},0);
   return true;
 }
-function pkmPartnerFitStr(o){return 'HP+'+o.hp+',攻+'+o.atk+',防+'+o.def+',特攻+'+o.spa+',特防+'+o.spd+',速+'+o.spe;}
+function pkmPartnerFitStr(o){var a=[];for(var i=0;i<PKM_PT_KEYS.length;i++){a.push(PKM_PT_KEYS[i][1]+'+'+num(o&&o[PKM_PT_KEYS[i][0]],0));}return a.join(',');}
 function pkmPartnerFit(pts,cap){
   var order=['spe','spd','spa','def','atk','hp'],total=pkmStatSum(pts);
   for(var i=0;i<order.length&&total>cap;i++){
@@ -6551,7 +6551,7 @@ function pkmPartnerSave(box,card){
   var obj=pkmPartnerObjOf(box);if(!obj)return false;
   var o={hp:0,atk:0,def:0,spa:0,spd:0,spe:0},ins=box.querySelectorAll('[data-pt]'),i;
   for(i=0;i<ins.length;i++){var k=ins[i].getAttribute('data-pt');if(o.hasOwnProperty(k))o[k]=Math.max(0,Math.floor(num(ins[i].value,0)));}
-  var v=(num(box.getAttribute('data-pt-cap'),0)<=0)?PKM_PT_ZERO:('HP+'+o.hp+',攻+'+o.atk+',防+'+o.def+',特攻+'+o.spa+',特防+'+o.spd+',速+'+o.spe);
+  var v=(num(box.getAttribute('data-pt-cap'),0)<=0)?PKM_PT_ZERO:pkmPartnerFitStr(o);
   obj.搭档倾向=v;
   if(card)card.partner=v;
   var done=function(){pkmPartnerBackDetail();};
