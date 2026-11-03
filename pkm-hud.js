@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.15';
+var PK_VER='5.9.16';
 /*PK_NOTICE_BEGIN
-v5.9.15 更新：
-· 「搭档加点」写回变量的格式跟着改：HP+0,物攻+0,物防+0,特攻+0,特防+0,速度+0（旧的「攻／防／速」写法照样能读）
+v5.9.16 更新：
+· 「搭档加点」HP 一栏显示成「H P」，六项名称等宽居中，输入框跟着对齐
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6420,6 +6420,7 @@ function showNatureInfo(name){
 }
 /* ── 搭档加点：可加点 = 档位(按可命令等级) − 种族值合计 ── */
 var PKM_PT_KEYS=[['hp','HP'],['atk','物攻'],['def','物防'],['spa','特攻'],['spd','特防'],['spe','速度']];
+function ptLabelOf(s){s=String(s||'');return s==='HP'?'H P':s;}
 function pkmPartnerTier(lv){var v=num(lv,0);if(v>=70)return 600;if(v>=55)return 570;if(v>=44)return 540;if(v>=29)return 510;return 460;}
 function pkmPartnerEligible(c){return !!(c&&(/^(搭档|搭檔)/.test(String(c.species||''))||String(c.partner||'').trim()));}
 function pkmStatSum(s){s=s||{};return num(s.hp,0)+num(s.atk,0)+num(s.def,0)+num(s.spa,0)+num(s.spd,0)+num(s.spe,0);}
@@ -6528,7 +6529,7 @@ function pkmPartnerDraw(box,stats,card){
   var rows='';
   for(var i=0;i<PKM_PT_KEYS.length;i++){
     var k=PKM_PT_KEYS[i][0];
-    rows+='<label style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:.82rem;min-width:116px"><span style="min-width:2.6em;text-align:right;opacity:.72">'+PKM_PT_KEYS[i][1]+'</span><input type="number" min="0" step="1" inputmode="numeric" data-pt="'+k+'" value="'+num(info.pts[k],0)+'" style="'+st+'"></label>';
+    rows+='<label style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:.82rem;min-width:116px"><span style="width:3.1em;text-align:center;opacity:.72">'+ptLabelOf(PKM_PT_KEYS[i][1])+'</span><input type="number" min="0" step="1" inputmode="numeric" data-pt="'+k+'" value="'+num(info.pts[k],0)+'" style="'+st+'"></label>';
   }
   box.innerHTML='<div style="width:100%;text-align:center;font-size:.86rem;line-height:1.9">档位 '+info.tier+'｜种族值 '+info.base+'｜可加 '+info.cap+'<br>已用 <b data-pt-used>'+info.used+'</b>｜剩 <b data-pt-left style="'+(info.left<0?'color:#ff8a8a':'')+'">'+info.left+'</b></div>'
     +'<div style="width:100%;display:grid;grid-template-columns:repeat(2,auto);gap:10px 26px;justify-content:center;margin-top:12px">'+rows+'</div>'
