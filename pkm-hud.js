@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.12';
+var PK_VER='5.9.13';
 /*PK_NOTICE_BEGIN
-v5.9.12 更新：
-· 图鉴收录已见形态：名字带前缀的（如「搭档Mega妙蛙花」「搭档Mega喷火龙X」）以前只算收录普通形态，Mega／超极巨化／地区形态不亮；现在统一按「基础名＋形态」记录，图鉴里这些形态会正常出现
+v5.9.13 更新：
+· 加快 Mega 形态的精灵出图：图标写成「charizard-megax」这种时，以前要先请求两个不存在的地址再回退，现在直接认成仓库里的「-mega-x」，一次取到
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3175,8 +3175,9 @@ function ensureSlugFix(){
   return slugFixPromise;
 }
 function fixSlug(n){return SLUG_FIX_MAP[n]||n;}
+function normMegaLetter(n){return String(n||'').toLowerCase().replace(/^(.*?)-?(megax|megay|megaz)$/,function(_,a,b){return a+'-mega-'+b.slice(-1);});}
 function slugCandidates(n){
-  var out=[n];
+  var out=[n=normMegaLetter(n)];
   var _mx=n.match(/^(.*?)-?(megax|megay|megaz)$/);
   if(_mx)out.push(_mx[1]+'-mega-'+_mx[2].slice(-1));
   var noH=n.replace(/[-:]/g,'');
@@ -3269,7 +3270,7 @@ var PKM_EN_DEX={};function resolvePkmIconRepo(el,icon,shiny){
   Promise.all([ensureSpriteMap(),ensureSlugFix()]).then(function(){
   var fn=String(icon||'').toLowerCase().replace(/\.(gif|png)$/,'');
   if(!fn){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');return;}
-  fn=fixSlug(fn);
+  fn=normMegaLetter(fixSlug(fn));
   fn=fn.replace(/-(regional-a|regional-g|regional-h|regional-p)$/,function(_,x){
     return ({'regional-a':'-alola','regional-g':'-galar','regional-h':'-hisui','regional-p':'-paldea'})[x];
   });
