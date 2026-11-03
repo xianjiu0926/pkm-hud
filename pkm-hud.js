@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.19';
+var PK_VER='5.9.20';
 /*PK_NOTICE_BEGIN
-v5.9.19 更新：
-· 名字或图标名里带「雌性／雄性」（-female／-male）的，自动去找 -f／-m 的图
-· 爱管侍、超能妙喵这些公母长得不一样的，不会再显示成另一性别的那张
+v5.9.20 更新：
+· 弱丁鱼(鱼群) 会去找鱼群形态的图，不再空着
+· 只有带括号形态名的宝可梦（弱丁鱼、爱管侍这类），只写基础名字也能出图
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3135,7 +3135,7 @@ function fetchPkmSlug(name,cb){
     cb&&cb(slug);
   }
   pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
-    var hit=store&&pkmDbLookup('dex',b);
+    var hit=store&&(pkmDbLookup('dex',b)||pkmDbLookupPrefix('dex',b));
     if(hit&&hit.en){
       pkmDexCache[b]=String(hit.no);
       lsSet('pk_ndex_'+b,String(hit.no));
@@ -3240,11 +3240,10 @@ var PKM_POKEOS_PROXY='https://wsrv.nl/?url=';
 var pkmSource='pokeos';
 try{var _psrc=localStorage.getItem('pk_source');pkmSource=(_psrc==='showdown')?'showdown':'pokeos';}catch(e){}function pkmFormParse(name){
   var t=String(name||'').trim(),form='';
-  /* 雌雄：只有少数物种公母长得不一样，仓库里的图是 -f / -m 后缀 */
+  /* 雌雄：只有少数物种公母长得不一样，仓库里的图是 -f / -m 后缀；雄性大部分仍是裸名 */
   var gs='';
   if(/雌性|[（(]\s*female\s*[）)]|\bfemale\b/i.test(t))gs='-f';
-  else if(/雄性|[（(]\s*male\s*[）)]|\bmale\b/i.test(t))gs='-m';
-  if(gs)t=t.replace(/雌性|雄性|female|male/gi,'');
+  if(/雌性|雄性|[（(]\s*(female|male)\s*[）)]|\b(female|male)\b/i.test(t))t=t.replace(/雌性|雄性|female|male/gi,'');
   /* 先剥掉「搭档／霸主／头目／闪光」这类非形态前缀，不然它们挡在前面，后面认形态全落空 */
   t=t.replace(/^(?:(?:搭檔|搭档|霸主|頭目|头目|閃光|闪光)[\s·・:：、,，\-—_~～]*)+/,'');
   if(/^(超极巨化|超极巨)/.test(t)){form='-gmax';t=t.replace(/^(超极巨化|超极巨)/,'');}
@@ -3270,7 +3269,7 @@ try{var _psrc=localStorage.getItem('pk_source');pkmSource=(_psrc==='showdown')?'
     else if(/[ZzＺ]$/.test(t)){form='-mega-z';t=t.replace(/[ZzＺ]$/,'');}
   }
   if(!form){
-    var keys=[['黄昏之鬃','-dusk'],['拂晓之翼','-dawn'],['灵兽形态','-therian'],['起源形态','-origin'],['天空形态','-sky'],['解放形态','-unbound'],['完全体','-complete'],['觉悟形态','-resolute'],['舞步形态','-pirouette'],['攻击形态','-attack'],['防御形态','-defense'],['速度形态','-speed'],['白昼形态','-midday'],['黑夜形态','-midnight'],['黄昏形态','-dusk'],['太阳形态','-sunny'],['雨水形态','-rainy'],['雪云形态','-snowy'],['晴天形态','-sunshine'],['全能形态','-hero'],['化身形态',''],['小智版','-ash'],['剑之王','-crowned'],['盾之王','-crowned'],['骑白马','-ice'],['骑黑马','-shadow'],['焰白','-white'],['暗黑','-black'],['究极','-ultra'],['灵兽','-therian'],['起源','-origin'],['天空','-sky'],['解放','-unbound'],['完全','-complete'],['觉悟','-resolute'],['舞步','-pirouette'],['攻击','-attack'],['防御','-defense'],['速度','-speed'],['白昼','-midday'],['黄昏','-dusk'],['晴天','-sunshine'],['全能','-hero'],['小智','-ash'],['加热','-heat'],['清洗','-wash'],['结冰','-frost'],['旋转','-fan'],['切割','-mow'],['10%形态','-10'],['50%形态','-50'],['10％形态','-10'],['50％形态','-50'],['10%','-10'],['50%','-50'],['10％','-10'],['50％','-50']];
+    var keys=[['黄昏之鬃','-dusk'],['拂晓之翼','-dawn'],['灵兽形态','-therian'],['起源形态','-origin'],['天空形态','-sky'],['解放形态','-unbound'],['完全体','-complete'],['觉悟形态','-resolute'],['舞步形态','-pirouette'],['攻击形态','-attack'],['防御形态','-defense'],['速度形态','-speed'],['白昼形态','-midday'],['黑夜形态','-midnight'],['黄昏形态','-dusk'],['太阳形态','-sunny'],['雨水形态','-rainy'],['雪云形态','-snowy'],['晴天形态','-sunshine'],['全能形态','-hero'],['化身形态',''],['小智版','-ash'],['剑之王','-crowned'],['盾之王','-crowned'],['骑白马','-ice'],['骑黑马','-shadow'],['焰白','-white'],['暗黑','-black'],['究极','-ultra'],['灵兽','-therian'],['起源','-origin'],['天空','-sky'],['解放','-unbound'],['完全','-complete'],['觉悟','-resolute'],['舞步','-pirouette'],['攻击','-attack'],['防御','-defense'],['速度','-speed'],['白昼','-midday'],['黄昏','-dusk'],['晴天','-sunshine'],['全能','-hero'],['小智','-ash'],['加热','-heat'],['清洗','-wash'],['结冰','-frost'],['旋转','-fan'],['切割','-mow'],['鱼群','-school'],['10%形态','-10'],['50%形态','-50'],['10％形态','-10'],['50％形态','-50'],['10%','-10'],['50%','-50'],['10％','-10'],['50％','-50']];
     keys.sort(function(a,b){return b[0].length-a[0].length;});
     for(var i=0;i<keys.length;i++){var k=keys[i][0];if(t.indexOf(k)>=0){t=t.replace(k,'');form=keys[i][1];break;}}
   }
@@ -3290,7 +3289,7 @@ var PKM_EN_DEX={};function resolvePkmIconRepo(el,icon,shiny){
   var sel=(pkmSource==='showdown')?'showdown':'pokeos';
   var other=(sel==='showdown')?'pokeos':'showdown';
   var order=[['animated',sel],['animated',other],['static',sel],['static',other]];
-  var base=spriteMapBase(fn);
+  var base=spriteMapBase(fn)||(/-(f|m)$/.test(fn)?fn.replace(/-(f|m)$/,''):'');
   var useBase=false,si=0,ci=0,cands=null;
   function candsFor(src){
     var s=useBase?base:fn;
