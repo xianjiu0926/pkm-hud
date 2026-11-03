@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.11';
+var PK_VER='5.9.12';
 /*PK_NOTICE_BEGIN
-v5.9.11 更新：
-· 修复名字前面带「搭档」「霸主」这类前缀的宝可梦（如「搭档Mega喷火龙X」「霸主·刺龙王」）点「图鉴」提示数据获取失败的问题
-· 同时修好这类名字的形态识别：以前前缀挡在前面，Mega、超极巨化、地区形态都认不出来
+v5.9.12 更新：
+· 图鉴收录已见形态：名字带前缀的（如「搭档Mega妙蛙花」「搭档Mega喷火龙X」）以前只算收录普通形态，Mega／超极巨化／地区形态不亮；现在统一按「基础名＋形态」记录，图鉴里这些形态会正常出现
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3455,7 +3454,7 @@ function addFull(o,n,ic){
   var t=t2s(String(n||'').trim());
   var pre=['搭档','头目','霸主','闪光','太晶化','太晶','极巨化','极巨'],go=true;
   while(go){go=false;for(var k=0;k<pre.length;k++){if(t.indexOf(pre[k])===0&&t.length>pre[k].length){t=t.slice(pre[k].length).trim();go=true;}}}
-  if(t)o[t]=1;
+  if(t)o[t]=1;var _fk2=seenFormKey(n);if(_fk2)o[_fk2]=1;
   var si=String(ic||'').toLowerCase(),rg='';
   if(si.indexOf('-alola')>=0||t.indexOf('阿罗拉')>=0||t.indexOf('阿羅拉')>=0)rg='阿罗拉';
   else if(si.indexOf('-galar')>=0||t.indexOf('伽勒尔')>=0||t.indexOf('伽勒爾')>=0)rg='伽勒尔';
@@ -3482,10 +3481,13 @@ function recordSeen(){
   try{localStorage.setItem(seenFullKey(),JSON.stringify(sf));}catch(e){}
 }
 function hitSpecies(set,name){if(!name)return false;if(set[name])return true;if(name.length<2)return false;for(var k in set){if(k.indexOf(name)===0&&k.length>name.length){if(!/[\u4e00-\u9fff]/.test(k.slice(name.length)))return true;}}return false;}
+function seenFormKey(n){try{var p=pkmFormParse(String(n||''));if(!p||!p.base)return '';return p.base+'|'+(p.form||'-base');}catch(e){return '';}}
 function formSeen(set,f,base){
   if(f.base===1)return true;
   if(!set)return false;
   if(f.name&&set[f.name])return true;
+  var _fk=seenFormKey(f.name);
+  if(_fk&&set[_fk])return true;
   if(f.region){
     var rk={'alola':'阿罗拉','galar':'伽勒尔','hisui':'洗翠','paldea':'帕底亚'}[f.region]||'';
     var rt={'alola':'阿羅拉','galar':'伽勒爾','hisui':'洗翠','paldea':'帕底亞'}[f.region]||'';
