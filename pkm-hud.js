@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.13';
+var PK_VER='5.9.14';
 /*PK_NOTICE_BEGIN
-v5.9.13 更新：
-· 加快 Mega 形态的精灵出图：图标写成「charizard-megax」这种时，以前要先请求两个不存在的地址再回退，现在直接认成仓库里的「-mega-x」，一次取到
+v5.9.14 更新：
+· 「搭档加点」六项名称改成 HP／物攻／物防／特攻／特防／速度
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6419,15 +6419,15 @@ function showNatureInfo(name){
   ensureNatures().then(render);
 }
 /* ── 搭档加点：可加点 = 档位(按可命令等级) − 种族值合计 ── */
-var PKM_PT_KEYS=[['hp','HP'],['atk','攻'],['def','防'],['spa','特攻'],['spd','特防'],['spe','速']];
+var PKM_PT_KEYS=[['hp','HP'],['atk','物攻'],['def','物防'],['spa','特攻'],['spd','特防'],['spe','速度']];
 function pkmPartnerTier(lv){var v=num(lv,0);if(v>=70)return 600;if(v>=55)return 570;if(v>=44)return 540;if(v>=29)return 510;return 460;}
 function pkmPartnerEligible(c){return !!(c&&(/^(搭档|搭檔)/.test(String(c.species||''))||String(c.partner||'').trim()));}
 function pkmStatSum(s){s=s||{};return num(s.hp,0)+num(s.atk,0)+num(s.def,0)+num(s.spa,0)+num(s.spd,0)+num(s.spe,0);}
 function pkmPartnerParse(str){
   var out={hp:0,atk:0,def:0,spa:0,spd:0,spe:0},s=String(str||''),m;
-  var re=/(?:^|[,\s，;；｜|])(HP|特攻|特防|速度|防御|攻击|速|攻|防)\s*([+\-]?)\s*(\d+)/g;
+  var re=/(?:^|[,\s，;；｜|])(HP|物攻|物防|特攻|特防|速度|防御|攻击|速|攻|防)\s*([+\-]?)\s*(\d+)/g;
   while((m=re.exec(s))){
-    var k=m[1]==='HP'?'hp':m[1]==='特攻'?'spa':m[1]==='特防'?'spd':(m[1]==='速'||m[1]==='速度')?'spe':(m[1]==='攻'||m[1]==='攻击')?'atk':'def';
+    var k=m[1]==='HP'?'hp':m[1]==='特攻'?'spa':m[1]==='特防'?'spd':(m[1]==='速'||m[1]==='速度')?'spe':(m[1]==='攻'||m[1]==='攻击'||m[1]==='物攻')?'atk':'def';
     out[k]=(m[2]==='-'?-1:1)*num(m[3],0);
   }
   return out;
