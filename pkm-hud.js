@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.18';
+var PK_VER='5.9.19';
 /*PK_NOTICE_BEGIN
-v5.9.18 更新：
-· 撤回上一版多出来的改动，功能与 v5.9.16 相同
+v5.9.19 更新：
+· 名字或图标名里带「雌性／雄性」（-female／-male）的，自动去找 -f／-m 的图
+· 爱管侍、超能妙喵这些公母长得不一样的，不会再显示成另一性别的那张
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3176,6 +3177,13 @@ function ensureSlugFix(){
 }
 function fixSlug(n){return SLUG_FIX_MAP[n]||n;}
 function normMegaLetter(n){return String(n||'').toLowerCase().replace(/^(.*?)-?(megax|megay|megaz)$/,function(_,a,b){return a+'-mega-'+b.slice(-1);});}
+/* 性别后缀：仓库里的图是 -f / -m，别处常写成 -female / -male */
+function normGenderSlug(n){
+  var s=String(n||'').toLowerCase();
+  if(/-female$/.test(s))return s.replace(/-female$/,'-f');
+  if(/-male$/.test(s))return s.replace(/-male$/,'-m');
+  return s;
+}
 function slugCandidates(n){
   var out=[n=normMegaLetter(n)];
   var _mx=n.match(/^(.*?)-?(megax|megay|megaz)$/);
@@ -3232,6 +3240,11 @@ var PKM_POKEOS_PROXY='https://wsrv.nl/?url=';
 var pkmSource='pokeos';
 try{var _psrc=localStorage.getItem('pk_source');pkmSource=(_psrc==='showdown')?'showdown':'pokeos';}catch(e){}function pkmFormParse(name){
   var t=String(name||'').trim(),form='';
+  /* 雌雄：只有少数物种公母长得不一样，仓库里的图是 -f / -m 后缀 */
+  var gs='';
+  if(/雌性|[（(]\s*female\s*[）)]|\bfemale\b/i.test(t))gs='-f';
+  else if(/雄性|[（(]\s*male\s*[）)]|\bmale\b/i.test(t))gs='-m';
+  if(gs)t=t.replace(/雌性|雄性|female|male/gi,'');
   /* 先剥掉「搭档／霸主／头目／闪光」这类非形态前缀，不然它们挡在前面，后面认形态全落空 */
   t=t.replace(/^(?:(?:搭檔|搭档|霸主|頭目|头目|閃光|闪光)[\s·・:：、,，\-—_~～]*)+/,'');
   if(/^(超极巨化|超极巨)/.test(t)){form='-gmax';t=t.replace(/^(超极巨化|超极巨)/,'');}
@@ -3263,14 +3276,14 @@ try{var _psrc=localStorage.getItem('pk_source');pkmSource=(_psrc==='showdown')?'
   }
   t=t.replace(/[（(][^）)]*[）)]/g,'').replace(/(的)?样子/g,'');
   var base=baseName(t);if(!base)base=t;
-  return {base:base,form:form};
+  return {base:base,form:form||gs};
 }
 
 var PKM_EN_DEX={};function resolvePkmIconRepo(el,icon,shiny){
   Promise.all([ensureSpriteMap(),ensureSlugFix()]).then(function(){
   var fn=String(icon||'').toLowerCase().replace(/\.(gif|png)$/,'');
   if(!fn){el.classList.add('no-img');el.style.backgroundImage='none';el.textContent='?';el.removeAttribute('data-icon');return;}
-  fn=normMegaLetter(fixSlug(fn));
+  fn=normGenderSlug(normMegaLetter(fixSlug(fn)));
   fn=fn.replace(/-(regional-a|regional-g|regional-h|regional-p)$/,function(_,x){
     return ({'regional-a':'-alola','regional-g':'-galar','regional-h':'-hisui','regional-p':'-paldea'})[x];
   });
