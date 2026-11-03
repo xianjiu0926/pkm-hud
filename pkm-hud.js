@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.10';
+var PK_VER='5.9.11';
 /*PK_NOTICE_BEGIN
-v5.9.10 更新：
-· 修复名字写成「喷火龙X」「超梦Y」这种（没带 Mega 前缀）的宝可梦点「图鉴」提示数据获取失败的问题
+v5.9.11 更新：
+· 修复名字前面带「搭档」「霸主」这类前缀的宝可梦（如「搭档Mega喷火龙X」「霸主·刺龙王」）点「图鉴」提示数据获取失败的问题
+· 同时修好这类名字的形态识别：以前前缀挡在前面，Mega、超极巨化、地区形态都认不出来
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3231,6 +3232,8 @@ var PKM_POKEOS_PROXY='https://wsrv.nl/?url=';
 var pkmSource='pokeos';
 try{var _psrc=localStorage.getItem('pk_source');pkmSource=(_psrc==='showdown')?'showdown':'pokeos';}catch(e){}function pkmFormParse(name){
   var t=String(name||'').trim(),form='';
+  /* 先剥掉「搭档／霸主／头目／闪光」这类非形态前缀，不然它们挡在前面，后面认形态全落空 */
+  t=t.replace(/^(?:(?:搭檔|搭档|霸主|頭目|头目|閃光|闪光)[\s·・:：、,，\-—_~～]*)+/,'');
   if(/^(超极巨化|超极巨)/.test(t)){form='-gmax';t=t.replace(/^(超极巨化|超极巨)/,'');}
   else if(/^(原始回归|原始)/.test(t)){form='-mega';t=t.replace(/^(原始回归|原始)/,'');}
   else if(/^(Mega|mega|超级)/.test(t)){form='-mega';t=t.replace(/^(Mega|mega|超级)/,'');}
