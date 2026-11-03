@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.9';
+var PK_VER='5.9.10';
 /*PK_NOTICE_BEGIN
-v5.9.9 更新：
-· 修复带「霸主」「头目」前缀的宝可梦点「图鉴」打不开、精灵图不显示、图鉴里标不上已捕获的问题（前缀和后面的「·」「：」「-」等分隔符以前没一起剥掉）
+v5.9.10 更新：
+· 修复名字写成「喷火龙X」「超梦Y」这种（没带 Mega 前缀）的宝可梦点「图鉴」提示数据获取失败的问题
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3246,6 +3246,12 @@ try{var _psrc=localStorage.getItem('pk_source');pkmSource=(_psrc==='showdown')?'
     if(/斗战/.test(t)){form='-regional-p-combat';t=t.replace(/斗战(种)?/,'');}
     else if(/火炽/.test(t)){form='-regional-p-blaze';t=t.replace(/火炽(种)?/,'');}
     else if(/水澜/.test(t)){form='-regional-p-aqua';t=t.replace(/水澜(种)?/,'');}
+  }
+  /* 名字本身带形态字母、没写 Mega 前缀（如「喷火龙X」）也要认出基名 */
+  if(!form&&t.length>2){
+    if(/[XxＸ]$/.test(t)){form='-mega-x';t=t.replace(/[XxＸ]$/,'');}
+    else if(/[YyＹ]$/.test(t)){form='-mega-y';t=t.replace(/[YyＹ]$/,'');}
+    else if(/[ZzＺ]$/.test(t)){form='-mega-z';t=t.replace(/[ZzＺ]$/,'');}
   }
   if(!form){
     var keys=[['黄昏之鬃','-dusk'],['拂晓之翼','-dawn'],['灵兽形态','-therian'],['起源形态','-origin'],['天空形态','-sky'],['解放形态','-unbound'],['完全体','-complete'],['觉悟形态','-resolute'],['舞步形态','-pirouette'],['攻击形态','-attack'],['防御形态','-defense'],['速度形态','-speed'],['白昼形态','-midday'],['黑夜形态','-midnight'],['黄昏形态','-dusk'],['太阳形态','-sunny'],['雨水形态','-rainy'],['雪云形态','-snowy'],['晴天形态','-sunshine'],['全能形态','-hero'],['化身形态',''],['小智版','-ash'],['剑之王','-crowned'],['盾之王','-crowned'],['骑白马','-ice'],['骑黑马','-shadow'],['焰白','-white'],['暗黑','-black'],['究极','-ultra'],['灵兽','-therian'],['起源','-origin'],['天空','-sky'],['解放','-unbound'],['完全','-complete'],['觉悟','-resolute'],['舞步','-pirouette'],['攻击','-attack'],['防御','-defense'],['速度','-speed'],['白昼','-midday'],['黄昏','-dusk'],['晴天','-sunshine'],['全能','-hero'],['小智','-ash'],['加热','-heat'],['清洗','-wash'],['结冰','-frost'],['旋转','-fan'],['切割','-mow'],['10%形态','-10'],['50%形态','-50'],['10％形态','-10'],['50％形态','-50'],['10%','-10'],['50%','-50'],['10％','-10'],['50％','-50']];
