@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.16';
+var PK_VER='5.9.18';
 /*PK_NOTICE_BEGIN
-v5.9.16 更新：
-· 「搭档加点」HP 一栏显示成「H P」，六项名称等宽居中，输入框跟着对齐
+v5.9.18 更新：
+· 撤回上一版多出来的改动，功能与 v5.9.16 相同
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
