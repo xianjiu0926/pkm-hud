@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.16';
+var PK_VER='5.9.17';
 /*PK_NOTICE_BEGIN
-v5.9.16 更新：
-· 「搭档加点」HP 一栏显示成「H P」，六项名称等宽居中，输入框跟着对齐
+v5.9.17 更新：
+· 聊天输入框里点到道具名，直接弹出道具详情（设置里「点击道具查看效果」关掉就不弹）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -1234,7 +1234,7 @@ function pkmHudAuthoritativeAssetMutation(opt){
   });
 }
 function pkmHudRenderCurrent(){
-  try{render();resizeFrame();try{pkmPartnerDotsRefresh();}catch(e){}return true;}catch(e){return false;}
+  try{render();resizeFrame();try{pkmPartnerDotsRefresh();}catch(e){}try{bindItemWordClick();}catch(e){}return true;}catch(e){return false;}
 }
 
 var winMode='0';
@@ -6021,6 +6021,47 @@ function showItemInfo(name,back,enName){
     if(d.detail&&d.detail!==d.text)_body+='<div class="row block"><span class="k">详细效果</span><span class="v">'+esc(d.detail).replace(/\n/g,'<br>')+'</span></div>';
     b.innerHTML=_body;
   });
+}
+/* ── 输入框里点到道具名，直接弹道具详情 ── */
+function hudItemWordAt(ta,pos){
+  try{
+    var store=PKM_DB['item'];
+    if(!store||!store.idx)return '';
+    var txt=String(('value' in ta)?(ta.value||''):(ta.textContent||''));
+    var p=Math.max(0,Math.min(txt.length,num(pos,0)));
+    var from=Math.max(0,p-16),to=Math.min(txt.length,p+16),win=txt.slice(from,to);
+    var bad=/[\s，。！？、,.!?：:；;、“”"'‘’（）()\[\]【】<>《》~～…—0-9]/;
+    var off=p-from;
+    for(var L=Math.min(16,win.length);L>=2;L--){
+      for(var i=0;i+L<=win.length;i++){
+        if(off<i||off>i+L)continue;
+        var w=win.slice(i,i+L);
+        if(bad.test(w))continue;
+        if(store.idx[w]||store.idx[w.toLowerCase()])return w;
+      }
+    }
+  }catch(e){}
+  return '';
+}
+function bindItemWordClick(){
+  try{
+    var ta=WIN.document.getElementById('send_textarea');
+    if(!ta||ta.__pkmItemWordBound)return;
+    ta.__pkmItemWordBound=1;
+    pkmDbLoad('item','items.json',['name','en','jp'],function(){});
+    ta.addEventListener('click',function(){
+      hudScope.setTimeout(function(){
+        try{
+          var pos=(typeof ta.selectionStart==='number')?ta.selectionStart:0;
+          pkmDbLoad('item','items.json',['name','en','jp'],function(store){
+            if(!store||!itemClickEnabled)return;
+            var w=hudItemWordAt(ta,pos);
+            if(w)showItemInfo(w,false,'');
+          });
+        }catch(e){}
+      },0);
+    });
+  }catch(e){}
 }
 function itemCleanTarget(v){
   return String(v||'')
