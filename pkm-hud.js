@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.8';
+var PK_VER='5.9.9';
 /*PK_NOTICE_BEGIN
-v5.9.8 更新：
-· 「图鉴」「搭档加点」两个按钮去掉前面的小图标，文字居中
+v5.9.9 更新：
+· 修复带「霸主」「头目」前缀的宝可梦点「图鉴」打不开、精灵图不显示、图鉴里标不上已捕获的问题（前缀和后面的「·」「：」「-」等分隔符以前没一起剥掉）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3430,11 +3430,11 @@ function auraPickerHTML(){var ap=parseAura((stat_data.训练家||{}).气场||'')
 function openAuraPicker(){if(inBattle()){hudMsg('战斗中无法切换气场');return;}clearBack();overlay.innerHTML=auraPickerHTML();overlay.classList.add('open');}
 function setActiveAura(n){if(inBattle()){hudMsg('战斗中无法切换气场');return;}n=parseInt(n,10);if(!n||n<1||n>3)return;var tr=stat_data.训练家||{};var ap=parseAura(tr.气场||'');if(ap.active===n){overlay.classList.remove('open');clearBack();return;}tr.气场=auraRebuild(ap,n);overlay.classList.remove('open');clearBack();pkmHudPersistStatData().then(function(){pkmHudRenderCurrent();},function(){pkmHudRenderCurrent();});}
 function badgePageHTML(){var rs=parseBadges(),regions=Object.keys(BADGE_MAP);var cur=badgeSel||pickRegion(rs)||regions[0];if(regions.indexOf(cur)<0)cur=regions[0];var tabs=regions.map(function(r){return '<button class="badge-tab'+(r===cur?' active':'')+'" data-bregion="'+esc(r)+'">'+esc(r)+'</button>';}).join('');var rec=null;rs.forEach(function(r){if(r.region===cur)rec=r;});if(!rec)rec={region:cur,list:[],cnt:0};var tab=BADGE_MAP[cur]||[],cells=tab.map(function(e,i){return badgeImg(cur,e,badgeGot(rec,e,i),true);}).join('');var mh=badgeMinH();return frame('徽章盒 '+esc(cur)+' '+badgeCount(rec)+'/'+tab.length,'<div class="badge-tabs">'+tabs+'</div><div class="badge-grid" style="min-height:'+mh+'px">'+cells+'</div>');}
-function pkmHideNamePrefix(s){var t=String(s==null?'':s).trim(),pre=['霸主','頭目','头目','搭檔','搭档','閃光','闪光'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){var p=pre[k];if(t.indexOf(p)===0&&t.length>p.length){var rest=t.slice(p.length).replace(/^[\s·・:：、,，\-—_]+/,'').trim();if(rest){t=rest;go=true;break;}}}}return t;}
+function pkmHideNamePrefix(s){var t=String(s==null?'':s).trim(),pre=['霸主','頭目','头目','搭檔','搭档','閃光','闪光'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){var p=pre[k];if(t.indexOf(p)===0&&t.length>p.length){var rest=t.slice(p.length).replace(/^[\s·・:：、,，\-—_~～]+/,'').trim();if(rest){t=rest;go=true;break;}}}}return t;}
 var PKM_PARTNER_TRENDS=['攻速','双刀','坦克','均衡'];
 function partnerTrendIcon(v){var t=String(v==null?'':v).trim();if(!t||PKM_PARTNER_TRENDS.indexOf(t)<0)return '';return '<img class="mega-ic" style="height:14px" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/搭档倾向/'+encodeURIComponent(t)+'.png')+'" alt="'+esc(t)+'" title="搭档倾向：'+esc(t)+'" onerror="this.remove()">';}
 function partnerIcon(size){var s=size||'clamp(.74rem,2.8vw,.88rem)';return '<img class="mega-ic" style="font-size:'+s+'" src="'+pkmRepoFirst(PKM_DATA_BASE+'UI/ui/搭档.png')+'" alt="搭档" title="搭档" onerror="this.remove()">';}
-function baseName(s){var t=String(s||'').trim(),i=t.indexOf('-');if(i>0)t=t.slice(0,i);var pre=['搭档','头目','霸主','闪光','原始回归','原始','超极巨化','超极巨','极巨化','极巨','太晶化','太晶','阿罗拉','伽勒尔','洗翠','帕底亚','Mega','mega'],go=true;while(go){go=false;for(var k=0;k<pre.length;k++){if(t.indexOf(pre[k])===0&&t.length>pre[k].length){t=t.slice(pre[k].length).trim();go=true;}}}return t;}
+function baseName(s){var t=String(s||'').trim();var pre=['搭档','头目','霸主','闪光','原始回归','原始','超极巨化','超极巨','极巨化','极巨','太晶化','太晶','阿罗拉','伽勒尔','洗翠','帕底亚','Mega','mega'],go=true;function trimSep(x){return String(x||'').replace(/^[\s·・:：、,，\-—_~～]+/,'').trim();}while(go){go=false;for(var k=0;k<pre.length;k++){if(t.indexOf(pre[k])===0&&t.length>pre[k].length){var _r=trimSep(t.slice(pre[k].length));if(_r){t=_r;go=true;break;}}}}var _i=t.indexOf('-');if(_i>0)t=t.slice(0,_i).trim();return trimSep(t);}
 function addSpecies(o,n){n=baseName(n);if(n)o[n]=1;}
 function ownedSpecies(){var o={},t=stat_data.队伍||{},k;for(k in t){if(t[k]&&t[k].名字&&t[k].名字!=='空')addSpecies(o,t[k].名字);}var b=stat_data.盒子||{};for(var bx in b){var sl=b[bx]||{};for(var p in sl){if(sl[p]&&sl[p].名字&&sl[p].名字!=='空')addSpecies(o,sl[p].名字);}}return o;}
 function chatKey(){try{var w=WIN,ST=w&&w.SillyTavern,ctx=ST&&ST.getContext?ST.getContext():null;var cid=(ctx&&ctx.chatId)||'';return String(cid).replace(/[^a-zA-Z0-9_-]/g,'_');}catch(e){return '';}}
