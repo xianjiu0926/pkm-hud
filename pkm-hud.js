@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.21';
+var PK_VER='5.9.22';
 /*PK_NOTICE_BEGIN
-v5.9.21 更新：
-· 搭档加点：中文名和图鉴对不上时，改用卡片里的英文名再查一次，谜拟Q 这种写法也能读到种族值
-· 奈克洛兹玛(黄昏之鬃/拂晓之翼) 的图能读到了
+v5.9.22 更新：
+· 自己建的精灵（DIY）也能加点了，种族值直接从 DIY 精灵库里读
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -6496,6 +6495,13 @@ function pkmPartnerInfo(partnerStr,stats){
 function pkmPartnerStats(name,cb,en){
   name=String(name||'').trim();
   if(!name){cb(null);return;}
+  var ds=null;
+  try{
+    diySyncFromStorage(false);
+    var dh=hudDiyLookup(name);
+    if(dh)ds=(dh.stage&&dh.stage.stats)||(dh.root&&dh.root.stats)||null;
+  }catch(e){}
+  if(ds&&pkmStatSum(ds)>0){cb(ds);return;}
   en=String(en||'').trim();
   function pickStats(d){
     var stats=null;
