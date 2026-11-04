@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.20';
+var PK_VER='5.9.21';
 /*PK_NOTICE_BEGIN
-v5.9.20 更新：
-· 弱丁鱼(鱼群) 会去找鱼群形态的图，不再空着
-· 只有带括号形态名的宝可梦（弱丁鱼、爱管侍这类），只写基础名字也能出图
+v5.9.21 更新：
+· 搭档加点：中文名和图鉴对不上时，改用卡片里的英文名再查一次，谜拟Q 这种写法也能读到种族值
+· 奈克洛兹玛(黄昏之鬃/拂晓之翼) 的图能读到了
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3541,7 +3541,7 @@ function battleStatusFor(pkm){
   }catch(e){}
   return '';
 }
-function cardFromPkm(p,slot,where,boxName){var hp=parseHP(p.HP);return{slot:slot||'',where:where||'team',boxName:boxName||'',empty:false,name:p.昵称||p.名字,species:p.名字,level:num(p.等级,1),hpCur:hp.cur,hpMax:hp.max,gender:p.性别||'',shiny:!!p.是否闪光||/闪光|閃光/.test(String(p.名字||'')),status:battleStatusFor(p),icon:p.图标||'',exp:p.经验||'',attr1:p.属性1||'',attr2:p.属性2||'',skills:p.技能||'',nature:p.性格||'',ability:p.特性||'',item:p.携带道具||'',itemEn:p.携带道具英文||'',iv:p.个体值||'',ball:p.精灵球||'',ballEn:p.精灵球英文||'',partner:p.搭档倾向||'',intimacy:p.亲密度||'',hatch:p.孵化剩余||''};}
+function cardFromPkm(p,slot,where,boxName){var hp=parseHP(p.HP);return{slot:slot||'',where:where||'team',boxName:boxName||'',empty:false,name:p.昵称||p.名字,species:p.名字,enname:p.英文名||'',level:num(p.等级,1),hpCur:hp.cur,hpMax:hp.max,gender:p.性别||'',shiny:!!p.是否闪光||/闪光|閃光/.test(String(p.名字||'')),status:battleStatusFor(p),icon:p.图标||'',exp:p.经验||'',attr1:p.属性1||'',attr2:p.属性2||'',skills:p.技能||'',nature:p.性格||'',ability:p.特性||'',item:p.携带道具||'',itemEn:p.携带道具英文||'',iv:p.个体值||'',ball:p.精灵球||'',ballEn:p.精灵球英文||'',partner:p.搭档倾向||'',intimacy:p.亲密度||'',hatch:p.孵化剩余||''};}
 function buildCards(){var out=[];for(var i=1;i<=6;i++){var p=(stat_data.队伍&&stat_data.队伍[String(i)])||{名字:'空'};if(p.名字&&p.名字!=='空'){out.push(cardFromPkm(p,i,'team',''));}else{out.push({slot:i,empty:true});}}return out;}
 
 var svgFrame='<svg class="card-bg-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="7,1.5 98.5,1.5 98.5,74 93,98.5 1.5,98.5 1.5,26" fill="rgba(127,116,232,0.25)" stroke="#7d95b5" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
@@ -6493,20 +6493,28 @@ function pkmPartnerInfo(partnerStr,stats){
   var used=pkmStatSum(pts);
   return {cmd:cmd,tier:tier,base:base,cap:cap,pts:pts,used:used,left:cap-used};
 }
-function pkmPartnerStats(name,cb){
+function pkmPartnerStats(name,cb,en){
   name=String(name||'').trim();
   if(!name){cb(null);return;}
-  pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
-    var hit=(store&&pkmDbLookup('dex',name))||(store&&pkmDbLookupPrefix('dex',name));
-    var no=hit?(parseInt(hit.no,10)||0):0;
-    fetchPokemon(name,no,function(d){
-      var stats=null;
-      if(d&&d.forms){
-        for(var i=0;i<d.forms.length;i++){if(d.forms[i]&&d.forms[i].base&&d.forms[i].stats){stats=d.forms[i].stats;break;}}
-        if(!stats&&d.forms[0])stats=d.forms[0].stats;
-      }
-      cb(stats);
+  en=String(en||'').trim();
+  function pickStats(d){
+    var stats=null;
+    if(d&&d.forms){
+      for(var i=0;i<d.forms.length;i++){if(d.forms[i]&&d.forms[i].base&&d.forms[i].stats){stats=d.forms[i].stats;break;}}
+      if(!stats&&d.forms[0])stats=d.forms[0].stats;
+    }
+    return stats;
+  }
+  function query(n,done){
+    pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+      var hit=(store&&pkmDbLookup('dex',n))||(store&&pkmDbLookupPrefix('dex',n));
+      var no=hit?(parseInt(hit.no,10)||0):0;
+      fetchPokemon(n,no,function(d){done(pickStats(d));});
     });
+  }
+  query(name,function(stats){
+    if(stats||!en||en.toLowerCase()===name.toLowerCase()){cb(stats);return;}
+    query(en,cb);
   });
 }
 function pkmPartnerBlockHTML(c){
@@ -6525,7 +6533,7 @@ function pkmPartnerOpen(card){
     var obj=pkmPartnerObjOf(box);
     if(obj&&pkmPartnerAutoZero(obj,pkmPartnerInfo(obj.搭档倾向,stats))&&card)card.partner=obj.搭档倾向;
     pkmPartnerDraw(box,stats,card);
-  });
+  },card&&card.enname);
 }
 function pkmPartnerDraw(box,stats,card){
   if(!box)return;
@@ -6594,7 +6602,7 @@ function pkmPartnerDotsRefresh(scope){
         var info=pkmPartnerInfo(p.搭档倾向,stats);
         pkmPartnerAutoZero(p,info);
         el.style.display=info.left>0?'':'none';
-      });
+      },p.英文名);
     })(list[i]);
   }
   var btn=root.querySelector('[data-pt-dot-btn]');
@@ -6605,7 +6613,7 @@ function pkmPartnerDotsRefresh(scope){
       pkmPartnerStats(pkmHideNamePrefix(c.species||c.name||''),function(stats){
         var info=pkmPartnerInfo(c.partner,stats);
         btn.style.display=info.left>0?'':'none';
-      });
+      },c.enname);
     }
   }
 }
