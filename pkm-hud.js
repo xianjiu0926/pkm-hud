@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.7';
+var PK_VER='6.0.8';
 /*PK_NOTICE_BEGIN
-v6.0.7 更新：
-· 电脑端战场卡固定一行两张，卡片各占一半宽，右边不再空一大块
+v6.0.8 更新：
+· 战场状态里的「太晶X」显示成太晶属性图标＋属性名，底色跟属性走
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -438,7 +438,7 @@ var css='#pkm-hud-win,#pkm-hud-inline{--frame:#7d95b5;--text:#c6d1e4;--dim:#8ba0
 '.tag{display:inline-block;font-size:.65rem;padding:0 4px;border-radius:3px;margin-left:4px;color:#fff;background:rgba(170,204,255,.35)}'+
 '.tag.shiny{background:#f0d848;color:#333}'+
 '.tag.boss{background:#c03028}'+
-'.ailment{display:inline-block;font-size:.62rem;padding:0 4px;border-radius:3px;margin-left:4px;color:#fff;font-weight:800;background:rgba(170,204,255,.35)}'+
+'.ailment{display:inline-block;font-size:.62rem;padding:0 4px;border-radius:3px;margin-left:4px;color:#fff;font-weight:800;background:rgba(170,204,255,.35)}'+'.ailment.tera{display:inline-flex;align-items:center;gap:2px;padding:0 5px 0 1px;text-shadow:0 1px 2px rgba(0,0,0,.55)}'+'.ailment.tera img{width:15px;height:15px;object-fit:contain;display:block}'+'.ailment.tera .tera-rest{font-weight:400;opacity:.92}'+
 '.ailment.par{background:#f8d830;color:#333}'+
 '.ailment.psn{background:#a040a0}'+
 '.ailment.brn{background:#f08030}'+
@@ -3547,7 +3547,7 @@ function num(v,d){var n=parseInt(v,10);return isNaN(n)?d:n;}
 function esc(s){s=String(s==null?'':s);s=s.replace(/&/g,'&amp;');s=s.replace(/</g,'&lt;');s=s.replace(/>/g,'&gt;');return s;}
 function parseHP(s){var p=String(s||'0/0').split('/');return{cur:num(p[0],0),max:num(p[1],0)};}
 function genderOf(g){var s=String(g||'');if(s==='♂'||s==='雄性'||s==='男'||s==='公'||s==='M'||s==='m'||s==='male')return{sym:'♂',cls:'m'};if(s==='♀'||s==='雌性'||s==='女'||s==='母'||s==='F'||s==='f'||s==='female')return{sym:'♀',cls:'f'};return{sym:'',cls:'none'};}
-function statusTag(s){s=String(s||'').trim();if(!s||s==='无'||s==='正常')return '';var m={'麻痹':'par','剧毒':'psn','中毒':'psn','灼伤':'brn','烧伤':'brn','睡眠':'slp','冰冻':'frz','混乱':'cnf','畏缩':'cnf'},c='bad';for(var k in m){if(s.indexOf(k)>=0){c=m[k];break;}}return '<span class="ailment '+c+'">'+esc(s)+'</span>';}
+function btTeraParse(s){var m=String(s||'').match(/^太晶\s*[：:]?\s*/);if(!m)return null;var tail=String(s).slice(m[0].length);for(var len=Math.min(4,tail.length);len>=1;len--){var t=tail.slice(0,len);if(typeSlug(t))return {type:t,rest:tail.slice(len).replace(/^[\s\-\uff0d\u2014\u2013\u00b7\u3001,\uff0c]+/,'')};}return null;}function teraTagHTML(tp,rest){var sl=typeSlug(tp);var ic=sl?'<img src="'+esc(pkmRepoFirst(PKM_DATA_BASE+'UI/tera/'+sl+'.png'))+'" alt="" onerror="this.remove()">':'';return '<span class="ailment tera" style="background:'+typeColor(tp)+'">'+ic+esc(tp)+(rest?'<span class="tera-rest">'+esc(rest)+'</span>':'')+'</span>';}function statusTag(s){s=String(s||'').trim();if(!s||s==='无'||s==='正常')return '';var _tp=btTeraParse(s);if(_tp)return teraTagHTML(_tp.type,_tp.rest);var m={'麻痹':'par','剧毒':'psn','中毒':'psn','灼伤':'brn','烧伤':'brn','睡眠':'slp','冰冻':'frz','混乱':'cnf','畏缩':'cnf'},c='bad';for(var k in m){if(s.indexOf(k)>=0){c=m[k];break;}}return '<span class="ailment '+c+'">'+esc(s)+'</span>';}
 function battleStatusFor(pkm){
   try{
     var field=(stat_data.战场&&stat_data.战场.场上)||{};
