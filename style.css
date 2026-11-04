@@ -1694,6 +1694,15 @@ body.hh-pair-mobile #hide-helper-ctx-outline-popup .hide-entry-name { padding-ri
    这里只把内边距与字号收一档，让「隐藏楼层 / 限制楼层 / 聊天统计 / 使用说明」四格在 320~420px
    的视口里都能单行放下（配 `white-space: nowrap`）。 */
 @media (max-width: 480px) {
+    /* 【移动端 · 聊天统计页不滚】这一页的内容比可视区高，靠外层 .popup-tabs-content 的滚动条，
+       但在 TauriTavern（Android）里那层拖不动 —— 同一弹窗里的「使用说明」靠自己的内层滚动就能滑。
+       于是给这一页也套一层内层滚动，参数与说明页一致（465px，正好落在外层 470px 里，不会被裁）。
+       —— 2026-11-05 阿言按弦九的实测反馈加的，只影响窄屏。 */
+    #token-stats-panel .tub-body {
+        overflow-y: auto !important; overflow-x: hidden !important;
+        max-height: 465px !important;
+        -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    }
     /* 第三十七轮：下间距（padding-bottom: 10px）在主规则里，这里是整条 padding 的重写 → 必须一起带上，
        否则窄屏下又变回 0、内容区重新贴上标签。 */
     #hide-helper-popup .popup-tabs-nav { padding: 0 40px 10px 8px !important; }
