@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.29';
+var PK_VER='6.0.0';
 /*PK_NOTICE_BEGIN
-v5.9.29 更新：
-· 战场卡的特性、性格、道具分开显示，各自带标签，不再挤成一行
+v6.0.0 更新：
+· 战场卡的属性改成色块，点开能看克制与抵抗，括号不显示了
+· 特性、性格、道具分开显示，各自带标签，不再挤成一行
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
