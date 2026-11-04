@@ -1,0 +1,12 @@
+{
+    "display_name": "隐藏助手（抗空格版）",
+    "loading_order": 14,
+    "generate_interceptor": "HideHelper_interceptGeneration",
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "uhhhh15",
+    "version": "4.2.4",
+    "description": "高效批量隐藏/显示消息的工具；本份修改：世界书统计按\"忽略空白\"匹配，兼容防路由等会插空格的脚本"
+}
