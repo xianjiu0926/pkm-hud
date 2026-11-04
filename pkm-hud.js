@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='5.9.22';
+var PK_VER='5.9.23';
 /*PK_NOTICE_BEGIN
-v5.9.22 更新：
-· 自己建的精灵（DIY）也能加点了，种族值直接从 DIY 精灵库里读
+v5.9.23 更新：
+· 图鉴里没有的精灵（自己建的、名字对不上的），精灵详情和附近宝可梦不再显示图鉴按钮
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3120,6 +3120,33 @@ function diyPokemonSprite(name){
   if(ref.indexOf(HUD_DIY_SCHEME)===0)return hudDiyAssetResolveSync(ref);
   return ref;
 }
+function pkmDexAvailable(name,cb){
+  name=String(name==null?'':name).trim();
+  if(!name){cb(false);return;}
+  name=pkmHideNamePrefix(name);
+  var own=false;
+  try{diySyncFromStorage(false);own=diyHas('pokemon',name);}catch(e){}
+  if(own){cb(false);return;}
+  pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+    if(!store||!store.data){cb(true);return;}
+    var b=pkmFormParse(name).base||name;
+    cb(!!(pkmDbLookup('dex',b)||pkmDbLookupPrefix('dex',b)));
+  });
+}
+function pkmDexBtnResolve(root){
+  var scope=root||document;
+  if(!scope||!scope.querySelectorAll)return;
+  var list=scope.querySelectorAll('[data-dex-check]');
+  for(var i=0;i<list.length;i++){
+    (function(el){
+      if(el.getAttribute('data-dex-done')==='1')return;
+      el.setAttribute('data-dex-done','1');
+      pkmDexAvailable(el.getAttribute('data-dex-check'),function(ok){
+        if(!ok)el.style.display='none';
+      });
+    })(list[i]);
+  }
+}
 function fetchPkmSlug(name,cb){
   if(!name){cb&&cb('');return;}
   var b=pkmFormParse(name).base;
@@ -3145,6 +3172,7 @@ function fetchPkmSlug(name,cb){
   });
 }
 function resolvePkmImgs(scope){
+  pkmDexBtnResolve(scope);
   var els=(scope||document).querySelectorAll('.pk-img[data-pkm],.pk-img[data-icon]');
   for(var i=0;i<els.length;i++){
     (function(el){
@@ -6630,12 +6658,12 @@ if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-w
 if(c.where==='box' && c.boxName) hudActions+='<button class="act-btn" data-pkm-movebox>切换盒子</button>';
 if(c.item && c.item!=='无') hudActions+='<button class="act-btn" data-pkm-unequip>卸下道具</button>';
 hudActions+='<button class="act-btn" data-pkm-equip>携带道具</button>';
-hudActions+='<button class="act-btn" data-pkm-dex-info>图鉴</button>';
+hudActions+='<button class="act-btn" data-pkm-dex-info data-dex-check="'+esc(c.species||c.name||'')+'">图鉴</button>';
 if(pkmPartnerEligible(c)) hudActions+=pkmPartnerBlockHTML(c);
 if(hudActions) hudActions='<div class="action-btns" style="margin-top:10px">'+hudActions+'</div>';
 return '<div class="modal detail-modal one"><div class="modal-head"><div class="modal-name">宝可梦详情</div><button class="close" data-close>✕</button></div><div class="modal-body">'+p1+'<div class="dt-sep"></div>'+p2+hudActions+'</div></div>';}
 
-function actionHTML(raw,key){var m=nearbyCategoryMeta(raw),p=m.pokemon,img=pkImgHTML(p.名字,p.图标,m.shiny,'action-img'),badges=nearbyPillsHTML(m)+nearbyTypeBarHTML(m),marks=nearbyNameIconsHTML(m);return '<div class="modal"><div class="modal-head"><div class="modal-name">选择行动</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="action-pkm nearby-action-head '+nearbyCellClasses(m)+'" style="'+nearbyCellStyle(m)+'"><div class="nb-edge"></div><div class="nearby-action-img">'+img+'</div><div class="action-info"><div class="nearby-name nearby-action-name">'+esc(pkmHideNamePrefix(p.名字))+' <span class="nb-name-icons">'+marks+'</span></div><div class="nb-pillbar nearby-action-pills">'+badges+'</div><div class="nearby-sub">数量 ×'+num(p.数量,1)+'</div></div></div><div class="action-btns"><button class="act-btn" data-action="对战" data-key="'+esc(key)+'">⚔️ 对战</button><button class="act-btn" data-action="捕捉" data-key="'+esc(key)+'">🔴 捕捉</button><button class="act-btn" data-action="观察" data-key="'+esc(key)+'">👀 观察</button><button class="act-btn act-dex-btn" data-pkm-dex="1" data-key="'+esc(key)+'">📖 图鉴</button></div></div></div>';}
+function actionHTML(raw,key){var m=nearbyCategoryMeta(raw),p=m.pokemon,img=pkImgHTML(p.名字,p.图标,m.shiny,'action-img'),badges=nearbyPillsHTML(m)+nearbyTypeBarHTML(m),marks=nearbyNameIconsHTML(m);return '<div class="modal"><div class="modal-head"><div class="modal-name">选择行动</div><button class="close" data-close>✕</button></div><div class="modal-body"><div class="action-pkm nearby-action-head '+nearbyCellClasses(m)+'" style="'+nearbyCellStyle(m)+'"><div class="nb-edge"></div><div class="nearby-action-img">'+img+'</div><div class="action-info"><div class="nearby-name nearby-action-name">'+esc(pkmHideNamePrefix(p.名字))+' <span class="nb-name-icons">'+marks+'</span></div><div class="nb-pillbar nearby-action-pills">'+badges+'</div><div class="nearby-sub">数量 ×'+num(p.数量,1)+'</div></div></div><div class="action-btns"><button class="act-btn" data-action="对战" data-key="'+esc(key)+'">⚔️ 对战</button><button class="act-btn" data-action="捕捉" data-key="'+esc(key)+'">🔴 捕捉</button><button class="act-btn" data-action="观察" data-key="'+esc(key)+'">👀 观察</button><button class="act-btn act-dex-btn" data-pkm-dex="1" data-key="'+esc(key)+'" data-dex-check="'+esc(p.名字||'')+'">📖 图鉴</button></div></div></div>';}
 
 function sendMessage(text){
   try{
