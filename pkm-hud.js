@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.10';
+var PK_VER='6.0.11';
 /*PK_NOTICE_BEGIN
-v6.0.10 更新：
-· 场上宝可梦的属性位置写成「太晶水」的，也显示成太晶图标＋属性名
+v6.0.11 更新：
+· 图鉴里切换形态时，大图不会再退成基础形态那只
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5258,8 +5258,11 @@ function md5(str){
   if(d){var forms=curPkmForms&&curPkmForms.length?curPkmForms:d.forms;f=forms[idx]||forms[0];}
   var en=(d&&d.enname)?String(d.enname).toLowerCase():'';
   if(!en)return '';
+  /* 形态自己的英文名已经带着形态后缀（tauros-paldea-combat），再拼一次 suffix 会 404，
+     全退到基础形态那张去。所以优先用 f.en。 */
+  var fen=(f&&f.en)?String(f.en).toLowerCase():'';
   var suf=(f&&f.suffix)||'';
-  var slug=en+suf;
+  var slug=normSlug(fen)||normSlug(en+suf);
   return pkmRepoUrl('static','pokeos',slug,shiny);
 }
 var evolutionCache=null,evolutionLoading=false,evolutionCbs=[];
