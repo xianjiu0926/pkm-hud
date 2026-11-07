@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.13';
+var PK_VER='6.0.14';
 /*PK_NOTICE_BEGIN
-v6.0.13 更新：
-· 去掉道具里的「亲密度」「经验值」两条——它们是游戏机制，不是道具
+v6.0.14 更新：
+· 修地图位置：当前地点带地区名时，11号道路不会再钉到1号道路（12→2、17→7、18→8 同类问题一起修好）
+· 认地点名时不再把数字从中间切开——「11号道路」里不算含「1号道路」
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3910,6 +3911,20 @@ function normLocParts(s){
   }
   return out;
 }
+/* 地点名是否真的出现在 loc 里：整段包含不算数，从数字中间切开的也不算（"关都11号道路"里没有"1号道路"） */
+function locNameHit(base,sub){
+  if(!base||!sub)return false;
+  var i=base.indexOf(sub);
+  while(i>=0){
+    var b=i>0?base.charAt(i-1):'';
+    var a=i+sub.length<base.length?base.charAt(i+sub.length):'';
+    var cutHead=(/\d/.test(sub.charAt(0))&&/\d/.test(b));
+    var cutTail=(/\d/.test(sub.charAt(sub.length-1))&&/\d/.test(a));
+    if(!cutHead&&!cutTail)return true;
+    i=base.indexOf(sub,i+1);
+  }
+  return false;
+}
 function findSpot(map,loc){
   if(!map||!loc)return null;
   var l=normLoc(loc);
@@ -3923,7 +3938,7 @@ function findSpot(map,loc){
     var parts=normLocParts(all[j].name);
     for(var p=0;p<parts.length;p++){
       var n=parts[p];
-      if(n&&(l.indexOf(n)>=0||n.indexOf(l)>=0))return all[j];
+      if(n&&(locNameHit(l,n)||locNameHit(n,l)))return all[j];
     }
   }
   return null;
