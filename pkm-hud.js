@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.15';
+var PK_VER='6.0.16';
 /*PK_NOTICE_BEGIN
-v6.0.15 更新：
-· 可学习招式表补上第九世代：606 只宝可梦的招式池更新为朱紫（例：闪焰王牌在朱紫里能学掷泥、泥巴射击、热沙大地）
-· 不在朱紫里的宝可梦保持原来的最近世代（剑盾／究极日月等），显示不变
+v6.0.16 更新：
+· 只在《Let's Go！皮卡丘／伊布》里出现过的宝可梦（独角虫到大嘴雀、派拉斯一族等 12 只），招式页改显示究极日月那一代，和世界书一致
+· 其他宝可梦不受影响
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5378,9 +5378,9 @@ function mvRows(list,hasLevel,head1){
 }
 function movesetRender(ms){
   var gens=ms&&ms.allgen||[];
-  var g=null;
-  for(var i=gens.length-1;i>=0;i--){if(gens[i].levelup&&gens[i].levelup.length){g=gens[i];break;}}
-  if(!g)g=gens[gens.length-1]||null;
+  var g=null,fb=null;
+  for(var i=gens.length-1;i>=0;i--){var x=gens[i];if(x.levelup&&x.levelup.length){if(!fb)fb=x;if(x.gen!=='lgplge'){g=x;break;}}}
+  if(!g)g=fb||gens[gens.length-1]||null;
   if(!g)return '<span class="dim">暂无招式数据</span>';
   var lv=(g.levelup||[]).slice().sort(function(a,b){return (a[1]-b[1])||(a[0]-b[0]);});
   var machine=(g.machine||[]).slice();
