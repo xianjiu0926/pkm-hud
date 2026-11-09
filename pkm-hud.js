@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.14';
+var PK_VER='6.0.15';
 /*PK_NOTICE_BEGIN
-v6.0.14 更新：
-· 修地图位置：当前地点带地区名时，11号道路不会再钉到1号道路（12→2、17→7、18→8 同类问题一起修好）
-· 认地点名时不再把数字从中间切开——「11号道路」里不算含「1号道路」
+v6.0.15 更新：
+· 可学习招式表补上第九世代：606 只宝可梦的招式池更新为朱紫（例：闪焰王牌在朱紫里能学掷泥、泥巴射击、热沙大地）
+· 不在朱紫里的宝可梦保持原来的最近世代（剑盾／究极日月等），显示不变
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4549,7 +4549,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20261107a';
+var PKM_DATA_REV='r20261109a';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
