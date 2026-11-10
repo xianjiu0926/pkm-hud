@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.17';
+var PK_VER='6.0.18';
 /*PK_NOTICE_BEGIN
-v6.0.17 更新：
-· 修好卡璞・蝶蝶这类名字里带中点的宝可梦，打开详情一直提示「宝可梦数据获取失败」的问题
-· 中点和横杠写成哪种、去不去掉，现在都能认出来
+v6.0.18 更新：
+· 自动更新角色卡脚本失败时，现在会显示 TT 真正返回的原因，不再只剩一句「[object Object]」
+· update_character 写不进去时，自动换一条卡数据通道再试一次
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7322,6 +7322,12 @@ function pkTauriDesc(v){
     return String(v).slice(0,80);
   }catch(e){return '?';}
 }
+function pkTauriErrText(e){
+  if(e==null)return String(e);
+  if(typeof e==='string')return e;
+  if(e&&typeof e.message==='string'&&e.message)return e.message;
+  try{var s=JSON.stringify(e);return (s&&s!=='{}')?s:String(e);}catch(x){return String(e);}
+}
 function pkTauriFindHud(char){
   function scan(o){
     if(!o||typeof o!=='object')return null;
@@ -7358,8 +7364,38 @@ function pkTauriUpdateScript(newContent){
       hit.scripts[hit.idx].content=newContent;
       var tdata=(target&&target.data)||{};
       diag.push('target='+pkTauriDesc(target)+' data='+pkTauriDesc(tdata)+' ext='+pkTauriDesc(target&&(target.extensions||tdata.extensions)));
-      var nm=(target&&(target.name||target.ch_name))||(tdata&&(tdata.name||tdata.ch_name))||'';
-      pkTauriInvoke('update_character',{name:nm,dto:target}).then(function(){done(true,'TT 角色卡脚本已更新');}).catch(function(e){done(false,'TT update_character 失败:'+(e&&e.message||e));});
+      var nm=String((target&&(target.name||target.ch_name))||(tdata&&(tdata.name||tdata.ch_name))||'').trim();
+      /* 第二条通道：改原始卡 JSON 走 update_character_card_data。update_character 的 DTO 跟 TT 版本对不上时用它 */
+      function tryCardData(){
+        return new Promise(function(res,rej){
+          var raw=target&&target.json_data;
+          if(!raw||typeof raw!=='string')return rej(new Error('拿不到 json_data（原始卡 JSON）'));
+          var obj;try{obj=JSON.parse(raw);}catch(err){return rej(new Error('json_data 不是合法 JSON'));}
+          function pick(o){
+            if(!o||typeof o!=='object')return null;
+            var e=o.extensions&&o.extensions.tavern_helper;
+            if(e&&Array.isArray(e.scripts))return e;
+            return pick(o.data)||pick(o.character);
+          }
+          var th=pick(obj);
+          if(!th)return rej(new Error('json_data 里找不到 tavern_helper.scripts'));
+          var ok=false;
+          for(var i=0;i<th.scripts.length;i++){
+            var sc=th.scripts[i];
+            if(sc&&typeof sc.content==='string'&&sc.content.indexOf('pkm-hud-btn')>=0&&sc.content.indexOf('PK_VER')>=0){sc.content=newContent;ok=true;break;}
+          }
+          if(!ok)return rej(new Error('json_data 里没找到 HUD 脚本'));
+          res(pkTauriInvoke('update_character_card_data',{name:nm,dto:{card_json:JSON.stringify(obj)}}));
+        });
+      }
+      pkTauriInvoke('update_character',{name:nm,dto:target})
+        .then(function(){done(true,'TT 角色卡脚本已更新');})
+        .catch(function(e){
+          var m1=pkTauriErrText(e);
+          tryCardData()
+            .then(function(){done(true,'TT 角色卡脚本已更新（换了卡数据通道）');})
+            .catch(function(e2){done(false,'TT update_character 失败:'+m1+'；卡数据通道也失败:'+pkTauriErrText(e2));});
+        });
     }
     function processList(arr){
       var j,hit;
