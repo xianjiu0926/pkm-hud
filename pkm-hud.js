@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.19';
+var PK_VER='6.0.20';
 /*PK_NOTICE_BEGIN
-v6.0.19 更新：
-· 修好角色卡脚本自动更新失败（提示 Character not found）：卡里的名字和真实文件名对不上时，会自动找出能用的那个名字再写
-· 一条路写不进去会自动换另一条，失败时显示 TT 返回的原始原因
+v6.0.20 更新：
+· 角色卡脚本更新失败时，诊断里会列出所有角色卡的名字和头像字段，用来查真实文件名
+· 只动诊断，不改正常流程
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7374,7 +7374,7 @@ function pkTauriUpdateScript(newContent){
     function modifySave(target,hit){
       hit.scripts[hit.idx].content=newContent;
       var tdata=(target&&target.data)||{};
-      diag.push('target='+pkTauriDesc(target)+' data='+pkTauriDesc(tdata)+' ext='+pkTauriDesc(target&&(target.extensions||tdata.extensions)));
+      diag.push('target='+pkTauriDesc(target)+' ext='+pkTauriDesc(target&&(target.extensions||tdata.extensions)));
       var nm=String((target&&(target.name||target.ch_name))||(tdata&&(tdata.name||tdata.ch_name))||'').trim();
       /* 卡里的名字和真实文件名不一定一样：TT 存盘用 sanitize 过的名字，读卡却拿原始名字拼路径。
          先探一遍候选，找到真能打开的那个名字再写 */
@@ -7388,7 +7388,7 @@ function pkTauriUpdateScript(newContent){
         return out;
       }
       function probe(list,i,cb){
-        if(i>=list.length){cb('');return;}
+        if(i>=list.length){diag.push('试过='+list.join('/'));cb('');return;}
         pkTauriInvoke('get_character',{name:list[i]}).then(function(){cb(list[i]);}).catch(function(){probe(list,i+1,cb);});
       }
       function saveWith(use){
@@ -7445,7 +7445,7 @@ function pkTauriUpdateScript(newContent){
       next();
     }
     pkTauriInvoke('get_all_characters',{shallow:false}).then(function(res){
-      diag.push('list='+pkTauriDesc(res));
+      if(Array.isArray(res))diag.push('cards='+res.map(function(c){return String((c&&c.name)||'?')+'<'+String((c&&c.avatar)||'')+'>';}).join(' | '));
       var arr=null;
       if(Array.isArray(res))arr=res;
       else if(res&&Array.isArray(res.items))arr=res.items;
