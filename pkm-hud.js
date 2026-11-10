@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.20';
+var PK_VER='6.0.21';
 /*PK_NOTICE_BEGIN
-v6.0.20 更新：
-· 角色卡脚本更新失败时，诊断里会列出所有角色卡的名字和头像字段，用来查真实文件名
-· 只动诊断，不改正常流程
+v6.0.21 更新：
+· 更新角色卡脚本时不再弹「Character not found」红框：先认卡里的头像字段当真实文件名，一次写对，不拿错名字去试
+· 定位成功过的文件名会记住，下次直接用
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7322,6 +7322,14 @@ function pkTauriDesc(v){
     return String(v).slice(0,80);
   }catch(e){return '?';}
 }
+function pkTtStemGet(name){
+  if(!name)return '';
+  try{var m=JSON.parse(localStorage.getItem('pk_tt_stem')||'{}');return String(m[name]||'');}catch(e){return '';}
+}
+function pkTtStemSet(name,stem){
+  if(!name||!stem||name===stem)return;
+  try{var m=JSON.parse(localStorage.getItem('pk_tt_stem')||'{}');m[name]=stem;localStorage.setItem('pk_tt_stem',JSON.stringify(m));}catch(e){}
+}
 function pkTauriSanitize(name){
   var s=String(name==null?'':name);
   s=s.replace(/[\/?<>\\:*|"\u0000-\u001f\u007f-\u009f]/g,'');
@@ -7376,57 +7384,62 @@ function pkTauriUpdateScript(newContent){
       var tdata=(target&&target.data)||{};
       diag.push('target='+pkTauriDesc(target)+' ext='+pkTauriDesc(target&&(target.extensions||tdata.extensions)));
       var nm=String((target&&(target.name||target.ch_name))||(tdata&&(tdata.name||tdata.ch_name))||'').trim();
+      var av=String((target&&target.avatar)||'');
+      var avStem=/\.png$/i.test(av)?av.slice(0,-4):'';
+      var cached=pkTtStemGet(nm);
       /* 卡里的名字和真实文件名不一定一样：TT 存盘用 sanitize 过的名字，读卡却拿原始名字拼路径。
-         先探一遍候选，找到真能打开的那个名字再写 */
+         头像字段里存的是真实文件名，先信它——拿错名字去试会让 TT 弹「Character not found」 */
       function stems(){
         var out=[];
         function add(v){v=String(v==null?'':v);if(v&&out.indexOf(v)<0)out.push(v);}
-        add(nm);
-        var av=String((target&&target.avatar)||'');
-        if(/\.png$/i.test(av))add(av.slice(0,-4));
-        add(pkTauriSanitize(nm));
+        add(cached);add(avStem);add(nm);add(pkTauriSanitize(nm));
         return out;
       }
       function probe(list,i,cb){
         if(i>=list.length){diag.push('试过='+list.join('/'));cb('');return;}
         pkTauriInvoke('get_character',{name:list[i]}).then(function(){cb(list[i]);}).catch(function(){probe(list,i+1,cb);});
       }
-      function saveWith(use){
-      use=String(use||nm||'');
-      if(use&&use!==nm)diag.push('改用文件名定位='+use);
-      /* 第二条通道：改原始卡 JSON 走 update_character_card_data。update_character 的 DTO 跟 TT 版本对不上时用它 */
-      function tryCardData(){
-        return new Promise(function(res,rej){
-          var raw=target&&target.json_data;
-          if(!raw||typeof raw!=='string')return rej(new Error('拿不到 json_data（原始卡 JSON）'));
-          var obj;try{obj=JSON.parse(raw);}catch(err){return rej(new Error('json_data 不是合法 JSON'));}
-          function pick(o){
-            if(!o||typeof o!=='object')return null;
-            var e=o.extensions&&o.extensions.tavern_helper;
-            if(e&&Array.isArray(e.scripts))return e;
-            return pick(o.data)||pick(o.character);
-          }
-          var th=pick(obj);
-          if(!th)return rej(new Error('json_data 里找不到 tavern_helper.scripts'));
-          var ok=false;
-          for(var i=0;i<th.scripts.length;i++){
-            var sc=th.scripts[i];
-            if(sc&&typeof sc.content==='string'&&sc.content.indexOf('pkm-hud-btn')>=0&&sc.content.indexOf('PK_VER')>=0){sc.content=newContent;ok=true;break;}
-          }
-          if(!ok)return rej(new Error('json_data 里没找到 HUD 脚本'));
-          res(pkTauriInvoke('update_character_card_data',{name:use,dto:{card_json:JSON.stringify(obj)}}));
-        });
+      function saveWith(use,probed){
+        use=String(use||nm||'');
+        if(use&&use!==nm)diag.push('用文件名定位='+use);
+        function tryCardData(){
+          return new Promise(function(res,rej){
+            var raw=target&&target.json_data;
+            if(!raw||typeof raw!=='string')return rej(new Error('拿不到 json_data（原始卡 JSON）'));
+            var obj;try{obj=JSON.parse(raw);}catch(err){return rej(new Error('json_data 不是合法 JSON'));}
+            function pick(o){
+              if(!o||typeof o!=='object')return null;
+              var e=o.extensions&&o.extensions.tavern_helper;
+              if(e&&Array.isArray(e.scripts))return e;
+              return pick(o.data)||pick(o.character);
+            }
+            var th=pick(obj);
+            if(!th)return rej(new Error('json_data 里找不到 tavern_helper.scripts'));
+            var ok=false;
+            for(var i=0;i<th.scripts.length;i++){
+              var sc=th.scripts[i];
+              if(sc&&typeof sc.content==='string'&&sc.content.indexOf('pkm-hud-btn')>=0&&sc.content.indexOf('PK_VER')>=0){sc.content=newContent;ok=true;break;}
+            }
+            if(!ok)return rej(new Error('json_data 里没找到 HUD 脚本'));
+            res(pkTauriInvoke('update_character_card_data',{name:use,dto:{card_json:JSON.stringify(obj)}}));
+          });
+        }
+        pkTauriInvoke('update_character',{name:use,dto:target})
+          .then(function(){pkTtStemSet(nm,use);done(true,'TT 角色卡脚本已更新');})
+          .catch(function(e){
+            var m1=pkTauriErrText(e);
+            tryCardData()
+              .then(function(){pkTtStemSet(nm,use);done(true,'TT 角色卡脚本已更新（换了卡数据通道）');})
+              .catch(function(e2){
+                if(probed){done(false,'TT update_character 失败:'+m1+'；卡数据通道也失败:'+pkTauriErrText(e2));return;}
+                probe(stems().filter(function(x){return x!==use;}),0,function(f){
+                  if(f){saveWith(f,true);return;}
+                  done(false,'TT update_character 失败:'+m1+'；卡数据通道也失败:'+pkTauriErrText(e2));
+                });
+              });
+          });
       }
-      pkTauriInvoke('update_character',{name:use,dto:target})
-        .then(function(){done(true,'TT 角色卡脚本已更新');})
-        .catch(function(e){
-          var m1=pkTauriErrText(e);
-          tryCardData()
-            .then(function(){done(true,'TT 角色卡脚本已更新（换了卡数据通道）');})
-            .catch(function(e2){done(false,'TT update_character 失败:'+m1+'；卡数据通道也失败:'+pkTauriErrText(e2));});
-        });
-      }
-      probe(stems(),0,function(found){saveWith(found);});
+      saveWith(cached||avStem||nm,false);
     }
     function processList(arr){
       var j,hit;
@@ -7445,7 +7458,7 @@ function pkTauriUpdateScript(newContent){
       next();
     }
     pkTauriInvoke('get_all_characters',{shallow:false}).then(function(res){
-      if(Array.isArray(res))diag.push('cards='+res.map(function(c){return String((c&&c.name)||'?')+'<'+String((c&&c.avatar)||'')+'>';}).join(' | '));
+
       var arr=null;
       if(Array.isArray(res))arr=res;
       else if(res&&Array.isArray(res.items))arr=res.items;
