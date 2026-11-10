@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.16';
+var PK_VER='6.0.17';
 /*PK_NOTICE_BEGIN
-v6.0.16 更新：
-· 只在《Let's Go！皮卡丘／伊布》里出现过的宝可梦（独角虫到大嘴雀、派拉斯一族等 12 只），招式页改显示究极日月那一代，和世界书一致
-· 其他宝可梦不受影响
+v6.0.17 更新：
+· 修好卡璞・蝶蝶这类名字里带中点的宝可梦，打开详情一直提示「宝可梦数据获取失败」的问题
+· 中点和横杠写成哪种、去不去掉，现在都能认出来
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -2977,6 +2977,9 @@ var PKM_ITEM_SEREBII_BASE='https://raw.githubusercontent.com/xianjiu0926/Pokemon
 var pkmItemSource='serebii';
 function toHalfWidth(s){return String(s==null?'':s).replace(/[！-～]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-65248);});}
 function normItemName(s){return toHalfWidth(String(s==null?'':s)).replace(/[\s\u3000]+/g,'');}
+/* 名字归一：把各种中点/横杠/空格/下划线全剥掉，用来兜底比对。
+   卡璞・蝶蝶（U+30FB）和卡璞·蝶蝶（U+00B7）屏幕上一样、码位不同，光靠精确比对查不到。 */
+function normNameKey(s){return String(s==null?'':s).toLowerCase().replace(/[\s\u3000\u00b7\u30fb\u2022\u2027\u2219\u22c5\uff0e.\-_\u2014\uff0d\u2212]/g,'');}
 function serebiiItemSlug(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'');}
 function serebiiItemSlugAlt(s){return String(s==null?'':s).toLowerCase().replace(/\.(png|gif|jpe?g|webp)$/,'').replace(/[^a-z0-9.]+/g,'.');}
 function serebiiItemUrl(slug){var s=serebiiItemSlug(slug);return s?pkmRepoFirst(PKM_ITEM_SEREBII_BASE+s+'.png'):'';}
@@ -4560,6 +4563,7 @@ function pkmDbBuildIndex(data,fields){
       var k=String(v);if(!idx[k])idx[k]=data[i];
       if(fields[f]==='en'||fields[f]==='jp'){var lk=k.toLowerCase();if(!idx[lk])idx[lk]=data[i];}
       var hw=normItemName(k);if(hw!==k&&!idx[hw])idx[hw]=data[i];
+      var nk=normNameKey(k);if(nk&&nk!==hw&&!idx[nk])idx[nk]=data[i];
     }
   }
   return idx;
@@ -4617,16 +4621,18 @@ function pkmDbLookup(kind,name){
   if(store.idx[n])return store.idx[n];
   var low=n.toLowerCase();if(store.idx[low])return store.idx[low];
   var hw=normItemName(n);if(hw!==n&&store.idx[hw])return store.idx[hw];
+  var nk=normNameKey(n);if(nk&&store.idx[nk])return store.idx[nk];
   return null;
 }
 function pkmDbLookupPrefix(kind,name){
   var store=PKM_DB[kind];if(!store||!store.data)return null;
   var n=String(name==null?'':name).trim();if(!n)return null;
+  var nk=normNameKey(n);
   for(var i=0;i<store.data.length;i++){
     var d=store.data[i];var nm=d&&d.name;
     if(nm==null)continue;
     var p=String(nm).split('(')[0].split('（')[0].trim();
-    if(p===n)return d;
+    if(p===n||(nk&&normNameKey(p)===nk))return d;
   }
   return null;
 }
