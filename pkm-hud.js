@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.18';
+var PK_VER='6.0.19';
 /*PK_NOTICE_BEGIN
-v6.0.18 更新：
-· 自动更新角色卡脚本失败时，现在会显示 TT 真正返回的原因，不再只剩一句「[object Object]」
-· update_character 写不进去时，自动换一条卡数据通道再试一次
+v6.0.19 更新：
+· 修好角色卡脚本自动更新失败（提示 Character not found）：卡里的名字和真实文件名对不上时，会自动找出能用的那个名字再写
+· 一条路写不进去会自动换另一条，失败时显示 TT 返回的原始原因
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -7322,6 +7322,17 @@ function pkTauriDesc(v){
     return String(v).slice(0,80);
   }catch(e){return '?';}
 }
+function pkTauriSanitize(name){
+  var s=String(name==null?'':name);
+  s=s.replace(/[\/?<>\\:*|"\u0000-\u001f\u007f-\u009f]/g,'');
+  if(/^\.+$/.test(s)||/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(s))s='';
+  s=s.replace(/[. ]+$/,'');
+  if(typeof TextEncoder!=='undefined'){
+    var enc=new TextEncoder();
+    while(s.length&&enc.encode(s).length>255)s=s.slice(0,-1);
+  }
+  return s;
+}
 function pkTauriErrText(e){
   if(e==null)return String(e);
   if(typeof e==='string')return e;
@@ -7365,6 +7376,24 @@ function pkTauriUpdateScript(newContent){
       var tdata=(target&&target.data)||{};
       diag.push('target='+pkTauriDesc(target)+' data='+pkTauriDesc(tdata)+' ext='+pkTauriDesc(target&&(target.extensions||tdata.extensions)));
       var nm=String((target&&(target.name||target.ch_name))||(tdata&&(tdata.name||tdata.ch_name))||'').trim();
+      /* 卡里的名字和真实文件名不一定一样：TT 存盘用 sanitize 过的名字，读卡却拿原始名字拼路径。
+         先探一遍候选，找到真能打开的那个名字再写 */
+      function stems(){
+        var out=[];
+        function add(v){v=String(v==null?'':v);if(v&&out.indexOf(v)<0)out.push(v);}
+        add(nm);
+        var av=String((target&&target.avatar)||'');
+        if(/\.png$/i.test(av))add(av.slice(0,-4));
+        add(pkTauriSanitize(nm));
+        return out;
+      }
+      function probe(list,i,cb){
+        if(i>=list.length){cb('');return;}
+        pkTauriInvoke('get_character',{name:list[i]}).then(function(){cb(list[i]);}).catch(function(){probe(list,i+1,cb);});
+      }
+      function saveWith(use){
+      use=String(use||nm||'');
+      if(use&&use!==nm)diag.push('改用文件名定位='+use);
       /* 第二条通道：改原始卡 JSON 走 update_character_card_data。update_character 的 DTO 跟 TT 版本对不上时用它 */
       function tryCardData(){
         return new Promise(function(res,rej){
@@ -7385,10 +7414,10 @@ function pkTauriUpdateScript(newContent){
             if(sc&&typeof sc.content==='string'&&sc.content.indexOf('pkm-hud-btn')>=0&&sc.content.indexOf('PK_VER')>=0){sc.content=newContent;ok=true;break;}
           }
           if(!ok)return rej(new Error('json_data 里没找到 HUD 脚本'));
-          res(pkTauriInvoke('update_character_card_data',{name:nm,dto:{card_json:JSON.stringify(obj)}}));
+          res(pkTauriInvoke('update_character_card_data',{name:use,dto:{card_json:JSON.stringify(obj)}}));
         });
       }
-      pkTauriInvoke('update_character',{name:nm,dto:target})
+      pkTauriInvoke('update_character',{name:use,dto:target})
         .then(function(){done(true,'TT 角色卡脚本已更新');})
         .catch(function(e){
           var m1=pkTauriErrText(e);
@@ -7396,6 +7425,8 @@ function pkTauriUpdateScript(newContent){
             .then(function(){done(true,'TT 角色卡脚本已更新（换了卡数据通道）');})
             .catch(function(e2){done(false,'TT update_character 失败:'+m1+'；卡数据通道也失败:'+pkTauriErrText(e2));});
         });
+      }
+      probe(stems(),0,function(found){saveWith(found);});
     }
     function processList(arr){
       var j,hit;
