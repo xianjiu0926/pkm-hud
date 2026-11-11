@@ -3,10 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.22';
+var PK_VER='6.0.23';
 /*PK_NOTICE_BEGIN
-v6.0.22 更新：
-· 附近宝可梦里带形态的（伽勒尔急冻鸟、阿罗拉/洗翠形态等），属性不再显示成普通形态那一套
+v6.0.23 更新：
+· 附近宝可梦的属性按卡片上写的中文名查，写「急冻鸟(伽勒尔)」就查伽勒尔那只，不再被英文名带回普通形态
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3647,12 +3647,6 @@ function nearbyEnSlug(en){
   s=s.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   return s;
 }
-function nearbyHasFormMark(s){
-  s=String(s==null?'':s).trim();
-  if(!s)return false;
-  if(formRegionOf(s))return true;
-  return /Mega|超级|超极巨|原始回归|剑之王|盾之王|骑白马|骑黑马|天空形态|灵兽|起源|解放|完全体|觉悟|舞步|攻击形态|防御形态|速度形态|白昼|黑夜|黄昏|太阳形态|雨水|雪云|晴天|全能|小智版|鱼群/i.test(s);
-}
 function nearbyPickForm(d,cn,en){
   if(!d||!d.forms||!d.forms.length)return null;
   var forms=d.forms;
@@ -3732,12 +3726,10 @@ function nearbyFetchTypes(name,en,cn,cb){
     pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
       var hit=null;
       var es=nearbyEnSlug(en);
-      // 卡里英文名常常只写基础种（伽勒尔急冻鸟也写 articuno），先查会落到普通形态上。
-      // 中文名带形态时以完整中文名为准，查不到再退回英文名。
+      // 表里写了什么名字就查哪个形态；卡里的英文名常常只写基础种（伽勒尔急冻鸟也写 articuno），拿它先查会落到普通形态上
       var full=String(cn||name||'').trim();
-      if(full&&nearbyHasFormMark(full))hit=pkmDbLookup('dex',full);
+      if(full)hit=pkmDbLookup('dex',full);
       if(!hit&&es)hit=pkmDbLookup('dex',es);
-      if(!hit&&cn)hit=pkmDbLookup('dex',cn);
       if(!hit&&name)hit=pkmDbLookup('dex',name);
       if(hit&&hit.types&&hit.types.length){fin(nearbyCleanType(hit.types[0]),nearbyCleanType(hit.types[1]||''));}
       else{next();}
