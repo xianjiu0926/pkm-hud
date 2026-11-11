@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.21';
+var PK_VER='6.0.22';
 /*PK_NOTICE_BEGIN
-v6.0.21 更新：
-· 更新角色卡脚本时不再弹「Character not found」红框：先认卡里的头像字段当真实文件名，一次写对，不拿错名字去试
-· 定位成功过的文件名会记住，下次直接用
+v6.0.22 更新：
+· 附近宝可梦里带形态的（伽勒尔急冻鸟、阿罗拉/洗翠形态等），属性不再显示成普通形态那一套
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -3648,6 +3647,12 @@ function nearbyEnSlug(en){
   s=s.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   return s;
 }
+function nearbyHasFormMark(s){
+  s=String(s==null?'':s).trim();
+  if(!s)return false;
+  if(formRegionOf(s))return true;
+  return /Mega|超级|超极巨|原始回归|剑之王|盾之王|骑白马|骑黑马|天空形态|灵兽|起源|解放|完全体|觉悟|舞步|攻击形态|防御形态|速度形态|白昼|黑夜|黄昏|太阳形态|雨水|雪云|晴天|全能|小智版|鱼群/i.test(s);
+}
 function nearbyPickForm(d,cn,en){
   if(!d||!d.forms||!d.forms.length)return null;
   var forms=d.forms;
@@ -3697,7 +3702,7 @@ function nearbyFetchTypes(name,en,cn,cb){
   if(!name&&!en){cb&&cb('','');return;}
   var cacheKey=nearbyTypeCacheKeyOf({名字:cn||name,英文名:en})||name;
   if(nearbyTypeCache[cacheKey]){var c=nearbyTypeCache[cacheKey];cb&&cb(c.type1,c.type2);return;}
-  var key='nbtype_v8_'+cacheKey;
+  var key='nbtype_v9_'+cacheKey;
   try{var raw=lsGet(key,'');if(raw){var o=JSON.parse(raw);if(o&&typeof o==='object'){o={type1:String(o.type1||''),type2:String(o.type2||'')};nearbyTypeCache[cacheKey]=o;cb&&cb(o.type1,o.type2);return;}}}catch(e){}
   if(nearbyTypePending[cacheKey]){nearbyTypePending[cacheKey].push(cb);return;}
   nearbyTypePending[cacheKey]=cb?[cb]:[];
@@ -3727,7 +3732,11 @@ function nearbyFetchTypes(name,en,cn,cb){
     pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
       var hit=null;
       var es=nearbyEnSlug(en);
-      if(es)hit=pkmDbLookup('dex',es);
+      // 卡里英文名常常只写基础种（伽勒尔急冻鸟也写 articuno），先查会落到普通形态上。
+      // 中文名带形态时以完整中文名为准，查不到再退回英文名。
+      var full=String(cn||name||'').trim();
+      if(full&&nearbyHasFormMark(full))hit=pkmDbLookup('dex',full);
+      if(!hit&&es)hit=pkmDbLookup('dex',es);
       if(!hit&&cn)hit=pkmDbLookup('dex',cn);
       if(!hit&&name)hit=pkmDbLookup('dex',name);
       if(hit&&hit.types&&hit.types.length){fin(nearbyCleanType(hit.types[0]),nearbyCleanType(hit.types[1]||''));}
