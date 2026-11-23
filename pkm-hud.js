@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.24';
+var PK_VER='6.0.25';
 /*PK_NOTICE_BEGIN
-v6.0.24 更新：
-· 详情页「分类」跟着当前形态走：帕底亚乌波显示「毒鱼宝可梦」，不再沿用普通乌波的「水鱼宝可梦」
-· 帕底亚乌波的详情大图换回正确的 HOME 渲染（之前那张放成了帕底亚肯泰罗·水澜种）
+v6.0.25 更新：
+· 进化链里显示宝可梦名字（乌波 → 沼王 / 土王），不再是一个个 #编号
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5357,12 +5356,15 @@ function renderEvoInto(d){
   var el=document.getElementById('pkm-evo');if(!el)return;
   var id=(d&&d.evolveChainId!=null)?d.evolveChainId:'';
   if(id===''||id==null){el.innerHTML='<span class="dim">暂无进化数据</span>';return;}
-  loadEvolution(function(list){
-    var el2=document.getElementById('pkm-evo');if(!el2)return;
-    if(!list){el2.innerHTML='<span class="dim">进化数据加载失败</span>';return;}
-    var chain=null;
-    for(var i=0;i<list.length;i++){if(String(list[i].id)===String(id)){chain=list[i].chain;break;}}
-    el2.innerHTML=evoChainRender(chain,(d&&d.ndex)||0);
+  /* 名字要从 dex 表里取；详情走缓存时 dex 可能还没加载，先补上再画链子 */
+  pkmDbLoad('dex','dex-list.json',['en','name'],function(store){
+    loadEvolution(function(list){
+      var el2=document.getElementById('pkm-evo');if(!el2)return;
+      if(!list){el2.innerHTML='<span class="dim">进化数据加载失败</span>';return;}
+      var chain=null;
+      for(var i=0;i<list.length;i++){if(String(list[i].id)===String(id)){chain=list[i].chain;break;}}
+      el2.innerHTML=evoChainRender(chain,(d&&d.ndex)||0);
+    });
   });
 }
 function mvRowHead(c1){
