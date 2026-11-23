@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.25';
+var PK_VER='6.0.26';
 /*PK_NOTICE_BEGIN
-v6.0.25 更新：
-· 进化链里显示宝可梦名字（乌波 → 沼王 / 土王），不再是一个个 #编号
+v6.0.26 更新：
+· 进化链里的名字可以点了，直接跳到那只宝可梦的图鉴，返回还能回到原来那只
+· 带形态的会落到对应形态（点「乌波(帕底亚)」进去就是帕底亚那只，不是普通乌波）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5313,6 +5314,30 @@ function loadMoveset(no,cb){
     .catch(function(){movesetCache[key]=null;movesetLoading[key]=false;cb&&cb(null);});
 }
 function evoName(no){var n=parseInt(no,10)||0;return pkmNoName(n)||PKM_DEX_EN[n]||('#'+n);}
+/* 进化链点击用：按编号取 dex 条目，形态提示（fromImg/toImg 里的 paldea/alola…）优先匹配 */
+function evoNoMeta(no,img){
+  var store=PKM_DB['dex'];if(!store||!store.data)return null;
+  var n=parseInt(no,10)||0;if(!n)return null;
+  var list=[],i;
+  for(i=0;i<store.data.length;i++){if(store.data[i].no===n)list.push(store.data[i]);}
+  if(!list.length)return null;
+  var hint=String(img||'').toLowerCase(),want='';
+  if(hint.indexOf('paldea')>=0)want='-paldea';
+  else if(hint.indexOf('alola')>=0)want='-alola';
+  else if(hint.indexOf('galar')>=0)want='-galar';
+  else if(hint.indexOf('hisui')>=0)want='-hisui';
+  if(want){for(i=0;i<list.length;i++){if(String(list[i].en||'').toLowerCase().indexOf(want)>=0)return list[i];}}
+  var best=list[0];
+  for(i=1;i<list.length;i++){if(String(list[i].en||'').length<String(best.en||'').length)best=list[i];}
+  return best;
+}
+function evoNameHTML(no,img){
+  var n=parseInt(no,10)||0;
+  if(!n)return esc(evoName(no));
+  var meta=evoNoMeta(n,img);
+  var show=pkmNoName(n)||evoName(no);
+  return '<span class="abi-link evo-pkm" data-evo-no="'+n+'" data-evo-name="'+esc((meta&&meta.name)||show)+'" data-evo-en="'+esc((meta&&meta.en)||'')+'">'+esc(show)+'</span>';
+}
 function evoFormName(cond,baseName){
   var s=String(cond||'');
   if(s.indexOf('超级进化')>=0)return '超级'+baseName;
@@ -5343,9 +5368,9 @@ function evoChainRender(chain,selfNo){
     }
     var hlFrom=(c.from===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
     var hlTo=(c.to===selfN)?' style="color:var(--pk-blue);font-weight:700"':'';
-    var toHtml='<span'+hlTo+'>'+esc(same?evoFormName(c.cond,evoName(c.from)):evoName(c.to))+'</span>';
+    var toHtml='<span'+hlTo+'>'+(same?esc(evoFormName(c.cond,evoName(c.from))):evoNameHTML(c.to,c.toImg))+'</span>';
     rows.push('<div class="evo-row">'
-      +'<span class="evo-from"'+hlFrom+'>'+esc(evoName(c.from))+'</span>'
+      +'<span class="evo-from"'+hlFrom+'>'+evoNameHTML(c.from,c.fromImg)+'</span>'
       +'<span class="evo-cond">'+(cond?esc(cond):'—')+'</span>'
       +'<span class="evo-to">'+toHtml+'</span>'
       +'</div>');
@@ -5425,7 +5450,7 @@ function mvTabSwitch(tab){
   var panels=wrap.querySelectorAll('.mv-panel');
   for(var j=0;j<panels.length;j++){panels[j].style.display=(panels[j].getAttribute('data-mvpanel')===tab)?'':'none';}
 }
-function showPokemonInfo(name,ndex,back,en){
+function showPokemonInfo(name,ndex,back,en,form){
   curPkmNdex=parseInt(ndex,10)||0;
   ensureFormCryMap();
   var _pbk=!!back;
@@ -5444,13 +5469,21 @@ function showPokemonInfo(name,ndex,back,en){
       if(f.base===1)baseForms.push(f);else otherForms.push(f);
     });
     var shown=baseForms.concat(otherForms);
+    /* 从进化链点进来的形态：就算图鉴里没记过，也先把它摆出来 */
+    if(form){
+      var _fhas=false,_fi;
+      for(_fi=0;_fi<shown.length;_fi++){if(String(shown[_fi].name||'')===String(form)){_fhas=true;break;}}
+      if(!_fhas){for(_fi=0;_fi<d.forms.length;_fi++){if(String(d.forms[_fi].name||'')===String(form)){shown.push(d.forms[_fi]);break;}}}
+    }
     if(!shown.length)shown=[d.forms[0]];
     curPkmForms=shown;
+    var _start=0;
+    if(form){for(var _fs=0;_fs<shown.length;_fs++){if(String(shown[_fs].name||'')===String(form)){_start=_fs;break;}}}
     var bar=document.getElementById('pkm-formbar');
     if(bar&&shown.length>1){
-      bar.innerHTML='<div class="pkm-forms">'+shown.map(function(f,i){return '<button class="btn-small pkm-form-btn'+(i===0?' active':'')+'" data-form="'+i+'">'+esc(f.label)+'</button>';}).join('')+'</div>';
+      bar.innerHTML='<div class="pkm-forms">'+shown.map(function(f,i){return '<button class="btn-small pkm-form-btn'+(i===_start?' active':'')+'" data-form="'+i+'">'+esc(f.label)+'</button>';}).join('')+'</div>';
     }
-  renderPkmForm(0);
+  renderPkmForm(_start);
   }
   fetchPokemon(name,curPkmNdex,function(d){
     if(d||!en||String(en).toLowerCase()===String(name).toLowerCase()){showDex(d);return;}
@@ -8717,6 +8750,7 @@ var cur=e.target.closest('[data-cache-usage-refresh]');if(cur){e.stopPropagation
 var pdu=e.target.closest('[data-notice-update]');if(pdu){e.stopPropagation();overlay.classList.remove('open');pkDoUpdate();return;}
 var pkc=e.target.closest('[data-pk-copy-content]');if(pkc){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc.textContent=ok?'✔ 已复制':'复制失败';});}else{pkc.textContent='无内容';}return;}
 var pkc2=e.target.closest('[data-pk-copy-content-close]');if(pkc2){e.stopPropagation();if(pkLatestContent){diyCopyText(pkLatestContent,function(ok){pkc2.textContent=ok?'✔ 已复制':'复制失败';hudScope.setTimeout(function(){overlay.classList.remove('open');clearBack();},400);});}else{pkc2.textContent='无内容';}return;}
+    var evl=e.target.closest('[data-evo-no]');if(evl){e.stopPropagation();var _evoNo=parseInt(evl.getAttribute('data-evo-no'),10)||0;var _evoEn=evl.getAttribute('data-evo-en')||'';var _evoNm=evl.getAttribute('data-evo-name')||evl.textContent||'';if(_evoNo||_evoNm)showPokemonInfo(_evoNm,_evoNo,1,_evoEn,_evoNm);return;}
     var dxc=e.target.closest('[data-pkm-dex-info]');if(dxc){e.stopPropagation();var _dc=currentDetailCard;var _dcn=_dc?(pkmFormParse(_dc.species||_dc.name||'').base||''):'';if(_dcn)showPokemonInfo(_dcn,0,1,_dc&&_dc.enname||'');return;}
     var dxb=e.target.closest('[data-pkm-dex]');if(dxb){e.stopPropagation();var _dk=dxb.getAttribute('data-key');var _dp=stat_data.附近宝可梦&&stat_data.附近宝可梦[_dk];if(_dp){var _dn=pkmFormParse(_dp.名字||'').base||String(_dp.名字||'');if(_dn)showPokemonInfo(_dn,0,1,_dp.英文名||'');}return;}
     var btn=e.target.closest('[data-action]');if(btn){var action=btn.getAttribute('data-action');var key=btn.getAttribute('data-key');var p=stat_data.附近宝可梦&&stat_data.附近宝可梦[key];if(p)sendAction(p,action);}
