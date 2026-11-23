@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.23';
+var PK_VER='6.0.24';
 /*PK_NOTICE_BEGIN
-v6.0.23 更新：
-· 附近宝可梦的属性按卡片上写的中文名查，写「急冻鸟(伽勒尔)」就查伽勒尔那只，不再被英文名带回普通形态
+v6.0.24 更新：
+· 详情页「分类」跟着当前形态走：帕底亚乌波显示「毒鱼宝可梦」，不再沿用普通乌波的「水鱼宝可梦」
+· 帕底亚乌波的详情大图换回正确的 HOME 渲染（之前那张放成了帕底亚肯泰罗·水澜种）
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5029,6 +5030,7 @@ function genToPkmAll(entries,baseEn,no){
     var ab2=g.abilities||[],ty2=g.types||[],st2=g.stats||{};
     d.forms.push({name:g.name||'',en:g.en||'',label:isBase?'普通':(g.name||''),region:region,base:isBase?1:0,
       suffix:g.suffix||'',
+      species:g.species||base.species||'',
       desc:g.desc||'',
       type1:ty2[0]||'',type2:ty2[1]||'',
       ability1:ab2[0]||'',ability2:ab2[1]||'',abilityd:ab2[2]||'',
@@ -5037,18 +5039,19 @@ function genToPkmAll(entries,baseEn,no){
   }
   return d;
 }
+var PKM_PM_VER=2;/* 详情缓存结构版本：2 起 forms[] 带 species */
 function fetchPokemon(name,ndex,cb){
   if(typeof ndex==='function'){cb=ndex;ndex=0;}
   if(!name){cb&&cb(null);return;}
   var key=name;
   if(pkmCache[key]){cb&&cb(pkmCache[key]);return;}
-  var _c2=lsGet('pk_pm_'+key,null);if(_c2){pkmCache[key]=_c2;cb&&cb(pkmCache[key]);return;}
+  var _c2=lsGet('pk_pm_'+key,null);if(_c2&&_c2.pkmv===PKM_PM_VER){pkmCache[key]=_c2;cb&&cb(pkmCache[key]);return;}
   if(pkmLoading[key]){pkmLoading[key].push(cb);return;}
   pkmLoading[key]=[];
   if(cb)pkmLoading[key].push(cb);
   function done(d){
     pkmCache[key]=d||null;
-    if(d){lsSet('pk_pm_'+key,d);}
+    if(d){d.pkmv=PKM_PM_VER;lsSet('pk_pm_'+key,d);}
     var cbs=pkmLoading[key]||[];
     pkmLoading[key]=null;
     for(var i=0;i<cbs.length;i++){try{cbs[i](d);}catch(e){}}
@@ -5205,7 +5208,8 @@ if(big){
     var out='';
     var _fdesc=(f&&f.desc)?f.desc:(d&&d.desc);
     if(_fdesc)out+='<div class="row block"><span class="k">介绍</span><span class="v">'+esc(_fdesc).replace(/\n/g,'<br>')+'</span></div>';
-    if(d.species)out+='<div class="row"><span class="k">分类</span><span class="v">'+esc(d.species)+'</span></div>';
+    var _fsp=(f&&f.species)||d.species;
+    if(_fsp)out+='<div class="row"><span class="k">分类</span><span class="v">'+esc(_fsp)+'</span></div>';
     var types='';
     if(f.type1)types+=typeChipHTML(f.type1);
     if(f.type2)types+=typeChipHTML(f.type2);
