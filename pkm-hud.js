@@ -3,11 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.26';
+var PK_VER='6.0.27';
 /*PK_NOTICE_BEGIN
-v6.0.26 更新：
-· 进化链里的名字可以点了，直接跳到那只宝可梦的图鉴，返回还能回到原来那只
-· 带形态的会落到对应形态（点「乌波(帕底亚)」进去就是帕底亚那只，不是普通乌波）
+v6.0.27 更新：
+· 招式数据补全攻击范围：953 个招式都写清了打几个目标，群攻、单体、自身、场地不再混着
+· 修掉几条旧数据里的错写法：喷火少了字、吵闹标成了「自身」
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4554,7 +4554,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20261109a';
+var PKM_DATA_REV='r20261125a';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
