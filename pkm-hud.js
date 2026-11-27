@@ -3,11 +3,10 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.28';
+var PK_VER='6.0.29';
 /*PK_NOTICE_BEGIN
-v6.0.28 更新：
-· 23 个招式改用官方新译名：断头钳、居合斩、地狱翻滚、自爆、灭亡之歌、鬼面、地狱突刺……
-· 旧名字照样认得，老存档不会断
+v6.0.29 更新：
+· 洛托姆五形态（加热/清洗/结冰/旋转/切割）的招式表会显示各自的专属招式
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -5302,16 +5301,23 @@ function loadEvolution(cb){
     .catch(function(){evolutionLoading=false;var c=evolutionCbs;evolutionCbs=[];for(var i=0;i<c.length;i++){try{c[i](null);}catch(e){}}cb&&cb(null);});
 }
 var movesetCache={},movesetLoading={};
-function loadMoveset(no,cb){
-  var key=String(no);
+/* 形态有自己的招式表就按后缀取（如 pokemon-0479-heat.json），没有就退回基础表 */
+function loadMoveset(no,suffix,cb){
+  if(typeof suffix==='function'){cb=suffix;suffix='';}
+  var sfx=String(suffix||'').toLowerCase();
+  var key=String(no)+sfx;
   if(movesetCache[key]){cb&&cb(movesetCache[key]);return;}
   if(movesetLoading[key]){cb&&cb(null);return;}
   movesetLoading[key]=true;
-  var file='movesets/pokemon-'+('000'+key).slice(-4)+'.json';
+  var file='movesets/pokemon-'+('000'+String(no)).slice(-4)+sfx+'.json';
   hudFetch(PKM_DATA_BASE+file)
     .then(function(r){return r.ok?r.json():Promise.reject();})
     .then(function(j){movesetCache[key]=j;movesetLoading[key]=false;cb&&cb(j);})
-    .catch(function(){movesetCache[key]=null;movesetLoading[key]=false;cb&&cb(null);});
+    .catch(function(){
+      movesetLoading[key]=false;
+      if(sfx){loadMoveset(no,'',cb);return;}
+      movesetCache[key]=null;cb&&cb(null);
+    });
 }
 function evoName(no){var n=parseInt(no,10)||0;return pkmNoName(n)||PKM_DEX_EN[n]||('#'+n);}
 /* 进化链点击用：按编号取 dex 条目，形态提示（fromImg/toImg 里的 paldea/alola…）优先匹配 */
@@ -5434,7 +5440,9 @@ function renderMovesInto(d){
   var el=document.getElementById('pkm-moves');if(!el)return;
   var nd=parseInt(d&&d.ndex,10)||0;
   if(!nd){el.innerHTML='<span class="dim">暂无招式数据</span>';return;}
-  loadMoveset(nd,function(ms){
+  var _lst=(curPkmForms&&curPkmForms.length)?curPkmForms:(d.forms||[]);
+  var _f=_lst[curPkmForm]||{};
+  loadMoveset(nd,_f.suffix||'',function(ms){
     var el2=document.getElementById('pkm-moves');if(!el2)return;
     if(!ms){el2.innerHTML='<span class="dim">暂无招式数据</span>';return;}
     pkmDbLoad('move','moves.json',['name','en','jp'],function(){
