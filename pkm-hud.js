@@ -3,10 +3,11 @@
 var WIN=(function(){try{if(window.parent&&window.parent!==window&&window.parent.document&&window.parent.document.body){return window.parent;}}catch(e){}return window;})();
 var document=WIN.document;
 /* ★★★ 发布新版只需改下面这一块：版本号 + 更新公告 ★★★ */
-var PK_VER='6.0.29';
+var PK_VER='6.0.30';
 /*PK_NOTICE_BEGIN
-v6.0.29 更新：
-· 洛托姆五形态（加热/清洗/结冰/旋转/切割）的招式表会显示各自的专属招式
+v6.0.30 更新：
+· 地区形态（阿罗拉/伽勒尔/洗翠/帕底亚）和各路特殊形态的图鉴，显示自己的招式表
+· 肯泰罗斗战种/火炽种/水澜种的招式表分开了
 PK_NOTICE_END*/
 var PK_UPDATE_URL='https://raw.githubusercontent.com/xianjiu0926/pkm-hud/main/pkm-hud.js';
 function pkVerCompare(a,b){
@@ -4553,7 +4554,7 @@ d.cat=t2s(cleanText(grab(/\|damagecategory=([^\n|]+)/)||grab(/\|分类=([^\n|]+)
   return d;
 }
 /* ==== GitHub 仓库数据源（特性/招式/道具效果）==== */
-var PKM_DATA_REV='r20261125b';
+var PKM_DATA_REV='r20261127a';
 var PKM_DB={abil:null,move:null,item:null,dex:null},PKM_DB_LOADING={abil:false,move:false,item:false,dex:false},PKM_DB_CBS={abil:[],move:[],item:[],dex:[]};
 function pkmDbBuildIndex(data,fields){
   var idx={};
